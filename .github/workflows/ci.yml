@@ -1,0 +1,16 @@
+name: C CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: ソースをチェックアウト
+      uses: actions/checkout@v3
+
+    - name: Dockerを使ってCI実行（Make + Valgrind）
+      run: |
+        docker build -t valgrind-env .
+        docker run --rm -v "$PWD":/app -w /app valgrind-env make clean build memcheck
