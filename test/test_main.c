@@ -17,7 +17,7 @@ int main(void) {
     assert(sum(data, size) == 41);
     assert(min(data, size) == 1);
     assert(max(data, size) == 9);
-    assert((int)(average(data, size) * 100) == 456);
+    assert((int)(average(data, size) * 100) == 455);
     assert((int)(median(data, size) * 100) == 500);
     assert(mode(data, size) == 5);
 
