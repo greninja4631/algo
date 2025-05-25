@@ -1,23 +1,9 @@
-# ✅ Jenkins LTS + JDK11ベースイメージ
-FROM jenkins/jenkins:lts-jdk11
+FROM gcc:latest
 
-# rootユーザーで必要なツール群インストール
-USER root
+WORKDIR /workspace
 
-RUN apt-get update && apt-get install -y \
-    gcc \
-    make \
-    valgrind \
-    docker.io \
-    git \
-    openssh-client \
-    bash \
-    && apt-get clean
+COPY . .
 
-# Jenkinsユーザーへ切り替え
-USER jenkins
+RUN apt-get update && apt-get install -y make valgrind
 
-# 作業ディレクトリ設定（実際はJenkins/docker run時に-mount推奨）
-WORKDIR /app
-
-# 注意：Jenkins本番運用時は「COPY」「VOLUME」などをDockerfileに書かず、Jenkins側でワークスペースをマウントする！
+CMD ["/bin/bash"]
