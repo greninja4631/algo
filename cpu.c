@@ -61,6 +61,3 @@ int main() {
     CPU cpu = {0};  // 全レジスタ初期化
     run(&cpu, program);
     return 0;
-}
-
-//a
