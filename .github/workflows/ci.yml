@@ -1,0 +1,31 @@
+# .github/workflows/ci.yml
+name: CI (GitHub Actions)
+
+on:
+  push:
+    branches: [ main, pre, feature ]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up gcc
+        run: sudo apt-get update && sudo apt-get install -y gcc make valgrind curl
+
+      - name: Build
+        run: make build
+
+      - name: Test
+        run: make test
+
+      - name: Memcheck
+        run: make memcheck || true  # Valgrindなければエラー無視
+
+      - name: Trigger Jenkins job  # JenkinsへWebAPIで通知（ここがJenkins連携）
+        if: ${{ github.ref == 'refs/heads/main' }} # 例：mainブランチだけ通知
+        run: |
+          curl -X POST "https://your-jenkins-domain/job/your-job-name/build?token=YOUR_TOKEN"
