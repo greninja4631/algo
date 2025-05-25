@@ -25,7 +25,7 @@ int main(void) {
     assert(stats.sum == 41);
     assert(stats.min == 1);
     assert(stats.max == 9);
-    assert((int)(stats.average * 100) == 456);
+    assert((int)(stats.average * 100) == 455);
     assert((int)(stats.median * 100) == 500);
     assert(stats.mode == 5);
 
