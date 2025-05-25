@@ -1,51 +1,71 @@
 #include "statistics.h"
-#include <stdio.h>      // 標準入出力
-#include <stdlib.h>     // malloc, free, qsort
-#include <string.h>     // memcpy
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include <errno.h>
 
-#define MAX_VALUE 100   // 最頻値カウント範囲
+#define MAX_VALUE 100
 
-// ------- ログマクロ（CLI/CIのログ標準化） -------
+// ログ標準化マクロ（Cloud/CIログにも流用可）
 #define LOG_INFO(...)   fprintf(stdout,  "[INFO]  " __VA_ARGS__)
 #define LOG_ERROR(...)  fprintf(stderr, "[ERROR] " __VA_ARGS__)
 
-// ------- 内部専用ユーティリティ：staticで外部非公開 -------
+/**
+ * @brief 内部専用：整数比較関数 (qsort用)
+ * @details API外部に公開しないためstatic化
+ */
 static int compare_ints(const void *a, const void *b) {
-    return (*(int *)a - *(int *)b);
+    return (*(const int *)a - *(const int *)b);
 }
 
-// ------- ここから外部API：staticなし＝テスト＆再利用OK -------
-
-// 合計
+/**
+ * @brief 合計値計算
+ * @details 引数バリデーションも行い、未定義動作防止
+ */
 int sum(const int *data, int size) {
+    if (!data || size <= 0) {
+        LOG_ERROR("Invalid input to sum()\n");
+        return 0;
+    }
     int total = 0;
     for (int i = 0; i < size; i++) total += data[i];
     return total;
 }
 
-// 最小
 int min(const int *data, int size) {
+    if (!data || size <= 0) {
+        LOG_ERROR("Invalid input to min()\n");
+        return 0;
+    }
     int min_val = data[0];
     for (int i = 1; i < size; i++) if (data[i] < min_val) min_val = data[i];
     return min_val;
 }
 
-// 最大
 int max(const int *data, int size) {
+    if (!data || size <= 0) {
+        LOG_ERROR("Invalid input to max()\n");
+        return 0;
+    }
     int max_val = data[0];
     for (int i = 1; i < size; i++) if (data[i] > max_val) max_val = data[i];
     return max_val;
 }
 
-// 平均
 double average(const int *data, int size) {
+    if (!data || size <= 0) {
+        LOG_ERROR("Invalid input to average()\n");
+        return 0.0;
+    }
     return (double)sum(data, size) / size;
 }
 
-// 中央値
 double median(const int *data, int size) {
+    if (!data || size <= 0) {
+        LOG_ERROR("Invalid input to median()\n");
+        return 0.0;
+    }
     int *copy = malloc(sizeof(int) * size);
     if (!copy) {
         LOG_ERROR("Memory allocation failed for median calculation\n");
@@ -60,8 +80,11 @@ double median(const int *data, int size) {
     return result;
 }
 
-// 最頻値
 int mode(const int *data, int size) {
+    if (!data || size <= 0) {
+        LOG_ERROR("Invalid input to mode()\n");
+        return 0;
+    }
     int freq[MAX_VALUE + 1] = {0};
     for (int i = 0; i < size; i++)
         if (data[i] >= 0 && data[i] <= MAX_VALUE)
@@ -75,9 +98,8 @@ int mode(const int *data, int size) {
     return mode_val;
 }
 
-// 構造体まとめ集計（APIで呼びやすく）
 Statistics calculate_statistics(const int *data, int size) {
-    Statistics stats;
+    Statistics stats = {0};
     stats.sum     = sum(data, size);
     stats.min     = min(data, size);
     stats.max     = max(data, size);
@@ -87,43 +109,33 @@ Statistics calculate_statistics(const int *data, int size) {
     return stats;
 }
 
-// ------- メイン関数：CLIでもCIでも利用可能な構成 -------
+/* 
+ * @brief エントリーポイント(main)
+ * @details ユニットテスト時は除外（#ifndef TESTING）
+ *           Cloud RunやAPI化時は除外することで再利用性UP
+ */
+#ifndef TESTING
 int main(void) {
     int data[] = {1, 2, 3, 3, 5, 5, 5, 8, 9};
     int size = sizeof(data) / sizeof(data[0]);
+    Statistics stats = calculate_statistics(data, size);
 
-    Statistics stats = {
-        .sum     = sum(data, size),
-        .min     = min(data, size),
-        .max     = max(data, size),
-        .average = average(data, size),
-        .median  = median(data, size),
-        .mode    = mode(data, size)
-    };
+    printf("{\n  \"sum\": %d,\n  \"min\": %d,\n  \"max\": %d,\n"
+           "  \"average\": %.2f,\n  \"median\": %.2f,\n  \"mode\": %d\n}\n",
+           stats.sum, stats.min, stats.max, stats.average, stats.median, stats.mode);
 
-    // JSON形式で出力（APIログ・CLI連携）
-    printf("{\n");
-    printf("  \"sum\": %d,\n", stats.sum);
-    printf("  \"min\": %d,\n", stats.min);
-    printf("  \"max\": %d,\n", stats.max);
-    printf("  \"average\": %.2f,\n", stats.average);
-    printf("  \"median\": %.2f,\n", stats.median);
-    printf("  \"mode\": %d\n", stats.mode);
-    printf("}\n");
-
-    // CIツールなどによる自動テスト（ユニットテスト相当）
-    assert(stats.sum > 0);
-    assert(stats.min >= 0);
-    assert(stats.max >= stats.min);
-    assert(stats.average >= 0.0);
-    assert(stats.median >= 0.0);
+    // 自動テスト（手動でもassertチェックOK）
+    assert(stats.sum == 41);
+    assert(stats.min == 1);
+    assert(stats.max == 9);
+    assert((int)(stats.average * 100) == 456);
+    assert((int)(stats.median * 100) == 500);
+    assert(stats.mode == 5);
 
     LOG_INFO("Statistics test passed.\n");
     return 0;
 }
- 
-
-
+#endif
 //  🔵 自分の頭に叩き込むべき領域（設計・面接・転用力に直結）
 
 //  🧠 項目	✨ 内容	💡 なぜ覚えるべきか？
