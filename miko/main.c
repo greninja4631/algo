@@ -1,5 +1,4 @@
 #include "statistics.h"
-#include <stdio.h>
 #include <assert.h>
 
 int main(void) {
@@ -8,7 +7,7 @@ int main(void) {
 
     Statistics stats = calculate_statistics(data, size);
 
-    // JSON形式で出力（APIログ・CLI連携・テスト観点）
+    // JSON形式で出力
     printf("{\n");
     printf("  \"sum\": %d,\n", stats.sum);
     printf("  \"min\": %d,\n", stats.min);

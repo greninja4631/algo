@@ -1,5 +1,4 @@
 #include "statistics.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -7,22 +6,13 @@
 
 #define MAX_VALUE 100
 
-// ログ標準化マクロ（Cloud/CIログにも流用可）
-#define LOG_INFO(...)   fprintf(stdout,  "[INFO]  " __VA_ARGS__)
-#define LOG_ERROR(...)  fprintf(stderr, "[ERROR] " __VA_ARGS__)
-
 /**
  * @brief 内部専用：整数比較関数 (qsort用)
- * @details API外部に公開しないためstatic化
  */
 static int compare_ints(const void *a, const void *b) {
     return (*(const int *)a - *(const int *)b);
 }
 
-/**
- * @brief 合計値計算
- * @details 引数バリデーションも行い、未定義動作防止
- */
 int sum(const int *data, int size) {
     if (!data || size <= 0) {
         LOG_ERROR("Invalid input to sum()\n");
@@ -108,34 +98,6 @@ Statistics calculate_statistics(const int *data, int size) {
     stats.mode    = mode(data, size);
     return stats;
 }
-
-/* 
- * @brief エントリーポイント(main)
- * @details ユニットテスト時は除外（#ifndef TESTING）
- *           Cloud RunやAPI化時は除外することで再利用性UP
- */
-#ifndef TESTING
-int main(void) {
-    int data[] = {1, 2, 3, 3, 5, 5, 5, 8, 9};
-    int size = sizeof(data) / sizeof(data[0]);
-    Statistics stats = calculate_statistics(data, size);
-
-    printf("{\n  \"sum\": %d,\n  \"min\": %d,\n  \"max\": %d,\n"
-           "  \"average\": %.2f,\n  \"median\": %.2f,\n  \"mode\": %d\n}\n",
-           stats.sum, stats.min, stats.max, stats.average, stats.median, stats.mode);
-
-    // 自動テスト（手動でもassertチェックOK）
-    assert(stats.sum == 41);
-    assert(stats.min == 1);
-    assert(stats.max == 9);
-    assert((int)(stats.average * 100) == 456);
-    assert((int)(stats.median * 100) == 500);
-    assert(stats.mode == 5);
-
-    LOG_INFO("Statistics test passed.\n");
-    return 0;
-}
-#endif
 //  🔵 自分の頭に叩き込むべき領域（設計・面接・転用力に直結）
 
 //  🧠 項目	✨ 内容	💡 なぜ覚えるべきか？

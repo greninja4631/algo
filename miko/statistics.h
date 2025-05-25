@@ -1,6 +1,12 @@
 #ifndef STATISTICS_H
 #define STATISTICS_H
 
+#include <stdio.h>
+
+// ログ標準化マクロ（Cloud/CIログにも流用可）
+#define LOG_INFO(...)   fprintf(stdout,  "[INFO]  " __VA_ARGS__)
+#define LOG_ERROR(...)  fprintf(stderr, "[ERROR] " __VA_ARGS__)
+
 /** 
  * @file statistics.h
  * @brief 統計計算API (抽象データ型/インターフェース分離) 
