@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 # ✅ 終了時間：9時間後
 start_time = datetime.now()
-end_time = start_time + timedelta(hours=9)
+end_time = start_time + timedelta(hours=15)
 
 print(f"開始: {start_time.strftime('%H:%M:%S')} ～ 終了予定: {end_time.strftime('%H:%M:%S')}")
 print("Slackオンライン維持を開始します...")
