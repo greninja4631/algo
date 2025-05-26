@@ -1,4 +1,4 @@
-#include "statistics.h"
+#include "src/statistics.h"
 #include <assert.h>
 #include <stdio.h>
 

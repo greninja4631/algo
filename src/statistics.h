@@ -1,6 +1,6 @@
-#ifndef STATISTICS_H
-#define STATISTICS_H
-
+// ---------- ヘッダガード：statistics.hが二重に読まれるのを防ぐ ----------
+#ifndef STATISTICS_H     // もしSTATISTICS_Hが定義されていなければ（最初だけ実行される）
+#define STATISTICS_H     // STATISTICS_Hを定義して「一度読み込んだよ！」と記録
 #include <stdio.h>
 
 // ログ標準化マクロ（Cloud/CIログにも流用可）
