@@ -22,19 +22,19 @@
  
  /* --- エラーコード（型安全・監視・CI/CD） --- */
  typedef enum {
-     DS_SUCCESS = 0,
-     DS_ERR_NULL_POINTER,
-     DS_ERR_ALLOC,
-     DS_ERR_EMPTY,
-     DS_ERR_INVALID_ARG,
-     DS_ERR_OVERFLOW,
-     DS_ERR_UNDERFLOW,
-     DS_ERR_NOT_FOUND,
-     DS_ERR_SYSTEM,
-     DS_ERR_OUT_OF_MEMORY,
-     DS_ERR_EMPTY_CONTAINER  ///< 空のコンテナ操作（pop/dequeue等）時の標準エラー
- } ds_error_t;
- 
+    DS_SUCCESS = 0,
+    DS_ERR_NULL_POINTER,
+    DS_ERR_ALLOC,
+    DS_ERR_EMPTY,
+    DS_ERR_INVALID_ARG,
+    DS_ERR_OVERFLOW,
+    DS_ERR_UNDERFLOW,
+    DS_ERR_NOT_FOUND,
+    DS_ERR_SYSTEM,
+    DS_ERR_OUT_OF_MEMORY,
+    DS_ERR_EMPTY_CONTAINER,    ///< 空のコンテナ操作（pop/dequeue等）時の標準エラー
+    DS_ERR_SYSTEM_FAILURE      ///< システムエラー/Undo/Redo/コマンド系で致命的失敗を明示
+} ds_error_t;
 // --- テスト互換性のためのエイリアス定義 ---
 #define DS_ERROR_NULL_POINTER     DS_ERR_NULL_POINTER
 #define DS_ERROR_NOT_FOUND       DS_ERR_NOT_FOUND

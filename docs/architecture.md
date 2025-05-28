@@ -1,41 +1,107 @@
-# プロジェクトアーキテクチャ設計ドキュメント
+アーキテクチャ設計ドキュメント
 
-## 1. ディレクトリ・レイヤー構成
 
-```text
+1. ディレクトリ＆レイヤー構成
+
 src/
-├── stack.c
-├── queue.c
-├── doubly_list.c
-├── rpn_calculator.c
-├── round_robin.c
-├── history_system.c
+├── stack.c               // スタック（LIFO方式）の内部実装
+├── queue.c               // キュー（FIFO方式）の内部実装
+├── doubly_list.c         // 双方向リスト（Deque/LinkedList）の内部実装
+├── rpn_calculator.c      // 逆ポーランド記法（RPN）電卓ロジック
+├── round_robin.c         // ラウンドロビン・スケジューラ（公平プロセス制御）
+├── history_system.c      // Undo/Redo履歴管理システム本体
 ├── util/
-│   ├── logger.c
-│   ├── metrics.c
-│   └── memory.c
+│   ├── logger.c          // ログ出力ユーティリティ（INFO/ERROR等）
+│   ├── metrics.c         // メトリクス収集・クラウド監視ユーティリティ
+│   └── memory.c          // メモリ管理・カスタム確保/解放ユーティリティ
 include/
-├── data_structures.h
-└── config.h
+├── data_structures.h     // データ構造・API宣言（全体公開インターフェース）
+└── config.h              // グローバル設定・定数管理ヘッダ
 tests/
-├── test_stack.c
-├── test_queue.c
-├── test_doubly_list.c
-├── test_rpn_calculator.c
-├── test_round_robin.c
-├── test_history_system.c
-└── test_util.c
+├── test_stack.c          // スタックADTの単体テスト
+├── test_queue.c          // キューADTの単体テスト
+├── test_doubly_list.c    // 双方向リストADTの単体テスト
+├── test_rpn_calculator.c // RPN電卓ADTの単体テスト
+├── test_round_robin.c    // ラウンドロビンスケジューラの単体テスト
+├── test_history_system.c // Undo/Redo履歴システムの単体テスト
+└── test_util.c           // 各種ユーティリティのテスト
 docs/
-├── api.md
-└── architecture.md
+├── api.md                // API仕様書
+└── architecture.md       // システム設計/構造説明ドキュメント
+
+	•	src/: 主要ロジック実装（データ構造・アルゴリズムごとに分離）
+	•	src/util/: ログ・メトリクス・メモリ管理等の横断的共通機能（依存性注入の実践）
+	•	include/: APIヘッダー宣言専用。外部公開APIのみを記載し、実装は完全に隠蔽
+	•	tests/: 各モジュール単体テスト。すべてのAPIをテスト駆動・CI/CD前提で設計
+	•	docs/: 設計思想やAPI仕様などのドキュメント
+
+⸻
+
+2. 設計思想と各層の役割
+
+■ API駆動設計 & 抽象データ型（ADT）
+	•	すべてのデータ構造・アルゴリズムは「APIファースト」で設計
+	•	typedef struct ds_stack ds_stack_t;のように実装を隠蔽し、安全かつ拡張性を担保
+
+■ 責務分離・変更に強い設計
+	•	本体（src/）・API宣言（include/）・共通機能（util/）・テスト（tests/）を徹底的に分離
+	•	変更時も影響範囲が限定され、現場の開発・保守性が圧倒的に向上
+
+■ 依存性注入（DI）/ テストファースト / DevOps対応
+	•	ログ出力・メモリ管理・観測メトリクスは差し替え可能なインターフェース設計
+	•	単体テストは全API網羅、assert・戻り値による自動検証＝CI/CD文化を徹底
+	•	metrics.cによる観測性（クラウド監視・運用監視の組み込み）
+
+⸻
+
+3. 学習できるスキル・現場応用力
+	•	型安全で壊れないAPI設計（C言語でも現代的に）
+	•	Undo/Redo・ラウンドロビンスケジューラなど現場アルゴリズム応用
+	•	横断関心事（ロギング・メトリクス・メモリ管理）を運用目線で設計
+	•	ドキュメント駆動・CI/CD・DevOps文化の実践
+
+⸻
+
+4. モジュールごとの設計ストーリー
+	•	stack.c / queue.c / doubly_list.c
+基本のデータ構造をAPIドリブン＆情報隠蔽で実装
+→ 全て「戻り値はエラーコード・引数はポインタ・構造体は外から見えない」
+	•	rpn_calculator.c
+逆ポーランド記法による「計算アルゴリズムのデータ構造応用」
+→ stackと文字列処理の応用で「実務現場力」を磨く
+	•	round_robin.c
+OS設計を意識したプロセススケジューラ。
+→ queue・プロセス管理・循環アルゴリズムの現場適用例
+	•	history_system.c
+コマンドパターンと双方向リストでUndo/Redo管理。
+→ オフィスソフトや画像編集ソフトなど実務現場と直結する機能
+	•	util/logger.c, metrics.c, memory.c
+すべてのデータ構造・アルゴリズムが「横断的な観測性・可視化」を持つ。
+→ 実プロダクト品質のための依存性注入（DI）設計
+
+⸻
+
+5. テストと品質保証
+	•	tests/以下に各API・各データ構造ごとのユニットテストを配置
+	•	assert()および戻り値による厳格な自動検証
+	•	テスト駆動（TDD）、CI/CDと完全に連動できる
+
+⸻
+
+6. ドキュメントと属人化排除
+	•	docs/api.md / architecture.md
+設計思想やAPI仕様は必ず文章で明示し、属人化ゼロ・誰でも保守・引き継ぎ可能な体制
+
+⸻
+
+7. 学び・成長のためのステップ
+	1.	API設計（include/data_structures.h）を読む
+→ 使い方・意図・安全性を確認
+	2.	src/の実装を見る
+→ 「どう隠蔽され、どのように責務分離されているか」を体感
+	3.	tests/を読む・書き換える
+→ テストファースト・CI/CD水準の自動テスト文化を身につける
+	4.	共通機能(util/)やドキュメント(docs/)を参考に
+→ 運用・拡張・現場移行まで見据えた「設計の本質」を学ぶ
 
 
-	•	src/: すべての実装本体を格納。データ構造/アルゴリズム/ユーティリティごとに.cファイル分離。
-
-	•	src/util/: ロガー・メトリクス・メモリ管理等「横断的な共通機能」を分離し、責務分離・依存性注入を実現。
-
-	•	include/: APIヘッダー（.h）専用。全ての外部公開APIは必ずここに宣言。内部実装は絶対に隠蔽。
-
-	•	tests/: 各モジュールごとの単体テスト。main()以外のAPIはすべてテスト駆動。
-    
-	•	docs/: アーキテクチャ設計/API仕様書などドキュメント専用。
