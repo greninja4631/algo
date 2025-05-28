@@ -1,3 +1,5 @@
+//statistics.hの役割は、statistics.hで関数の挙動を呼び起こした時に、statistics.h経由で、statistics.cを呼び起こす方法に一貫性を持たせることが目的である。
+
 // ---------- ヘッダガード：statistics.hが二重に読まれるのを防ぐ ----------
 #ifndef STATISTICS_H     // もしSTATISTICS_Hが定義されていなければ（最初だけ実行される）
 #define STATISTICS_H     // STATISTICS_Hを定義して「一度読み込んだよ！」と記録

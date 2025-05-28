@@ -1,3 +1,5 @@
+//statistics.cで関数の具体的な計算内容を書く目的だ。
+
 #include "src/statistics.h"
 #include <stdlib.h>
 #include <string.h>

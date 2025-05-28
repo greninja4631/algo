@@ -1,3 +1,6 @@
+#deactivate    で環境を抜けることができる。
+
+
 import pyautogui
 import time
 from datetime import datetime, timedelta
@@ -20,3 +23,8 @@ while datetime.now() < end_time:
     time.sleep(60)                               # 1分ごとに実行
 
 print("🔚 9時間のマウス操作が完了しました")
+
+
+
+
+
