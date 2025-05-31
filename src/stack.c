@@ -1,4 +1,4 @@
-#include "data_structures.h"
+#include "include/data_structures.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
@@ -17,7 +17,7 @@ void ds_stack_set_log(ds_log_func_t logger) { log_func = logger; }
 ds_stack_t* ds_stack_create(void) {
     ds_stack_t* s = malloc(sizeof(ds_stack_t));
     if (!s) {
-        if (log_func) log_func(2, "stack: allocation failed");
+        if (log_func) log_func(2, "stack: allocation failed"); //「log_func に何もセットされてなければ（NULL なら）何もしない」「log_func に関数がセットされていれば（NULL じゃなければ）その関数を呼び出す」 「log_func が指している関数」を、引数付きで呼び出す という意味
         return NULL;
     }
     s->data = malloc(STACK_INIT_CAPACITY * sizeof(void*));
