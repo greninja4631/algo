@@ -11,7 +11,7 @@
  * - 依存性注入（ログ/メモリ/スタック）でテスト性・運用性強化
  */
 
- #include "data_structures.h"
+#include "include/data_structures.h"
  #include <stdlib.h>
  #include <stdio.h>
  #include <string.h>
