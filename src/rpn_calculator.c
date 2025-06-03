@@ -40,7 +40,7 @@
  static bool is_number(const char* token, double* val) {
      if (!token || !*token) return false;
      char* endptr = NULL;
-     double num = strtod(token, &endptr);
+     double num = strtod(token, &endptr); //”strtod（文字列→浮動小数点数に変換）
      if (endptr == token || *endptr != '\0') return false;
      if (val) *val = num;
      return true;

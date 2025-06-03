@@ -10,7 +10,7 @@ INC     := -Iinclude
 OBJ_DIR := build
 BIN     := $(OBJ_DIR)/main
 DOCS_DIR := docs
-
+//面談
 # ユニットテスト（全テスト自動走査）
 TESTS   := $(wildcard tests/test_*.c)
 TEST_BIN := $(OBJ_DIR)/test_bin
