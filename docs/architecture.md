@@ -16,7 +16,7 @@ src/
 │   └── memory.c          // メモリ管理・カスタム確保/解放ユーティリティ
 include/
 ├── data_structures.h     // データ構造・API宣言（全体公開インターフェース）
-└── config.h              // グローバル設定・定数管理ヘッダ
+└── config.h              // グローバル設定・定数管理ヘッダ…
 tests/
 ├── test_stack.c          // スタックADTの単体テスト
 ├── test_queue.c          // キューADTの単体テスト
