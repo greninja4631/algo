@@ -78,6 +78,9 @@ ds_error_t ds_stack_peek(const ds_stack_t*, void** data);      // 先頭参照
 bool ds_stack_is_empty(const ds_stack_t*);                     // 空判定
 size_t ds_stack_size(const ds_stack_t*);                       // 要素数取得
 ds_error_t ds_stack_get_stats(const ds_stack_t*, ds_stats_t*); // メトリクス取得
+ds_error_t ds_stack_reset(ds_stack_t* stack);                  // ← ★ 追加
+
+
 
 // --- Queue（キュー: FIFO）API宣言 ---
 typedef struct ds_queue ds_queue_t;

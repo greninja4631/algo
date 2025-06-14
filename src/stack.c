@@ -1,4 +1,4 @@
-#include "include/data_structures.h"
+#include "data_structures.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
@@ -43,7 +43,7 @@ ds_error_t ds_stack_push(ds_stack_t* stack, void* data) {
         stack->data = newdata;
         stack->capacity = newcap;
     }
-    stack->data[stack->size++] = data;
+     stack->data[stack->size++] = data;
     return DS_SUCCESS;
 }
 

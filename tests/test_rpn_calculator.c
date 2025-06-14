@@ -13,7 +13,7 @@
  #include <stdio.h>
  #include <assert.h>
  #include <string.h>
- #include "../include/data_structures.h"
+ #include "data_structures.h"
  
  int main(void) {
      printf("=== RPN Calculator ADT Unit Test Start ===\n");

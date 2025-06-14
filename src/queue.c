@@ -72,17 +72,40 @@ ds_error_t ds_queue_destroy(ds_queue_t* queue) {
 /**
  * @brief キューにデータをエンキュー
  */
-ds_error_t ds_queue_enqueue(ds_queue_t* queue, void* data) {
+
+//  キューの「不変条件」について
+// ヒカル： キューには「絶対に守らなあかんルール」があるんや！それを「不変条件」って言うんやけど：
+// ルール1：空の場合
+
+// front == NULL かつ rear == NULL
+// 両方ともNULLでなければならない
+
+// ルール2：要素が1つの場合
+
+// front == rear かつ 両方とも同じノードを指す
+// 前も後ろも同じ人
+
+// ルール3：要素が2つ以上の場合
+
+// front != NULL かつ rear != NULL
+// 両方とも有効なノードを指す
+
+//	不変条件：「どんなときも、キューの最後尾ノードの next はNULL！」である
+
+
+//enqueue = キュー（queue）という「列」に新しいデータ（要素）を追加するための関数です。
+ ds_error_t ds_queue_enqueue(ds_queue_t* queue, void* data) {
     if (!queue) return DS_ERR_NULL_POINTER;
     ds_queue_node_t* node = (ds_queue_node_t*)ds_malloc(sizeof(ds_queue_node_t));
     if (!node) return DS_ERR_ALLOC;
     node->data = data;
-    node->next = NULL;
+    node->next = NULL; 
+    // 条件分岐の理由：キューが空の場合と、既にデータがある場合で処理が異なるためです。
     if (!queue->rear) {
         queue->front = queue->rear = node;
     } else {
-        queue->rear->next = node;
-        queue->rear = node;
+        queue->rear->next = node;//今の最後尾の人の後ろに並ばせる
+        queue->rear = node;      //今の最後尾の人の後ろに並ぶことに成功したことをキュー本体の大元に情報を保存して更新する。
     }
     queue->size++;
     return DS_SUCCESS;
@@ -108,8 +131,9 @@ ds_error_t ds_queue_dequeue(ds_queue_t* queue, void** data) {
  */
 ds_error_t ds_queue_front(ds_queue_t* queue, void** data) {
     if (!queue || !data) return DS_ERR_NULL_POINTER;
-    if (!queue->front) return DS_ERR_EMPTY;
-    *data = queue->front->data;
+    if (!queue->front) return DS_ERR_EMPTY; // ここで空ならエラーを返す
+
+    *data = queue->front->data;   // ここまで来たら、queue->frontは絶対NULLではない
     return DS_SUCCESS;
 }
 
@@ -135,6 +159,12 @@ size_t ds_queue_size(const ds_queue_t* queue) {
 void ds_set_log_function(ds_log_func_t func) {
     ds_log = func ? func : default_log;
 }
+
+// 2. 意味・意図
+// 	•	「ユーザーが自作のログ関数をセットしてきたら、それを使う」
+// 	•	「何もセットされなかった（funcがNULL）なら、用意してあるdefault_logを使う」
+// 	•	**「常に“どちらか必ず使える関数”がds_logにセットされる」ようにするための“安全装置”**です。
+
 
 /**
  * @brief メモリ管理関数を差し替える（テスト・本番切り替え）
