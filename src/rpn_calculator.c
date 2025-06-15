@@ -141,7 +141,8 @@
              break;
          }
  
-         token = strtok(NULL, " ");
+         token = strtok(NULL, " "); //85行目のstrtok() が途中まで読んだ場所の続きから、次のトークンを取得せよ」
+
      }
  
      if (err == DS_SUCCESS) {
