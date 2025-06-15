@@ -74,7 +74,6 @@ ds_error_t ds_queue_destroy(ds_queue_t* queue) {
  */
 
 //  キューの「不変条件」について
-// ヒカル： キューには「絶対に守らなあかんルール」があるんや！それを「不変条件」って言うんやけど：
 // ルール1：空の場合
 
 // front == NULL かつ rear == NULL
@@ -100,7 +99,7 @@ ds_error_t ds_queue_destroy(ds_queue_t* queue) {
     if (!node) return DS_ERR_ALLOC;
     node->data = data;
     node->next = NULL; 
-    // 条件分岐の理由：キューが空の場合と、既にデータがある場合で処理が異なるためです。
+    // 条件分岐の理由：キューが空の場合がif文の!queue->rearと、既にデータがある場合はelse ifで処理が異なるためです。
     if (!queue->rear) {
         queue->front = queue->rear = node;
     } else {
@@ -114,6 +113,7 @@ ds_error_t ds_queue_destroy(ds_queue_t* queue) {
 /**
  * @brief キューからデータをデキュー
  */
+//dequeue（デキュー）→ キューから要素を取り出す（先頭から取り出し）
 ds_error_t ds_queue_dequeue(ds_queue_t* queue, void** data) {
     if (!queue || !data) return DS_ERR_NULL_POINTER;
     if (!queue->front) return DS_ERR_EMPTY;
@@ -148,11 +148,12 @@ bool ds_queue_is_empty(const ds_queue_t* queue) {
 /**
  * @brief キューのサイズ取得
  */
-size_t ds_queue_size(const ds_queue_t* queue) {
-    if (!queue) return 0;
-    return queue->size;
-}
+int ds_queue_size(const ds_queue_t* queue, size_t* out_size) {
+    if (!queue || !out_size) return DS_ERR_NULL_POINTER;
 
+    *out_size = queue->size;
+    return DS_SUCCESS;
+}
 /**
  * @brief ログ関数を差し替える（DevOps/テスト用）
  */
