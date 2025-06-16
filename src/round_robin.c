@@ -4,10 +4,11 @@
 #include <stdio.h>
 
 /* --- ラウンドロビン・スケジューラ構造体 --- */
+//remaining_time = 120分 ソープランドのサービス時間
 struct ds_round_robin_scheduler {
-    int time_quantum;
-    ds_queue_t* queue;
-};
+    int time_quantum;     // 各プロセスに割り当てる時間（タイムスライス）何分ごとに、ソープランドの回転を行うかどうか
+    ds_queue_t* queue;    // 実行待ちプロセスを保存するキュー
+}; ds_round_robin_scheduler_t;
 
 /* --- メモリ/ログ関数の依存性注入 --- */
 static ds_malloc_func_t ds_malloc = malloc;
@@ -36,6 +37,8 @@ static ds_process_t* clone_process(const ds_process_t* src) {
 /**
  * @brief スケジューラ生成
  */
+
+//「新しい皿（プロセス）をレーン（queue）に追加」は「新しく来たプロセスを、順番待ちの列の後ろに並べる」その操作をプログラムでは ds_queue_enqueue() で表現している
 ds_round_robin_scheduler_t* ds_round_robin_scheduler_create(int time_quantum) {
     if (time_quantum <= 0) return NULL;
     ds_round_robin_scheduler_t* sched = (ds_round_robin_scheduler_t*)ds_malloc(sizeof(ds_round_robin_scheduler_t));
@@ -48,6 +51,7 @@ ds_round_robin_scheduler_t* ds_round_robin_scheduler_create(int time_quantum) {
         ds_free(sched);
         return NULL;
     }
+    // queue =「列（順番待ちの箱）」＝データをしまっておく場所
     sched->time_quantum = time_quantum;
     return sched;
 }
@@ -55,6 +59,7 @@ ds_round_robin_scheduler_t* ds_round_robin_scheduler_create(int time_quantum) {
 /**
  * @brief スケジューラ破棄
  */
+//dequeue ＝「1番前の配列から取り出す」
 ds_error_t ds_round_robin_scheduler_destroy(ds_round_robin_scheduler_t* scheduler) {
     if (!scheduler) return DS_ERR_NULL_POINTER;
     void* proc;
@@ -68,7 +73,7 @@ ds_error_t ds_round_robin_scheduler_destroy(ds_round_robin_scheduler_t* schedule
 
 /**
  * @brief プロセスをスケジューラへ追加
- */
+ *///processは実行タスクと同じ意味である。enqueue＝「キュー（queue）の一番後ろにデータを追加する」
 ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* scheduler, const ds_process_t* process) {
     if (!scheduler || !process) return DS_ERR_NULL_POINTER;
     ds_process_t* proc_copy = clone_process(process);
@@ -79,26 +84,53 @@ ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sche
 /**
  * @brief 次に実行するプロセスを取得
  */
-ds_error_t ds_round_robin_scheduler_get_next_process(ds_round_robin_scheduler_t* scheduler, ds_process_t* process_out) {
-    if (!scheduler || !process_out) return DS_ERR_NULL_POINTER;
-    void* proc_ptr;
-    if (ds_queue_dequeue(scheduler->queue, &proc_ptr) != DS_SUCCESS)
-        return DS_ERR_EMPTY;
-    ds_process_t* proc = (ds_process_t*)proc_ptr;
-    int exec_time = (proc->remaining_time < scheduler->time_quantum) ? proc->remaining_time : scheduler->time_quantum;
-    proc->remaining_time -= exec_time;
-    memcpy(process_out, proc, sizeof(ds_process_t));
-    if (proc->remaining_time > 0) {
-        ds_queue_enqueue(scheduler->queue, proc);
-    } else {
-        ds_free(proc);
-    }
-    return DS_SUCCESS;
-}
+////dequeue ＝「1番前の配列から取り出す」
+        // return DS_ERR_EMPTY;
+        // •	パターンA： if文 残り3分、タイムクォンタム10分
+        // •	if条件はtrue → exec_time=3
+        // •	実行後、remaining_time=0
+
+        // •	パターンB：if else文 残り15分、タイムクォンタム10分
+        // •	if条件はfalse → exec_time=10
+        // •	実行後、remaining_time=5
+        ds_error_t ds_round_robin_scheduler_get_next_process(ds_round_robin_scheduler_t* scheduler, ds_process_t* process_out) {
+            if (!scheduler || !process_out) return DS_ERR_NULL_POINTER;
+            void* proc_ptr;
+            if (ds_queue_dequeue(scheduler->queue, &proc_ptr) != DS_SUCCESS) {
+                // return DS_ERR_EMPTY; ← ここでエラー返すのが一般的
+                return DS_ERR_EMPTY;
+            }
+        
+            ds_process_t* proc = (ds_process_t*)proc_ptr;
+            int exec_time;
+            if (proc->remaining_time < scheduler->time_quantum) {
+                exec_time = proc->remaining_time;
+            } else {
+                exec_time = scheduler->time_quantum;
+            }
+        
+            proc->remaining_time -= exec_time;
+        
+            // 結果をprocess_outにコピー
+            memcpy(process_out, proc, sizeof(ds_process_t));
+        
+            // 残り時間に応じて次の処理
+            if (proc->remaining_time > 0) {
+                ds_queue_enqueue(scheduler->queue, proc);
+            } else {
+                ds_free(proc);
+            }
+        
+            return DS_SUCCESS;
+        }
+
 
 /**
  * @brief プロセスの実行完了通知
  */
+
+//  ✅ 「このプロセス、完食したで！」
+// queue から該当 process_id のプロセスを探して削除する。
 ds_error_t ds_round_robin_scheduler_complete_process(ds_round_robin_scheduler_t* scheduler, int process_id) {
     if (!scheduler) return DS_ERR_NULL_POINTER;
     ds_queue_t* queue = scheduler->queue;
