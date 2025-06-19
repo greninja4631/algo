@@ -3,6 +3,11 @@
         "assert.h": "c",
         "stdlib.h": "c",
         "math.h": "c",
-        "config.h": "c"
+        "config.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "vector": "c",
+        "main_practice_c": "c"
     }
 }

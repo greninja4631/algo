@@ -113,11 +113,30 @@ ds_error_t ds_queue_destroy(ds_queue_t* queue) {
 /**
  * @brief キューからデータをデキュー
  */
-//dequeue（デキュー）→ キューから要素を取り出す（先頭から取り出し）
+//【解説：queueとdequeの違い】
+// 1. queue（キュー）
+// 「front」：先頭。「取り出す側」（dequeueする場所）です。
+
+// 「rear」：末尾。「追加する側」（enqueueする場所）です。
+
+// 特徴：片方からしか取り出せない、片方からしか追加できない
+// （例：行列の順番待ち、バスの乗車など）
+
+// 2. deque（デック、両端キュー：double-ended queue）
+// 「front」：先頭。「追加も削除もできる」場所です。
+
+// 「back」または「rear」：末尾。「追加も削除もできる」場所です。
+
+// 特徴：前からも後ろからもデータを追加・削除できる
+// （例：両側にドアのあるバス、トランプの山札など）
+
+
+
 ds_error_t ds_queue_dequeue(ds_queue_t* queue, void** data) {
     if (!queue || !data) return DS_ERR_NULL_POINTER;
     if (!queue->front) return DS_ERR_EMPTY;
     ds_queue_node_t* node = queue->front;
+    //変数nodeはただの変数宣言だけであるため、構造体に記載があるかどうかは関係ない
     *data = node->data;
     queue->front = node->next;
     if (!queue->front) queue->rear = NULL;

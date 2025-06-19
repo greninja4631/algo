@@ -32,6 +32,7 @@ static ds_process_t* clone_process(const ds_process_t* src) {
     return copy;
 }
 
+
 /* --- 公開API --- */
 
 /**
@@ -63,13 +64,23 @@ ds_round_robin_scheduler_t* ds_round_robin_scheduler_create(int time_quantum) {
 ds_error_t ds_round_robin_scheduler_destroy(ds_round_robin_scheduler_t* scheduler) {
     if (!scheduler) return DS_ERR_NULL_POINTER;
     void* proc;
-    while (ds_queue_dequeue(scheduler->queue, &proc) == DS_SUCCESS) {
+    ds_error_t ret;
+    // エラー内容を変数に保存
+    while ((ret = ds_queue_dequeue(scheduler->queue, &proc)) == DS_SUCCESS) {
         ds_free(proc);
+    }
+    if (ret != DS_ERR_EMPTY) {
+        // 「空」以外のエラーならログ・エラー通知など（ここでreturnしてもよい）
+        // 例: fprintf(stderr, "Queue error: %d\n", ret);
+        ds_queue_destroy(scheduler->queue);
+        ds_free(scheduler);
+        return ret;  // エラーコードを返す
     }
     ds_queue_destroy(scheduler->queue);
     ds_free(scheduler);
     return DS_SUCCESS;
 }
+
 
 /**
  * @brief プロセスをスケジューラへ追加
@@ -110,9 +121,15 @@ ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sche
             }
         
             proc->remaining_time -= exec_time;
+
+            //proc->remaining_time = 12; exec_time = 5;
+            //// ＝ proc->remaining_time = proc->remaining_time - exec_time;
+            // ＝ proc->remaining_time = 12 - 5;
+            // ＝ proc->remaining_time = 7;
         
             // 結果をprocess_outにコピー
             memcpy(process_out, proc, sizeof(ds_process_t));
+            //*「proc（計算中のプロセス）の内容を、process_out（外部に渡す変数）に丸ごとコピーする」**という意味になります。
         
             // 残り時間に応じて次の処理
             if (proc->remaining_time > 0) {
@@ -130,7 +147,7 @@ ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sche
  */
 
 //  ✅ 「このプロセス、完食したで！」
-// queue から該当 process_id のプロセスを探して削除する。
+// queue から該当 　process_id のプロセスを探して削除する。
 ds_error_t ds_round_robin_scheduler_complete_process(ds_round_robin_scheduler_t* scheduler, int process_id) {
     if (!scheduler) return DS_ERR_NULL_POINTER;
     ds_queue_t* queue = scheduler->queue;
@@ -141,14 +158,47 @@ ds_error_t ds_round_robin_scheduler_complete_process(ds_round_robin_scheduler_t*
         if (ds_queue_dequeue(queue, &proc_ptr) != DS_SUCCESS) break;
         ds_process_t* proc = (ds_process_t*)proc_ptr;
         if (proc->process_id == process_id) {
+
+            //proc->process_id：今カウンターで見てるバーガーセットの伝票番号（＝それぞれの注文番号） 
+            //process_id：店員が呼び出しマイクで「◯◯番のお客様」と呼んでいる番号（＝渡したい注文番号）
+          
             ds_free(proc);
             found = true;
-            continue;
+            continue; //「continue;」は「このバーガーは処理終わったから、次のバーガーに進んで！」という合図はfor文の指定回数文行う
         }
-        ds_queue_enqueue(queue, proc);
+        ds_queue_enqueue(queue, proc); //forループが成功していた場合は、第二引数を第１引数にすべてコピー&ペーストし、!= DS_SUCCESS) break;が発生した場合は、for文でループが成功していた要素の数まで,trueの時と同じようにコピペする
+    
     }
     return found ? DS_SUCCESS : DS_ERR_NOT_FOUND;
 }
+
+// ✅ 1. 「プロセスが終わった」＝もうCPUで実行する必要がない
+// 	•	割り当て時間（remaining_time）が0になったプロセスは、全ての仕事が終わったという状態です。
+// 	•	もう順番待ちのキューに残しておく意味がありません。
+
+// ⸻
+
+// ✅ 2. 無駄なメモリ・リソースを消費しないため
+// 	•	使い終わったプロセス（終わった皿）は“片付ける”のがOS流儀です。
+// 	•	そのままキューに残しておくと、「ゴミ（使い終わった仕事）」がどんどん溜まり、
+// システムのメモリが無駄に消費されてしまいます。
+
+// ⸻
+
+// ✅ 3. キューを“正常な順番待ちリスト”に保つため
+// 	•	「すでに完了しているプロセス」がキューに残っていると、
+// “順番待ち”の意味がなくなる（=実行しても何もすることがないプロセスが順番に回ってしまう）。
+// 	•	OSスケジューラは「まだ実行すべき仕事だけを公平に回す」のが使命です。
+
+// ⸻
+
+// ✅ 4. process_idで探して削除する理由
+// 	•	「完了したプロセスはプロセスIDで一意に管理されている」から
+// 	•	他のプロセス（まだ残ってるやつ）はそのまま残し、終わった特定のプロセスだけ削除できる
+// 	•	IDで指定することで、「間違って他のプロセスを消さない」という安全設計になる
+
+
+
 
 /* --- 依存性注入 --- */
 void ds_set_log_function(ds_log_func_t func) { ds_log = func ? func : default_log; }
