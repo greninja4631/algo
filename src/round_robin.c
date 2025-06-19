@@ -153,11 +153,15 @@ ds_error_t ds_round_robin_scheduler_complete_process(ds_round_robin_scheduler_t*
     ds_queue_t* queue = scheduler->queue;
     size_t n = ds_queue_size(queue);
     bool found = false;
+    //i++はループ本体が1回終わるごとに加算される
     for (size_t i = 0; i < n; ++i) {
         void* proc_ptr;
         if (ds_queue_dequeue(queue, &proc_ptr) != DS_SUCCESS) break;
         ds_process_t* proc = (ds_process_t*)proc_ptr;
         if (proc->process_id == process_id) {
+
+            //【マクドナルドで例える】スタッフが「注文ボックスから最大n枚だけ順番にチケットを確認」
+            //毎回「この注文番号は店長が探している番号と一致するか？」を確認
 
             //proc->process_id：今カウンターで見てるバーガーセットの伝票番号（＝それぞれの注文番号） 
             //process_id：店員が呼び出しマイクで「◯◯番のお客様」と呼んでいる番号（＝渡したい注文番号）
