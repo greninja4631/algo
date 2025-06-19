@@ -131,7 +131,9 @@
      if (!new_node) return DS_ERR_OUT_OF_MEMORY;
      clone_command(&new_node->command, command);
      new_node->prev = history->current;
+     // new_node起点で->next = NULL;
      new_node->next = NULL;
+     //history->current起点で次のノードnextをnew_nodeにする。
      if (history->current) history->current->next = new_node;
      history->current = new_node;
 
@@ -141,7 +143,7 @@
      history->tail = new_node;
      history->size++;
  
-     // 最大履歴超過時は古いものから削除
+     // 最大履歴超過時は古いものから削除 最大履歴超過時」とは、「保存できる履歴の最大数（上限）」を超えてしまった状態を指します。
      while (history->max_history > 0 && history->size > history->max_history) {
          history_node_t* old_head = history->head;
          history->head = old_head->next;
@@ -157,12 +159,15 @@
   * @brief 
   * Undo = Ctrz+Zと同じ意味を持つ挙動のプログラム
   */
+
+  //【両者の本質的な違い】
+// history->current->prevは、「参照」が目的。  「1つ前はどれだろう？」と“指さす”だけが目的。
+// command.undoは、「操作・実行」が目的 「よし、前の注文に戻るぞ！」と、実際に1ページ前を開き直す（currentが前に進む）。
  ds_error_t ds_history_system_undo(ds_history_system_t* history) {
      if (!history || !history->current) return DS_ERR_INVALID_ARG;
      if (!history->current->command.undo) return DS_ERR_SYSTEM_FAILURE;
      ds_error_t result = history->current->command.undo(history->current->command.data);
      if (result != DS_SUCCESS) return result;
-     //return resultで様々なエラーを再利用性・拡張性を保ちながら、出力できる
      history->current = history->current->prev;
      return DS_SUCCESS;
  }
