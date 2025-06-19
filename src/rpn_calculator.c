@@ -51,12 +51,17 @@
      *out_val = strtod(str, &endptr);
      return (endptr != str && *endptr == '\0');
  }
+//  endptr != str: これが true の場合、何らかの変換が行われたことを意味します。もし endptr == str であれば、全く変換できなかったことを示します。
+//  *endptr == '\0': これが true の場合、変換が行われた後に文字列の終端に到達したことを意味します。つまり、文字列全体が有効な数値として変換されたことを示します。
+
  
  /* --- ds_stack_push / pop / reset（仮のAPI実装） --- */
  ds_error_t ds_stack_push(ds_stack_t* stack, void* value) {
      if (stack->size >= stack->capacity) return DS_ERR_ALLOC;
      stack->data[stack->size++] = value;
      return DS_SUCCESS;
+   //仮定の数字として、 data=100 size=3 value５ だとして、index4に要素のデータを代入する。
+    
  }
  
  ds_error_t ds_stack_pop(ds_stack_t* stack, void** out) {

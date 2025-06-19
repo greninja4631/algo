@@ -145,3 +145,18 @@ void ds_set_memory_functions(ds_malloc_func_t malloc_func, ds_free_func_t free_f
 }
 #endif
 #endif /* DATA_STRUCTURES_H */
+
+
+// typedef struct history_node {
+//     ds_command_t command;
+//     struct history_node* prev;
+//     struct history_node* next;
+// } history_node_t;
+
+// // struct ds_history_system {
+//     history_node_t* head;         // 最古の履歴 history_node_t*のポインターを使用して、history_node_tの構造体にアクセスすることができる
+//     history_node_t* tail;         // 最新の履歴
+//     history_node_t* current;      // 現在の位置（Undo/Redo判定用）
+//     size_t size;                  // 履歴数
+//     size_t max_history;           // 最大保持数（0なら無制限）
+// };
