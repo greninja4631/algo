@@ -1,7 +1,8 @@
 #include "hashmap.h"
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>  
+#include <stdlib.h>   // ★追加
+#include <string.h>   // strdupもここ
 
 static void free_value(void* v) { free(v); }
 
