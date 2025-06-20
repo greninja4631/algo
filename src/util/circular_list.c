@@ -81,4 +81,3 @@ size_t ds_circular_list_size(const ds_circular_list_t* list) {
 }
 
 
-//検証
