@@ -1,17 +1,19 @@
-# ベースはgcc最新版（軽量・高互換）
+# ベースは gcc の最新版（軽量で互換性あり）
 FROM gcc:13-bullseye
 
-# 作業ディレクトリをプロジェクトルートに
+# 作業ディレクトリをプロジェクトルートに設定
 WORKDIR /workspace
 
-# すべてのファイルをコピー
+# プロジェクトのすべてのファイルをイメージ内にコピー
 COPY . .
 
-# 必要に応じてdoxygenやcppcheck, clang-tidyも入れる（品質担保）
-RUN apt-get update && apt-get install -y doxygen cppcheck clang-tidy && rm -rf /var/lib/apt/lists/*
+# 必要なツール類をすべてインストール（make, git, doxygen, cppcheck, clang-tidy）
+RUN apt-get update && \
+    apt-get install -y make git doxygen cppcheck clang-tidy && \
+    rm -rf /var/lib/apt/lists/*
 
-# デフォルトはテストビルド
+# デフォルトでテストビルド（Makefileが存在し、testターゲットがあることが前提）
 RUN make test
 
-# コンテナ起動時はシェル起動（実験・デバッグ用）
+# デバッグや手動操作のため、bashを起動
 CMD [ "bash" ]
