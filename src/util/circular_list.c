@@ -79,3 +79,6 @@ bool ds_circular_list_is_empty(const ds_circular_list_t* list) {
 size_t ds_circular_list_size(const ds_circular_list_t* list) {
     return list ? list->size : 0;
 }
+
+
+//検証
