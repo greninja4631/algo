@@ -1,163 +1,134 @@
-/**
- * @file rpn_calculator.c
- * @brief 逆ポーランド記法（RPN）電卓ADT実装
- * @version 1.0.0
- * @date 2025-05-28
- *
- * 【設計意図】
- * - 単一責務: スタックADTを活用しRPN式の評価のみ担当
- * - 情報隠蔽: 内部構造はAPI外から不透明
- * - エラー処理・メモリ安全・CI/CD/クラウド適合を重視
- * - 依存性注入（ログ/メモリ/スタック）でテスト性・運用性強化
- */
+#include "data_structures.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <math.h>
+#include <stdarg.h>
 
- #include "data_structures.h"
- #include <stdlib.h>
- #include <stdio.h>
- #include <string.h>
- #include <ctype.h>
- #include <math.h>
- #include <stdarg.h>
- 
- /* --- スタック構造体定義 --- */
- typedef struct {
-     void** data;
-     int size;
-     int capacity;
- } ds_stack_t;
- 
- /* --- 計算機構造体定義 + typedef（重要） --- */
- struct ds_rpn_calculator {
-     ds_stack_t* stack;
- };
- typedef struct ds_rpn_calculator ds_calc_t;
- 
- /* --- メモリ管理 / ログ関数（依存性注入） --- */
- static ds_malloc_func_t ds_malloc = malloc;
- static ds_free_func_t ds_free = free;
- static ds_log_func_t ds_log = NULL;
- 
- static void default_log(ds_log_level_t level, const char* fmt, ...) {
-     (void)level;
-     va_list args;
-     va_start(args, fmt);
-     vfprintf(stderr, fmt, args);
-     va_end(args);
- }
- 
- /* --- 数値かどうか判定する補助関数（仮） --- */
- int is_number(const char* str, double* out_val) {
-     char* endptr = NULL;
-     *out_val = strtod(str, &endptr);
-     return (endptr != str && *endptr == '\0');
- }
-//  endptr != str: これが true の場合、何らかの変換が行われたことを意味します。もし endptr == str であれば、全く変換できなかったことを示します。
-//  *endptr == '\0': これが true の場合、変換が行われた後に文字列の終端に到達したことを意味します。つまり、文字列全体が有効な数値として変換されたことを示します。
+// ---- 依存性注入メモリ/ログ関数（.cファイル内で本当に必要な場合のみstaticで宣言！） ----
+static ds_malloc_func_t ds_malloc = malloc;
+static ds_free_func_t ds_free = free;
+static ds_log_func_t ds_log = NULL;
 
- 
- /* --- ds_stack_push / pop / reset（仮のAPI実装） --- */
- ds_error_t ds_stack_push(ds_stack_t* stack, void* value) {
-     if (stack->size >= stack->capacity) return DS_ERR_ALLOC;
-     stack->data[stack->size++] = value;
-     return DS_SUCCESS;
-   //仮定の数字として、 data=100 size=3 value５ だとして、index4に要素のデータを代入する。
-    
- }
- 
- ds_error_t ds_stack_pop(ds_stack_t* stack, void** out) {
-     if (stack->size == 0) return DS_ERR_INVALID_ARG;
-     *out = stack->data[--stack->size];
-     return DS_SUCCESS;
- }
- 
- void ds_stack_reset(ds_stack_t* stack) {
-     for (int i = 0; i < stack->size; ++i) {
-         ds_free(stack->data[i]);
-     }
-     stack->size = 0;
- }
- 
- /* --- RPN式を評価する関数 --- */
- ds_error_t ds_evaluate_expr(ds_calc_t* calc, const char* expression, double* result) {
-     if (!calc || !expression || !result) return DS_ERR_INVALID_ARG;
- 
-     ds_stack_t* stack_ref = calc->stack;
-     ds_stack_reset(stack_ref);
- 
-     char* expr_copy = strdup(expression);
-     if (!expr_copy) return DS_ERR_ALLOC;
- 
-     char* token = strtok(expr_copy, " ");
-     ds_error_t err = DS_SUCCESS;
- 
-     while (token) {
-         double value;
-         if (is_number(token, &value)) {
-             double* num_ptr = (double*)ds_malloc(sizeof(double));
-             if (!num_ptr) { err = DS_ERR_ALLOC; break; }
-             *num_ptr = value;
-             if ((err = ds_stack_push(stack_ref, num_ptr)) != DS_SUCCESS) {
-                 ds_free(num_ptr);
-                 break;
-             }
-         } else if (strlen(token) == 1 && strchr("+-*/", token[0])) {
-             void* rhs_ptr = NULL;
-             void* lhs_ptr = NULL;
- 
-             if ((err = ds_stack_pop(stack_ref, &rhs_ptr)) != DS_SUCCESS) break;
-             if ((err = ds_stack_pop(stack_ref, &lhs_ptr)) != DS_SUCCESS) {
-                 ds_free(rhs_ptr);
-                 break;
-             }
- 
-             double rhs = *(double*)rhs_ptr;
-             double lhs = *(double*)lhs_ptr;
-             ds_free(rhs_ptr);
-             ds_free(lhs_ptr);
- 
-             double result_val = 0;
-             switch (token[0]) {
-                 case '+': result_val = lhs + rhs; break;
-                 case '-': result_val = lhs - rhs; break;
-                 case '*': result_val = lhs * rhs; break;
-                 case '/':
-                     if (rhs == 0) {
-                         err = DS_ERR_INVALID_ARG;
-                         break;
-                     }
-                     result_val = lhs / rhs;
-                     break;
-                 default:
-                     err = DS_ERR_INVALID_ARG;
-                     break;
-             }
- 
-             if (err != DS_SUCCESS) break;
- 
-             double* result_ptr = (double*)ds_malloc(sizeof(double));
-             if (!result_ptr) { err = DS_ERR_ALLOC; break; }
-             *result_ptr = result_val;
-             if ((err = ds_stack_push(stack_ref, result_ptr)) != DS_SUCCESS) {
-                 ds_free(result_ptr);
-                 break;
-             }
-         } else {
-             err = DS_ERR_INVALID_ARG;
-             break;
-         }
- 
-         token = strtok(NULL, " "); //85行目のstrtok() が途中まで読んだ場所の続きから、次のトークンを取得せよ」
+// デフォルトログ関数（外部から切り替え可能）
+static void default_log(ds_log_level_t level, const char* fmt, ...) {
+    (void)level;
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+}
 
-     }
- 
-     if (err == DS_SUCCESS) {
-         void* final_ptr = NULL;
-         if ((err = ds_stack_pop(stack_ref, &final_ptr)) == DS_SUCCESS) {
-             *result = *(double*)final_ptr;
-             ds_free(final_ptr);
-         }
-     }
- 
-     free(expr_copy);
-     return err;
- }
+// 外部から依存性注入できるAPI
+void ds_set_log_function(ds_log_func_t func) { ds_log = func ? func : default_log; }
+void ds_set_memory_functions(ds_malloc_func_t malloc_func, ds_free_func_t free_func) {
+    ds_malloc = malloc_func ? malloc_func : malloc;
+    ds_free = free_func ? free_func : free;
+}
+
+// ---- 構造体本体（本当に必要なメンバだけ） ----
+struct ds_rpn_calculator {
+    ds_stack_t* stack;  // スタックは別途実装
+};
+
+// ---- 補助関数 ----
+static int is_number(const char* str, double* out_val) {
+    char* endptr = NULL;
+    *out_val = strtod(str, &endptr);
+    return (endptr != str && *endptr == '\0');
+}
+
+// ---- RPN電卓API本体 ----
+
+ds_rpn_calculator_t* ds_rpn_calculator_create(void) {
+    ds_rpn_calculator_t* calc = (ds_rpn_calculator_t*)ds_malloc(sizeof(ds_rpn_calculator_t));
+    if (!calc) return NULL;
+    calc->stack = ds_stack_create();
+    if (!calc->stack) {
+        ds_free(calc);
+        return NULL;
+    }
+    return calc;
+}
+
+ds_error_t ds_rpn_calculator_destroy(ds_rpn_calculator_t* calc) {
+    if (!calc) return DS_ERR_NULL_POINTER;
+    ds_stack_destroy(calc->stack);
+    ds_free(calc);
+    return DS_SUCCESS;
+}
+
+ds_error_t ds_rpn_calculator_reset(ds_rpn_calculator_t* calc) {
+    if (!calc) return DS_ERR_NULL_POINTER;
+    return ds_stack_reset(calc->stack);
+}
+
+ds_error_t ds_rpn_calculator_push(ds_rpn_calculator_t* calc, double value) {
+    if (!calc) return DS_ERR_NULL_POINTER;
+    // 値をheapに保存（スタックAPIがvoid*を要求する前提）
+    double* val_ptr = (double*)ds_malloc(sizeof(double));
+    if (!val_ptr) return DS_ERR_ALLOC;
+    *val_ptr = value;
+    return ds_stack_push(calc->stack, val_ptr);
+}
+
+ds_error_t ds_rpn_calculator_pop(ds_rpn_calculator_t* calc, double* out) {
+    if (!calc || !out) return DS_ERR_NULL_POINTER;
+    void* ptr = NULL;
+    ds_error_t err = ds_stack_pop(calc->stack, &ptr);
+    if (err != DS_SUCCESS) return err;
+    if (!ptr) return DS_ERR_EMPTY;
+    *out = *(double*)ptr;
+    ds_free(ptr);
+    return DS_SUCCESS;
+}
+
+// --- RPN式評価 ---
+ds_error_t ds_rpn_calculator_evaluate(ds_rpn_calculator_t* calc, const char* expression, double* result) {
+    if (!calc || !expression || !result) return DS_ERR_INVALID_ARG;
+    ds_error_t err = DS_SUCCESS;
+    ds_rpn_calculator_reset(calc);
+
+    char* expr_copy = strdup(expression);
+    if (!expr_copy) return DS_ERR_ALLOC;
+
+    char* token = strtok(expr_copy, " ");
+    while (token) {
+        double value;
+        if (is_number(token, &value)) {
+            if ((err = ds_rpn_calculator_push(calc, value)) != DS_SUCCESS) break;
+        } else if (strlen(token) == 1 && strchr("+-*/", token[0])) {
+            double rhs, lhs;
+            if ((err = ds_rpn_calculator_pop(calc, &rhs)) != DS_SUCCESS) break;
+            if ((err = ds_rpn_calculator_pop(calc, &lhs)) != DS_SUCCESS) break;
+
+            double result_val = 0;
+            switch (token[0]) {
+                case '+': result_val = lhs + rhs; break;
+                case '-': result_val = lhs - rhs; break;
+                case '*': result_val = lhs * rhs; break;
+                case '/':
+                    if (rhs == 0) { err = DS_ERR_INVALID_ARG; break; }
+                    result_val = lhs / rhs;
+                    break;
+                default: err = DS_ERR_INVALID_ARG; break;
+            }
+            if (err != DS_SUCCESS) break;
+            if ((err = ds_rpn_calculator_push(calc, result_val)) != DS_SUCCESS) break;
+        } else {
+            err = DS_ERR_INVALID_ARG;
+            break;
+        }
+        token = strtok(NULL, " ");
+    }
+
+    if (err == DS_SUCCESS) {
+        double final;
+        if ((err = ds_rpn_calculator_pop(calc, &final)) == DS_SUCCESS) {
+            *result = final;
+        }
+    }
+    free(expr_copy);
+    return err;
+}

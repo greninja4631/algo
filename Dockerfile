@@ -1,5 +1,5 @@
 # ベースは gcc の最新版（軽量で互換性あり）
-FROM gcc:13-bullseye
+FROM gcc:13.2.0
 
 # 作業ディレクトリをプロジェクトルートに設定
 WORKDIR /workspace
@@ -17,3 +17,4 @@ RUN make test
 
 # デバッグや手動操作のため、bashを起動
 CMD [ "bash" ]
+
