@@ -1,4 +1,4 @@
-#include "data_structures.h"
+#include "circular_list.h"
 #include <stdlib.h>
 
 // リスト構造体定義
@@ -33,20 +33,19 @@ ds_error_t ds_circular_list_destroy(ds_circular_list_t* list) {
     return DS_SUCCESS;
 }
 
-// 末尾追加（tailの直後＝headの前にもなる）
+// 末尾追加
 ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) {
     if (!list) return DS_ERR_NULL_POINTER;
     ds_circular_node_t* node = malloc(sizeof(ds_circular_node_t));
     if (!node) return DS_ERR_ALLOC;
     node->data = data;
     if (!list->tail) {
-        // 最初の要素
-        node->next = node; // 自分自身を指す
+        node->next = node; // 1つ目
         list->tail = node;
     } else {
-        node->next = list->tail->next; // head
+        node->next = list->tail->next;
         list->tail->next = node;
-        list->tail = node; // tailを更新
+        list->tail = node;
     }
     list->size++;
     return DS_SUCCESS;
@@ -59,11 +58,10 @@ ds_error_t ds_circular_list_remove(ds_circular_list_t* list, void** data) {
     ds_circular_node_t* head = list->tail->next;
     *data = head->data;
     if (list->tail == head) {
-        // 1個だけ
         free(head);
         list->tail = NULL;
     } else {
-        list->tail->next = head->next; // headを飛ばす
+        list->tail->next = head->next;
         free(head);
     }
     list->size--;
@@ -79,6 +77,3 @@ bool ds_circular_list_is_empty(const ds_circular_list_t* list) {
 size_t ds_circular_list_size(const ds_circular_list_t* list) {
     return list ? list->size : 0;
 }
-
-
-//

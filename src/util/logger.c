@@ -16,6 +16,8 @@
  #include <stdarg.h>
  #include <time.h>
  
+//vを推して、githubにpushしたときに、jenkinsも同時に起動でコードの品質をチェックしたい
+
  /* --- グローバル状態：ログ出力関数ポインタ（依存性注入/DI対応） --- */
  static ds_log_func_t custom_logger = NULL;
  
