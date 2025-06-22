@@ -12,9 +12,10 @@
  * - 全操作はエラーコードでチェック（API設計の原則）
  */
 
+ #include "../include/data_structures.h"
  #include <stdio.h>
  #include <assert.h>
- #include "../include/data_structures.h"
+
  
  int main(void) {
      printf("=== Stack ADT Unit Test Start ===\n");

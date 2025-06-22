@@ -1,134 +1,86 @@
-/**
- * @file logger.c
- * @brief シンプルかつクラウド観測性を意識した構造化ログユーティリティ
- * @version 1.0.0
- * @date 2025-05-28
- *
- * 【設計意図】
- * - ログ出力をアプリの各所から一元的に扱うことで保守性/再利用性/観測性を向上
- * - 標準出力/標準エラー出力だけでなくクラウド/テスト環境にも差し替えやすい構造
- * - DevOpsのCI/CD、GCP/AWS/Datadog等のクラウド監視基盤との連携も視野
- * - 依存性注入（DI）によるテスト容易性
- */
+#ifndef DATA_STRUCTURES_H
+#define DATA_STRUCTURES_H
 
- #include "data_structures.h"
- #include <stdio.h>
- #include <stdarg.h>
- #include <time.h>
- 
-//vを推して、githubにpushしたときに、jenkinsも同時に起動でコードの品質をチェックしたい
+#include "data_structures.h"
+#include <stdarg.h>
+#include <stdio.h>
 
- /* --- グローバル状態：ログ出力関数ポインタ（依存性注入/DI対応） --- */
- static ds_log_func_t custom_logger = NULL;
- 
- /**
-  * @brief 標準ログ出力の実装（デフォルト）
-  * - 本番: stdout, エラー: stderr
-  * - 必要に応じてJSON構造化ログにも拡張可能
-  */
- static void default_log_func(ds_log_level_t level, const char* format, ...) {
-     va_list args;
-     FILE* out = (level >= DS_LOG_ERROR) ? stderr : stdout;
- 
-     // タイムスタンプ出力（ISO 8601形式）
-     time_t now = time(NULL);
-     struct tm tm_info;
-     localtime_r(&now, &tm_info);
-     char buf[32];
-     strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S", &tm_info);
- 
-     // ログレベル文字列
-     const char* level_str = "";
-     switch (level) {
-         case DS_LOG_DEBUG: level_str = "DEBUG"; break;
-         case DS_LOG_INFO:  level_str = "INFO "; break;
-         case DS_LOG_WARN:  level_str = "WARN "; break;
-         case DS_LOG_ERROR: level_str = "ERROR"; break;
-         case DS_LOG_FATAL: level_str = "FATAL"; break;
-         default:           level_str = "LOG  "; break;
-     }
- 
-     // フォーマット: [時刻][レベル] メッセージ
-     fprintf(out, "[%s][%s] ", buf, level_str);
-     va_start(args, format);
-     vfprintf(out, format, args);
-     va_end(args);
-     fprintf(out, "\n");
-     fflush(out); // ログが即座に出るようにflush
- }
- 
- /**
-  * @brief ログ出力関数のセット（依存性注入/テスト差し替え用）
-  * - NULLを渡すとデフォルト実装になる
-  */
- void ds_set_log_function(ds_log_func_t log_func) {
-     custom_logger = log_func;
- }
- 
- /**
-  * @brief ログを出力するユーティリティ関数
-  * - API/アプリ内部はこの関数を直接使うことで、どこでもログ一元化
-  * - モックやクラウド実装と容易に切り替え可
-  */
- void ds_log(ds_log_level_t level, const char* format, ...) {
-     va_list args;
-     va_start(args, format);
-     if (custom_logger) {
-         // 可変長引数を直接渡せないので一旦vprintf的に展開
-         // ⇒推奨：ラップ用のvlog関数も実装するとよい
-         // ここでは一時バッファで実装
-         char tmp[1024];
-         vsnprintf(tmp, sizeof(tmp), format, args);
-         custom_logger(level, "%s", tmp);
-     } else {
-         // デフォルト（標準出力/エラー出力）
-         va_list args2;
-         va_start(args2, format);
-         default_log_func(level, format, args2);
-         va_end(args2);
-     }
-     va_end(args);
- }
- 
- /**
-  * @brief ログレベルごとの簡易API（利便性UP）
-  * - 例: ds_log_info("Process started: %d", pid);
-  */
- void ds_log_debug(const char* format, ...) {
-     va_list args;
-     va_start(args, format);
-     ds_log(DS_LOG_DEBUG, format, args);
-     va_end(args);
- }
- void ds_log_info(const char* format, ...) {
-     va_list args;
-     va_start(args, format);
-     ds_log(DS_LOG_INFO, format, args);
-     va_end(args);
- }
- void ds_log_warn(const char* format, ...) {
-     va_list args;
-     va_start(args, format);
-     ds_log(DS_LOG_WARN, format, args);
-     va_end(args);
- }
- void ds_log_error(const char* format, ...) {
-     va_list args;
-     va_start(args, format);
-     ds_log(DS_LOG_ERROR, format, args);
-     va_end(args);
- }
- void ds_log_fatal(const char* format, ...) {
-     va_list args;
-     va_start(args, format);
-     ds_log(DS_LOG_FATAL, format, args);
-     va_end(args);
- }
- 
- /* --- テスト容易性/CI/CD運用 --- */
- /*
-     - logger.cの各APIはmain()依存無し・グローバル状態極小
-     - ユニットテストやクラウド用実装に容易に差し替え可
-     - 標準出力だけでなくCloud LoggingやDatadogのAPI呼び出しに切り替えられる
-     - 本番運用ではJSON形式/マスク処理/トレースID付与などを追加可能
- */
+// ----- エラーコード -----
+typedef enum {
+    DS_SUCCESS = 0,
+    DS_ERR_NULL_POINTER,
+    DS_ERR_ALLOC,
+    DS_ERR_EMPTY,
+    DS_ERR_INVALID_ARG,
+    DS_ERR_OVERFLOW,
+    DS_ERR_UNDERFLOW,
+    DS_ERR_NOT_FOUND,
+    DS_ERR_SYSTEM,
+    DS_ERR_OUT_OF_MEMORY,
+    DS_ERR_EMPTY_CONTAINER,
+    DS_ERR_SYSTEM_FAILURE
+} ds_error_t;
+
+// ----- メモリ・ロギング -----
+typedef void* (*ds_malloc_func_t)(size_t);
+typedef void  (*ds_free_func_t)(void*);
+void ds_set_memory_functions(ds_malloc_func_t malloc_func, ds_free_func_t free_func);
+
+typedef enum {
+    DS_LOG_DEBUG = 0, DS_LOG_INFO, DS_LOG_WARN, DS_LOG_ERROR, DS_LOG_FATAL
+} ds_log_level_t;
+typedef void (*ds_log_func_t)(ds_log_level_t, const char*, ...);
+void ds_set_log_function(ds_log_func_t func);
+void ds_log(ds_log_level_t level, const char* fmt, ...);
+
+// ----- スタック -----
+typedef struct ds_stack ds_stack_t;
+ds_stack_t* ds_stack_create(void);
+ds_error_t ds_stack_destroy(ds_stack_t*);
+ds_error_t ds_stack_push(ds_stack_t*, void*);
+ds_error_t ds_stack_pop(ds_stack_t*, void**);
+ds_error_t ds_stack_peek(const ds_stack_t*, void**);
+bool ds_stack_is_empty(const ds_stack_t*);
+size_t ds_stack_size(const ds_stack_t*);
+ds_error_t ds_stack_get_stats(const ds_stack_t*, void*);
+ds_error_t ds_stack_reset(ds_stack_t*);
+
+// ----- キュー -----
+typedef struct ds_queue ds_queue_t;
+ds_queue_t* ds_queue_create(void);
+ds_error_t ds_queue_destroy(ds_queue_t*);
+ds_error_t ds_queue_enqueue(ds_queue_t*, void*);
+ds_error_t ds_queue_dequeue(ds_queue_t*, void**);
+bool ds_queue_is_empty(const ds_queue_t*);
+size_t ds_queue_size(const ds_queue_t*);
+ds_error_t ds_queue_get_stats(const ds_queue_t*, void*);
+ds_error_t ds_queue_front(const ds_queue_t*, void**);
+
+// ----- Doubly List -----
+typedef struct ds_doubly_list ds_doubly_list_t;
+
+// ----- Circular List -----
+typedef struct ds_circular_node ds_circular_node_t;
+typedef struct ds_circular_list ds_circular_list_t;
+
+// ----- Undo/Redo履歴 -----
+typedef struct ds_command ds_command_t;
+typedef struct ds_history_system ds_history_system_t;
+
+// ----- RPN電卓 -----
+typedef struct ds_rpn_calculator ds_rpn_calculator_t;
+ds_rpn_calculator_t* ds_rpn_calculator_create(void);
+ds_error_t ds_rpn_calculator_destroy(ds_rpn_calculator_t*);
+ds_error_t ds_rpn_calculator_evaluate(ds_rpn_calculator_t*, const char*, double*);
+ds_error_t ds_rpn_calculator_reset(ds_rpn_calculator_t*);
+ds_error_t ds_rpn_calculator_push(ds_rpn_calculator_t*, double);
+ds_error_t ds_rpn_calculator_pop(ds_rpn_calculator_t*, double*);
+
+// ----- ラウンドロビン -----
+typedef struct ds_process ds_process_t;
+typedef struct ds_round_robin_scheduler ds_round_robin_scheduler_t;
+
+// ----- 汎用Stats -----
+typedef struct ds_stats ds_stats_t;
+
+#endif /* DATA_STRUCTURES_H */

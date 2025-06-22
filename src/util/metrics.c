@@ -1,83 +1,76 @@
 /**
- * @file metrics.c
- * @brief データ構造ライブラリ用クラウド対応メトリクス収集モジュール
+ * @file memory.c
+ * @brief メモリ管理の依存性注入と監視拡張ポイント（クラウド/テスト/モック/高速化用）
  * @version 1.0.0
  * @date 2025-05-28
  *
  * 【設計理念】
- * - ライブラリ内部の状態変化や操作回数を集計し、外部から容易に観測できる設計
- * - Prometheus/GCP Monitoring/Datadogなどのクラウド監視連携を意識
- * - 依存性注入・テスト容易性・将来の拡張性（新規メトリクス追加等）を重視
+ * - malloc/freeを直接呼ぶのではなく、差し替え可能な関数経由で全メモリアクセスを統一
+ * - メモリリーク検出、GC、クラウド運用・テスト用の模擬メモリ障害対応
+ * - 監視や高速アロケータ(jemalloc/tcmalloc)等への将来拡張
+ * - シリコンバレー標準の「依存性注入」設計
  */
 
  #include "data_structures.h"
  #include <stdlib.h>
- #include <string.h>
- #include <time.h>
+ #include <stdio.h>
  
- /* ---- グローバルメトリクス管理 ----
-  * ここでは最小限のメトリクス（操作回数/メモリ使用量等）を実装。
-  * 本番では各データ構造インスタンスごとに個別管理することを推奨。
-  */
+ /* ---- グローバル状態：アロケータ関数ポインタ ---- */
+ static ds_malloc_func_t custom_malloc = NULL;
+ static ds_free_func_t custom_free = NULL;
  
  /**
-  * @brief メトリクスを初期化するユーティリティ関数
-  * @param stats 初期化するメトリクス構造体
+  * @brief メモリ関数の登録（依存性注入。NULLで標準関数に戻る）
+  * @param malloc_func malloc代替関数
+  * @param free_func free代替関数
   */
- void ds_metrics_init(ds_stats_t* stats) {
-     if (!stats) return;
-     stats->total_elements    = 0;
-     stats->memory_allocated  = 0;
-     stats->operations_count  = 0;
-     stats->creation_timestamp = (uint64_t)time(NULL);
+ void ds_set_memory_functions(ds_malloc_func_t malloc_func, ds_free_func_t free_func) {
+     custom_malloc = malloc_func;
+     custom_free   = free_func;
  }
  
  /**
-  * @brief 要素数・操作回数などの値を更新する関数
-  * @param stats 対象メトリクス
-  * @param delta_elements 要素数の増減値
-  * @param delta_ops 操作回数の増分
-  * @param memory_change 追加・削除メモリ量
+  * @brief メモリ確保ラッパー
+  * - テストやクラウド用に差し替え可能
+  * - 将来のトラッキングや高速化に備え一元管理
   */
- void ds_metrics_update(ds_stats_t* stats, ssize_t delta_elements, size_t delta_ops, ssize_t memory_change) {
-     if (!stats) return;
-     if (delta_elements < 0 && (size_t)(-delta_elements) > stats->total_elements)
-         stats->total_elements = 0;
+ void* ds_malloc(size_t size) {
+     if (custom_malloc)
+         return custom_malloc(size);
+     return malloc(size);
+ }
+ 
+ /**
+  * @brief メモリ解放ラッパー
+  * - テストやGC、クラウド拡張に対応
+  */
+ void ds_free(void* ptr) {
+     if (custom_free)
+         custom_free(ptr);
      else
-         stats->total_elements += delta_elements;
- 
-     stats->operations_count += delta_ops;
- 
-     if (memory_change < 0 && (size_t)(-memory_change) > stats->memory_allocated)
-         stats->memory_allocated = 0;
-     else
-         stats->memory_allocated += memory_change;
+         free(ptr);
  }
  
  /**
-  * @brief メトリクス情報のコピー取得
-  * @param src コピー元
-  * @param dest コピー先
+  * @brief メモリ確保/解放時にメトリクスを更新する例（オプション）
+  * - metrics.cのAPIと組み合わせてメモリ使用量のリアルタイム監視が可能
   */
- void ds_metrics_copy(const ds_stats_t* src, ds_stats_t* dest) {
-     if (!src || !dest) return;
-     memcpy(dest, src, sizeof(ds_stats_t));
- }
  
- /**
-  * @brief 監視ツール等へのメトリクス出力 (拡張ポイント)
-  * - 本格運用ではここからPrometheus/GCP/Datadog等APIへ連携可
-  * @param stats 出力するメトリクス
-  */
- void ds_metrics_export(const ds_stats_t* stats) {
-     if (!stats) return;
-     // 現状は標準出力。将来的にはJSONやクラウドAPI出力等に拡張可
-     printf("{\"elements\":%zu,\"memory\":%zu,\"ops\":%zu,\"created\":%llu}\n",
-         stats->total_elements, stats->memory_allocated, stats->operations_count,
-         (unsigned long long)stats->creation_timestamp);
+ // 例: カスタムmallocでアロケート状況を監視したい場合
+ /*
+ static void* tracked_malloc(size_t size) {
+     void* p = malloc(size);
+     if (p) ds_metrics_update(global_stats, 0, 0, size); // グローバルなメトリクス等
+     return p;
  }
+ static void tracked_free(void* ptr) {
+     // サイズを記録しておく場合のみ。ここでは例示のみ。
+     ds_metrics_update(global_stats, 0, 0, -prev_size);
+     free(ptr);
+ }
+ */
  
  /* --- テスト容易性/CI/CD運用 ---
-     - ds_metrics_init()/update()/copy() などはmain依存無し
-     - モック/クラウド拡張容易、CIでカバレッジ向上
+     - CIではメモリ障害模擬やvalgrind、GC実装実験等も差し替えのみで実現可
+     - 依存性注入により本番/テスト/開発の最適化が容易
  */

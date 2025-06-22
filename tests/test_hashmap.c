@@ -1,3 +1,4 @@
+#include "../include/data_structures.h"
 #include "hashmap.h"
 #include <assert.h>
 #include <stdio.h>

@@ -4,6 +4,7 @@
  * - 責務分離・エラー処理・静的変数
  * - CI/CD・テスト・クラウド対応しやすい実装
  */
+#include "../include/data_structures.h"
 #include "hashmap.h"
 #include <stdlib.h>
 #include <string.h>

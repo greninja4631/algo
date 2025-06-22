@@ -10,7 +10,7 @@
  * - エラー処理・テスト容易性・依存性注入・情報隠蔽を徹底
  */
 
- #include "data_structures.h"
+#include "../include/data_structures.h"
  #include <stdlib.h>
  #include <string.h>
  

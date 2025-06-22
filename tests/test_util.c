@@ -10,10 +10,10 @@
  * - CI/CD現場ですぐ使えるmain()/assert設計
  */
 
+ #include "../include/data_structures.h"
  #include <stdio.h>
  #include <assert.h>
  #include <string.h>
- #include "../include/data_structures.h"
  #include "../include/config.h"
  
  // ========== logger.c テスト ==========

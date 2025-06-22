@@ -3,6 +3,8 @@
  * @brief LRUキャッシュ実装（HashMap + Doubly Linked List合成）
  * - 最小・拡張容易設計・全操作O(1)設計
  */
+
+#include "../include/data_structures.h"
 #include "lru_cache.h"
 #include "hashmap.h"
 #include <stdlib.h>

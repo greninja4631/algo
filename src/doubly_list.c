@@ -1,6 +1,7 @@
 #ifndef DATA_STRUCTURES_H
 #define DATA_STRUCTURES_H
 
+#include "../include/data_structures.h"
 #include <stddef.h> // size_t のため
 #include <stdbool.h> // bool のため (C23以前でキーワードでない場合)
 #include <stdarg.h> // va_list, va_start, va_end のため
