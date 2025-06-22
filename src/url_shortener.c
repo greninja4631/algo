@@ -1,7 +1,8 @@
 /**
  * @file url_shortener.c
- * @brief URL短縮サービスのサンプル（LRU+HashMap利用例、クラウド・WebAPI化容易）
+ * @brief UuRL短縮サービスのサンプル（LRU+HashMap利用例、クラウド・WebAPI化容易）
  */
+#include "../include/data_structures.h"
 #include "lru_cache.h"
 #include <stdio.h>
 #include <stdlib.h>

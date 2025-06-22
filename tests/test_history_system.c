@@ -1,6 +1,7 @@
+#include "../include/data_structures.h"
 #include <stdio.h>
 #include <assert.h>
-#include "../include/data_structures.h"
+
 
 int main(void) {
     printf("=== Doubly List ADT Unit Test Start ===\n");

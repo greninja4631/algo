@@ -11,9 +11,10 @@
  * - 型安全、戻り値検証、リソースリークなし
  */
 
+ #include "../include/data_structures.h"
  #include <stdio.h>
  #include <assert.h>
- #include "../include/data_structures.h"
+
  
  int main(void) {
      printf("=== Queue ADT Unit Test Start ===\n");

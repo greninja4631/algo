@@ -1,3 +1,4 @@
+#include "../include/data_structures.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>

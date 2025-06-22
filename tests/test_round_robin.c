@@ -10,10 +10,11 @@
  * - 拡張・リファクタ容易なテスト設計
  */
 
+ #include "../include/data_structures.h"
  #include <stdio.h>
  #include <assert.h>
  #include <string.h>
- #include "../include/data_structures.h"
+
  
  int main(void) {
      printf("=== Round Robin Scheduler ADT Unit Test Start ===\n");
