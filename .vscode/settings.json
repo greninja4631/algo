@@ -9,6 +9,27 @@
         "string_view": "c",
         "vector": "c",
         "main_practice_c": "c",
-        "time.h": "c"
-    }
+        "time.h": "c",
+        "statistics.h": "c",
+        "data_structures.h": "c",
+        "stdio.h": "c"
+    },
+
+    // ファイルを自動保存
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000,
+
+    // C/C++エラーや警告の常時表示
+    "C_Cpp.errorSquiggles": "Enabled",
+    "C_Cpp.intelliSenseEngine": "Default",
+
+    // 必須ではないが推奨
+    "editor.renderWhitespace": "all",
+    "editor.tabSize": 4,
+    "editor.wordWrap": "on",
+
+    // 保存時に自動フォーマット
+    "editor.formatOnSave": true
 }
+
+

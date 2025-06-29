@@ -1,20 +1,22 @@
-# ベースは gcc の最新版（軽量で互換性あり）
+# =======================
+# Dockerfile (CI/CD統合)
+# =======================
+
 FROM gcc:13.2.0
 
-# 作業ディレクトリをプロジェクトルートに設定
+# 1. 作業ディレクトリの作成
 WORKDIR /workspace
 
-# プロジェクトのすべてのファイルをイメージ内にコピー
+# 2. プロジェクトの全ファイルをコンテナにコピー
 COPY . .
 
-# 必要なツール類をすべてインストール（make, git, doxygen, cppcheck, clang-tidy）
+# 3. 必要なツールのインストール
 RUN apt-get update && \
-    apt-get install -y make git doxygen cppcheck clang-tidy && \
+    apt-get install -y make git doxygen cppcheck clang-tidy valgrind && \
     rm -rf /var/lib/apt/lists/*
 
-# デフォルトでテストビルド（Makefileが存在し、testターゲットがあることが前提）
-RUN make test
+# 4. make test で全テスト自動実行（Makefile必須！）
+RUN make clean && make test
 
-# デバッグや手動操作のため、bashを起動
-CMD [ "bash" ]
-
+# 5. 対話用シェル（失敗してもbashが起動）
+CMD ["bash"]

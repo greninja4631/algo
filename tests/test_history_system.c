@@ -1,4 +1,5 @@
-#include "../include/data_structures.h"
+#include "../include/ds/doubly_list.h"
+#include "../include/ds/history_system.h"
 #include <stdio.h>
 #include <assert.h>
 
@@ -61,18 +62,3 @@ int main(void) {
     printf("=== Doubly List ADT Unit Test Passed ===\n");
     return 0;
 }
-
-// typedef struct history_node {
-//     ds_command_t command;
-//     struct history_node* prev;「前のページ（prev）」
-//     struct history_node* next;「次のページ（next）」
-// } history_node_t;
-
-// struct ds_history_system {
-//     history_node_t* head;      // 最古の履歴ノードへのポインタ（リストの先頭）
-//     history_node_t* tail;      // 最新の履歴ノードへのポインタ（リストの末尾）
-//     history_node_t* current;   // 現在位置（Undo/Redo判定用）、履歴リスト内の今のノード
-//     size_t size;               // 履歴ノードの総数
-//     size_t max_history;        // 保存できる履歴の最大数
-// };
-

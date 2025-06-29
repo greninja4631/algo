@@ -1,0 +1,13 @@
+// test_integration.c
+#include "../include/ds/circular_list.h"
+#include "../include/ds/doubly_list.h"
+#include "../include/ds/hashmap.h"
+#include "../include/ds/history_system.h"
+#include "../include/ds/lru_cache.h"
+#include "../include/ds/queue.h"
+#include "../include/ds/round_robin.h"
+#include "../include/ds/rpn_calculator.h"
+#include "../include/ds/stack.h"
+#include "../include/ds/statistics.h"
+#include "../include/ds/url_shortener.h"
+#include <stdio.h>

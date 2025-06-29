@@ -1,86 +1,117 @@
-#ifndef DATA_STRUCTURES_H
-#define DATA_STRUCTURES_H
-
-#include "data_structures.h"
-#include <stdarg.h>
+// src/util/logger.c
+#include "../../include/data_structures.h"
 #include <stdio.h>
+#include <stdarg.h>
 
-// ----- エラーコード -----
-typedef enum {
-    DS_SUCCESS = 0,
-    DS_ERR_NULL_POINTER,
-    DS_ERR_ALLOC,
-    DS_ERR_EMPTY,
-    DS_ERR_INVALID_ARG,
-    DS_ERR_OVERFLOW,
-    DS_ERR_UNDERFLOW,
-    DS_ERR_NOT_FOUND,
-    DS_ERR_SYSTEM,
-    DS_ERR_OUT_OF_MEMORY,
-    DS_ERR_EMPTY_CONTAINER,
-    DS_ERR_SYSTEM_FAILURE
-} ds_error_t;
+// ===== エラーコード → 文字列 =====
+const char* ds_error_string(ds_error_t err) {
+    switch (err) {
+        case DS_SUCCESS:             return "Success";
+        case DS_ERR_NULL_POINTER:    return "Null pointer";
+        case DS_ERR_ALLOC:           return "Allocation error";
+        case DS_ERR_EMPTY:           return "Empty";
+        case DS_ERR_INVALID_ARG:     return "Invalid argument";
+        case DS_ERR_OVERFLOW:        return "Overflow";
+        case DS_ERR_UNDERFLOW:       return "Underflow";
+        case DS_ERR_NOT_FOUND:       return "Not found";
+        case DS_ERR_SYSTEM:          return "System error";
+        case DS_ERR_OUT_OF_MEMORY:   return "Out of memory";
+        case DS_ERR_EMPTY_CONTAINER: return "Empty container";
+        case DS_ERR_SYSTEM_FAILURE:  return "System failure";
+        default:                     return "Unknown error";
+    }
+}
 
-// ----- メモリ・ロギング -----
-typedef void* (*ds_malloc_func_t)(size_t);
-typedef void  (*ds_free_func_t)(void*);
-void ds_set_memory_functions(ds_malloc_func_t malloc_func, ds_free_func_t free_func);
+// ===== デフォルトロガー実装（stderrに出力） =====
+static void default_log(ds_log_level_t level, const char* fmt, ...) {
+    (void)level; // levelでログフィルタ等も今後拡張可能
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+}
 
-typedef enum {
-    DS_LOG_DEBUG = 0, DS_LOG_INFO, DS_LOG_WARN, DS_LOG_ERROR, DS_LOG_FATAL
-} ds_log_level_t;
-typedef void (*ds_log_func_t)(ds_log_level_t, const char*, ...);
-void ds_set_log_function(ds_log_func_t func);
-void ds_log(ds_log_level_t level, const char* fmt, ...);
+// ===== グローバルなログ関数ポインタ =====
+static ds_log_func_t g_log_func = NULL;
 
-// ----- スタック -----
-typedef struct ds_stack ds_stack_t;
-ds_stack_t* ds_stack_create(void);
-ds_error_t ds_stack_destroy(ds_stack_t*);
-ds_error_t ds_stack_push(ds_stack_t*, void*);
-ds_error_t ds_stack_pop(ds_stack_t*, void**);
-ds_error_t ds_stack_peek(const ds_stack_t*, void**);
-bool ds_stack_is_empty(const ds_stack_t*);
-size_t ds_stack_size(const ds_stack_t*);
-ds_error_t ds_stack_get_stats(const ds_stack_t*, void*);
-ds_error_t ds_stack_reset(ds_stack_t*);
+// ===== ログ関数の差し替えAPI =====
+void ds_set_log_function(ds_log_func_t func) {
+    g_log_func = func ? func : default_log;
+}
 
-// ----- キュー -----
-typedef struct ds_queue ds_queue_t;
-ds_queue_t* ds_queue_create(void);
-ds_error_t ds_queue_destroy(ds_queue_t*);
-ds_error_t ds_queue_enqueue(ds_queue_t*, void*);
-ds_error_t ds_queue_dequeue(ds_queue_t*, void**);
-bool ds_queue_is_empty(const ds_queue_t*);
-size_t ds_queue_size(const ds_queue_t*);
-ds_error_t ds_queue_get_stats(const ds_queue_t*, void*);
-ds_error_t ds_queue_front(const ds_queue_t*, void**);
+// ===== ログ出力API（全ファイルはこれを使う） =====
+void ds_log(ds_log_level_t level, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    if (g_log_func)
+    {
+        // g_log_funcはva_list非対応なので、vfprintf同様に可変引数を直接渡す
+        // 可変長引数をラップして渡す
+        g_log_func(level, fmt, args);
+    }
+    va_end(args);
+}
 
-// ----- Doubly List -----
-typedef struct ds_doubly_list ds_doubly_list_t;
+// ===== 初期化 =====
+__attribute__((constructor))
+static void logger_init(void) {
+    // プログラム起動時にデフォルトのロガーをセット
+    g_log_func = default_log;
+}
+#include "../../include/util/logger.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 
-// ----- Circular List -----
-typedef struct ds_circular_node ds_circular_node_t;
-typedef struct ds_circular_list ds_circular_list_t;
+// ログレベル文字列
+static const char* ds_log_level_str[] = {
+    "INFO", "WARN", "ERROR"
+};
 
-// ----- Undo/Redo履歴 -----
-typedef struct ds_command ds_command_t;
-typedef struct ds_history_system ds_history_system_t;
+// デフォルトのログ関数
+static void default_log_func(ds_log_level_t level, const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    fprintf(stderr, "[%s] ", ds_log_level_str[level]);
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+    va_end(args);
+}
 
-// ----- RPN電卓 -----
-typedef struct ds_rpn_calculator ds_rpn_calculator_t;
-ds_rpn_calculator_t* ds_rpn_calculator_create(void);
-ds_error_t ds_rpn_calculator_destroy(ds_rpn_calculator_t*);
-ds_error_t ds_rpn_calculator_evaluate(ds_rpn_calculator_t*, const char*, double*);
-ds_error_t ds_rpn_calculator_reset(ds_rpn_calculator_t*);
-ds_error_t ds_rpn_calculator_push(ds_rpn_calculator_t*, double);
-ds_error_t ds_rpn_calculator_pop(ds_rpn_calculator_t*, double*);
+// 現在のログ関数（初期値: デフォルト）
+static ds_log_func_t g_log_func = default_log_func;
 
-// ----- ラウンドロビン -----
-typedef struct ds_process ds_process_t;
-typedef struct ds_round_robin_scheduler ds_round_robin_scheduler_t;
+// ログ関数を差し替えるAPI
+void ds_set_log_function(ds_log_func_t func)
+{
+    g_log_func = func ? func : default_log_func;
+}
 
-// ----- 汎用Stats -----
-typedef struct ds_stats ds_stats_t;
+// ログ出力API本体
+void ds_log(ds_log_level_t level, const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    if (g_log_func) {
+        // 関数ポインタ渡し → vsnprintfではなく vfprintf互換で良い
+        g_log_func(level, fmt, args);
+    }
+    va_end(args);
+}
 
-#endif /* DATA_STRUCTURES_H */
+// エラーコード → 文字列
+const char* ds_error_string(ds_error_t err)
+{
+    switch (err) {
+        case DS_SUCCESS:            return "Success";
+        case DS_ERR_NULL_POINTER:   return "Null pointer";
+        case DS_ERR_ALLOC:          return "Allocation failed";
+        case DS_ERR_OUT_OF_MEMORY:  return "Out of memory";
+        case DS_ERR_SYSTEM_FAILURE: return "System failure";
+        case DS_ERR_INVALID_ARG:    return "Invalid argument";
+        case DS_ERR_EMPTY_CONTAINER:return "Empty container";
+        case DS_ERR_NOT_FOUND:      return "Not found";
+        default:                    return "Unknown error";
+    }
+}
