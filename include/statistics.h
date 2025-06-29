@@ -46,5 +46,3 @@ int mode(const int *data, int size);
 Statistics calculate_statistics(const int *data, int size);
 
 #endif // STATISTICS_H
-
-//成功しました
