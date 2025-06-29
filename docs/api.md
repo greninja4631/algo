@@ -1,32 +1,46 @@
-# Data Structures API Documentation
-
-**Version:** 1.0.0  
-**Date:** 2025-05-28  
-**Author:** シリコンバレー標準設計テンプレート
-
-
-以下の概念でエラー修正希望です。
-
-
-私のCプロジェクト（Dockerビルド）で発生しているビルドエラーについて、  
-**1つ1つのエラーをソフトウェア工学・設計責務の観点から徹底的に分解・解説し、**  
-必ず**「どこにどの責務・API宣言があるべきか」**を整理してもらい、  
-**最終的に100％ビルドが通る（Docker+make testでOK）状態の修正版コードを、.h/.c丸ごとコピペできる形で**  
-1つずつ提示してください。
-
-- エラーの該当ログ・Dockerfile・Makefile・ディレクトリ構成をすべて提示します。
-- コードは「責務の分離」を必ず守り、型やenumやAPIの再定義・未定義エラーを絶対に起こさないようにしてください。
-- 「どのモジュールがどこに依存してよいか」を明示し、依存方向の逆流や多重定義を起こさない形を必須とします。
-- 修正提案は部分パッチではなく「全体をそのまま上書き可能な完成版コード」でお願いします。
-- 原因分析から「設計責務の教科書的説明→解決策→フルコード例」までセットで1つずつお願いします。
-
-【備考】
-- push/popなどの操作は必ずstack.cのみで実装してください。
-- enum, typedef, structの本体実装は.cのみに限定し、.hには宣言だけを残してください。
-- make testがエラー無く通るまでの最短ルートを重視してください。
+docker build -t algo-ci . && docker run --rm -it algo-ci ./run_ci.sh
 
 
 
+✅ エラーを解消するための「修正すべき項目リスト」
+
+1. 全ヘッダの #include パスを正しいものに修正  
+   - 例:  
+     - `#include "../data_structures.h"` → `#include "data_structures.h"`
+     - `#include "lru_cache.h"` → `#include "ds/lru_cache.h"` など  
+     （Makefileの `-I` で `include` ディレクトリが通っている前提）
+
+2. 必要なヘッダファイルが本当に存在しているか確認  
+   - 例: `include/ds/lru_cache.h`, `include/ds/circular_list.h` など
+
+3. すべての「不透明型」宣言をヘッダで行う  
+   - 例:  
+     ```c
+     typedef struct ds_lru_cache ds_lru_cache_t;
+     ```
+     - 使用する型・関数は必ず正しいヘッダで宣言/include
+
+4. 型や関数プロトタイプ宣言の漏れをなくす  
+   - `Statistics` 型、`calculate_statistics()` などは使う前に必ず宣言/include
+
+5. C標準型（bool, size_tなど）を使うファイルでヘッダを追加  
+   - 例:  
+     - `#include <stdbool.h>`
+     - `#include <stddef.h>`
+
+6. 同名関数・変数の二重定義を避ける  
+   - 例:  
+     - `ds_log` のグローバル関数とstatic変数名の衝突を解消  
+     - 名前を変える、もしくはstatic変数を削除
+
+7. `LOG_ERROR` などの独自マクロやロギングを `ds_log` に統一する
+
+8. `ds_stats_t` など不明な型を使う場合は型定義する  
+   - もしくは、使わない実装に変更する
+
+9. `printf` 未定義エラーの場合は `<stdio.h>` を必ず include
+
+10. MakefileやDockerfileの `-I` で `include` フォルダが必ず通っているか確認
 
 
 ## 目次
