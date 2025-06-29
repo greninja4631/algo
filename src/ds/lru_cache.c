@@ -43,8 +43,6 @@ static void insert_front(ds_lru_cache_t* cache, lru_node_t* node) {
     if (!cache->tail) cache->tail = node;
 }
 
-// API本体
-
 // --- 生成 ---
 ds_lru_cache_t* ds_lru_cache_create(size_t capacity) {
     if (capacity == 0) {
@@ -76,7 +74,7 @@ ds_error_t ds_lru_cache_destroy(ds_lru_cache_t* cache) {
     lru_node_t* node = cache->head;
     while (node) {
         lru_node_t* next = node->next;
-        if (node->value) ds_free(node->value); // 値もfreeする(文字列やヒープ領域)
+        if (node->value) ds_free(node->value); // 値もfreeする
         ds_free(node);
         node = next;
     }

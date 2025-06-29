@@ -27,5 +27,3 @@ ds_error_t test_circular_and_round_robin(void);
 }
 #endif
 #endif // NEXT_NEXT_PRACTICE_H
-
-//

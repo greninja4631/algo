@@ -1,7 +1,5 @@
-
-
 #include "../../include/data_structures.h"
-#include "../../include/ds/hashmap.h"
+#include "../../include/hashmap.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -20,6 +18,8 @@ struct ds_hashmap {
     ds_hashmap_entry_t** buckets;
     size_t num_buckets;
     size_t size;
+    ds_hashmap_free_func key_free; // カスタム解放関数（ヘッダ定義と一致）
+    ds_hashmap_free_func val_free;
 };
 
 // --- 内部: ハッシュ関数 ---
@@ -53,6 +53,7 @@ static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) {
 
 // 作成
 ds_hashmap_t* ds_hashmap_create(size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free) {
+    (void)capacity; // capacityは現状未使用
     ds_hashmap_t* map = (ds_hashmap_t*)ds_malloc(sizeof(ds_hashmap_t));
     if (!map) {
         ds_log(DS_LOG_ERROR, "[ds_hashmap] 本体確保失敗\n");
@@ -67,6 +68,8 @@ ds_hashmap_t* ds_hashmap_create(size_t capacity, ds_hashmap_free_func key_free, 
     for (size_t i = 0; i < DS_HASHMAP_INIT_BUCKETS; ++i) map->buckets[i] = NULL;
     map->num_buckets = DS_HASHMAP_INIT_BUCKETS;
     map->size = 0;
+    map->key_free = key_free;
+    map->val_free = val_free;
     return map;
 }
 
@@ -77,7 +80,10 @@ ds_error_t ds_hashmap_destroy(ds_hashmap_t* map) {
         ds_hashmap_entry_t* e = map->buckets[i];
         while (e) {
             ds_hashmap_entry_t* next = e->next;
-            ds_free(e->key);
+            // カスタム解放に対応
+            if (map->key_free) map->key_free(e->key);
+            else ds_free(e->key);
+            if (map->val_free && e->value) map->val_free(e->value);
             ds_free(e);
             e = next;
         }
@@ -94,6 +100,8 @@ ds_error_t ds_hashmap_put(ds_hashmap_t* map, const char* key, void* value) {
     ds_hashmap_entry_t* e = map->buckets[idx];
     while (e) {
         if (strcmp(e->key, key) == 0) {
+            // 既存値を解放
+            if (map->val_free && e->value) map->val_free(e->value);
             e->value = value;
             return DS_SUCCESS;
         }
@@ -133,7 +141,9 @@ ds_error_t ds_hashmap_remove(ds_hashmap_t* map, const char* key) {
     while (e) {
         if (strcmp(e->key, key) == 0) {
             *prev = e->next;
-            ds_free(e->key);
+            if (map->key_free) map->key_free(e->key);
+            else ds_free(e->key);
+            if (map->val_free && e->value) map->val_free(e->value);
             ds_free(e);
             map->size--;
             return DS_SUCCESS;
