@@ -1,0 +1,1300 @@
+gcc -Wall -Wextra -Werror -g -O2 -Iinclude -Iinclude -o build/main src/main.c  src/ds/circular_list.c src/ds/doubly_list.c src/ds/hashmap.c src/ds/history_system.c src/ds/lru_cache.c src/ds/next_next_practice.c src/ds/queue.c src/ds/round_robin.c src/ds/rpn_calculator.c src/ds/stack.c src/ds/statistics.c src/ds/url_shortener.c
+In file included from src/main.c:5:
+include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/main.c:6:
+include/ds/statistics.h:31:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t')
+   31 | } ds_stats_t;
+      |   ^
+include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/main.c:17:23: error: expected identifier or '('
+   17 | int main(void) { void = void; 
+      |                       ^
+src/main.c:33:38: error: no member named 'sum' in 'ds_stats_t'
+   33 |     printf("  \"sum\": %d,\n", stats.sum);
+      |                                ~~~~~ ^
+src/main.c:34:38: error: no member named 'min' in 'ds_stats_t'
+   34 |     printf("  \"min\": %d,\n", stats.min);
+      |                                ~~~~~ ^
+src/main.c:35:38: error: no member named 'max' in 'ds_stats_t'
+   35 |     printf("  \"max\": %d,\n", stats.max);
+      |                                ~~~~~ ^
+src/main.c:36:44: error: no member named 'average' in 'ds_stats_t'
+   36 |     printf("  \"average\": %.2f,\n", stats.average);
+      |                                      ~~~~~ ^
+src/main.c:37:43: error: no member named 'median' in 'ds_stats_t'
+   37 |     printf("  \"median\": %.2f,\n", stats.median);
+      |                                     ~~~~~ ^
+src/main.c:38:38: error: no member named 'mode' in 'ds_stats_t'
+   38 |     printf("  \"mode\": %d\n", stats.mode);
+      |                                ~~~~~ ^
+9 errors generated.
+In file included from src/ds/circular_list.c:3:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/circular_list.c:4:
+In file included from src/ds/../../include/ds/circular_list.h:6:
+src/ds/../../include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+src/ds/circular_list.c:3:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    3 | #include "../../include/data_structures.h"
+      |          ^
+src/ds/../../include/ds/circular_list.h:6:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    6 | #include "data_structures.h"    // ← これを追加！
+      |          ^
+src/ds/../../include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/circular_list.c:4:
+In file included from src/ds/../../include/ds/circular_list.h:6:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at src/ds/../../include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/ds/circular_list.c:20:58: error: expected identifier or '('
+   20 | ds_circular_list_t* ds_circular_list_create(void) { void = void; 
+      |                                                          ^
+src/ds/circular_list.c:29:85: error: redefinition of 'list'
+   29 | ds_error_t ds_circular_list_destroy(ds_circular_list_t* list) { ds_circular_list_t* list = ds_circular_list_t* list; 
+      |                                                                                     ^
+src/ds/circular_list.c:29:57: note: previous definition is here
+   29 | ds_error_t ds_circular_list_destroy(ds_circular_list_t* list) { ds_circular_list_t* list = ds_circular_list_t* list; 
+      |                                                         ^
+src/ds/circular_list.c:29:92: error: unexpected type name 'ds_circular_list_t': expected expression
+   29 | ds_error_t ds_circular_list_destroy(ds_circular_list_t* list) { ds_circular_list_t* list = ds_circular_list_t* list; 
+      |                                                                                            ^
+src/ds/circular_list.c:46:96: error: redefinition of 'list'
+   46 | ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) { ds_circular_list_t* list, void* data = ds_circular_list_t* list, void* data; 
+      |                                                                                                ^
+src/ds/circular_list.c:46:56: note: previous definition is here
+   46 | ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) { ds_circular_list_t* list, void* data = ds_circular_list_t* list, void* data; 
+      |                                                        ^
+src/ds/circular_list.c:46:102: error: expected identifier or '('
+   46 | ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) { ds_circular_list_t* list, void* data = ds_circular_list_t* list, void* data; 
+      |                                                                                                      ^
+src/ds/circular_list.c:46:101: error: expected ';' at end of declaration
+   46 | ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) { ds_circular_list_t* list, void* data = ds_circular_list_t* list, void* data; 
+      |                                                                                                     ^
+      |                                                                                                     ;
+src/ds/circular_list.c:46:108: error: redefinition of 'data'
+   46 | ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) { ds_circular_list_t* list, void* data = ds_circular_list_t* list, void* data; 
+      |                                                                                                            ^
+src/ds/circular_list.c:46:68: note: previous definition is here
+   46 | ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) { ds_circular_list_t* list, void* data = ds_circular_list_t* list, void* data; 
+      |                                                                    ^
+src/ds/circular_list.c:46:115: error: unexpected type name 'ds_circular_list_t': expected expression
+   46 | ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) { ds_circular_list_t* list, void* data = ds_circular_list_t* list, void* data; 
+      |                                                                                                                   ^
+src/ds/circular_list.c:46:141: error: expected identifier or '('
+   46 | ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) { ds_circular_list_t* list, void* data = ds_circular_list_t* list, void* data; 
+      |                                                                                                                                             ^
+src/ds/circular_list.c:46:140: error: expected ';' at end of declaration
+   46 | ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) { ds_circular_list_t* list, void* data = ds_circular_list_t* list, void* data; 
+      |                                                                                                                                            ^
+      |                                                                                                                                            ;
+src/ds/circular_list.c:46:147: error: redefinition of 'data'
+   46 | ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) { ds_circular_list_t* list, void* data = ds_circular_list_t* list, void* data; 
+      |                                                                                                                                                   ^
+src/ds/circular_list.c:46:68: note: previous definition is here
+   46 | ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) { ds_circular_list_t* list, void* data = ds_circular_list_t* list, void* data; 
+      |                                                                    ^
+src/ds/circular_list.c:64:97: error: redefinition of 'list'
+   64 | ds_error_t ds_circular_list_remove(ds_circular_list_t* list, void** data) { ds_circular_list_t* list, void** data = ds_circular_list_t* list, void** data; 
+      |                                                                                                 ^
+src/ds/circular_list.c:64:56: note: previous definition is here
+   64 | ds_error_t ds_circular_list_remove(ds_circular_list_t* list, void** data) { ds_circular_list_t* list, void** data = ds_circular_list_t* list, void** data; 
+      |                                                        ^
+src/ds/circular_list.c:64:103: error: expected identifier or '('
+   64 | ds_error_t ds_circular_list_remove(ds_circular_list_t* list, void** data) { ds_circular_list_t* list, void** data = ds_circular_list_t* list, void** data; 
+      |                                                                                                       ^
+src/ds/circular_list.c:64:102: error: expected ';' at end of declaration
+   64 | ds_error_t ds_circular_list_remove(ds_circular_list_t* list, void** data) { ds_circular_list_t* list, void** data = ds_circular_list_t* list, void** data; 
+      |                                                                                                      ^
+      |                                                                                                      ;
+src/ds/circular_list.c:64:110: error: redefinition of 'data'
+   64 | ds_error_t ds_circular_list_remove(ds_circular_list_t* list, void** data) { ds_circular_list_t* list, void** data = ds_circular_list_t* list, void** data; 
+      |                                                                                                              ^
+src/ds/circular_list.c:64:69: note: previous definition is here
+   64 | ds_error_t ds_circular_list_remove(ds_circular_list_t* list, void** data) { ds_circular_list_t* list, void** data = ds_circular_list_t* list, void** data; 
+      |                                                                     ^
+src/ds/circular_list.c:64:117: error: unexpected type name 'ds_circular_list_t': expected expression
+   64 | ds_error_t ds_circular_list_remove(ds_circular_list_t* list, void** data) { ds_circular_list_t* list, void** data = ds_circular_list_t* list, void** data; 
+      |                                                                                                                     ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+In file included from src/ds/doubly_list.c:3:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/doubly_list.c:4:
+In file included from src/ds/../../include/ds/doubly_list.h:6:
+src/ds/../../include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+src/ds/doubly_list.c:3:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    3 | #include "../../include/data_structures.h"
+      |          ^
+src/ds/../../include/ds/doubly_list.h:6:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    6 | #include "../data_structures.h" // ds_error_t, ds_stats_t など共通型
+      |          ^
+src/ds/../../include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/doubly_list.c:4:
+In file included from src/ds/../../include/ds/doubly_list.h:6:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at src/ds/../../include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/ds/doubly_list.c:28:55: error: redefinition of 'data'
+   28 | static ds_doubly_node_t* new_node(void* data) { void* data = void* data; 
+      |                                                       ^
+src/ds/doubly_list.c:28:41: note: previous definition is here
+   28 | static ds_doubly_node_t* new_node(void* data) { void* data = void* data; 
+      |                                         ^
+src/ds/doubly_list.c:28:62: error: expected expression
+   28 | static ds_doubly_node_t* new_node(void* data) { void* data = void* data; 
+      |                                                              ^
+src/ds/doubly_list.c:44:54: error: expected identifier or '('
+   44 | ds_doubly_list_t* ds_doubly_list_create(void) { void = void; 
+      |                                                      ^
+src/ds/doubly_list.c:56:79: error: redefinition of 'list'
+   56 | ds_error_t ds_doubly_list_destroy(ds_doubly_list_t* list) { ds_doubly_list_t* list = ds_doubly_list_t* list; 
+      |                                                                               ^
+src/ds/doubly_list.c:56:53: note: previous definition is here
+   56 | ds_error_t ds_doubly_list_destroy(ds_doubly_list_t* list) { ds_doubly_list_t* list = ds_doubly_list_t* list; 
+      |                                                     ^
+src/ds/doubly_list.c:56:86: error: unexpected type name 'ds_doubly_list_t': expected expression
+   56 | ds_error_t ds_doubly_list_destroy(ds_doubly_list_t* list) { ds_doubly_list_t* list = ds_doubly_list_t* list; 
+      |                                                                                      ^
+src/ds/doubly_list.c:59:23: error: explicitly assigning value of variable of type 'ds_doubly_node_t *' (aka 'struct ds_doubly_node *') to itself [-Werror,-Wself-assign]
+   59 |     while (cur) { cur = cur; 
+      |                   ~~~ ^ ~~~
+src/ds/doubly_list.c:69:96: error: redefinition of 'list'
+   69 | ds_error_t ds_doubly_list_insert_front(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                                                                ^
+src/ds/doubly_list.c:69:58: note: previous definition is here
+   69 | ds_error_t ds_doubly_list_insert_front(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                          ^
+src/ds/doubly_list.c:69:102: error: expected identifier or '('
+   69 | ds_error_t ds_doubly_list_insert_front(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                                                                      ^
+src/ds/doubly_list.c:69:101: error: expected ';' at end of declaration
+   69 | ds_error_t ds_doubly_list_insert_front(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                                                                     ^
+      |                                                                                                     ;
+src/ds/doubly_list.c:69:108: error: redefinition of 'data'
+   69 | ds_error_t ds_doubly_list_insert_front(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                                                                            ^
+src/ds/doubly_list.c:69:70: note: previous definition is here
+   69 | ds_error_t ds_doubly_list_insert_front(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                                      ^
+src/ds/doubly_list.c:69:115: error: unexpected type name 'ds_doubly_list_t': expected expression
+   69 | ds_error_t ds_doubly_list_insert_front(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                                                                                   ^
+src/ds/doubly_list.c:69:139: error: expected identifier or '('
+   69 | ds_error_t ds_doubly_list_insert_front(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                                                                                                           ^
+src/ds/doubly_list.c:69:138: error: expected ';' at end of declaration
+   69 | ds_error_t ds_doubly_list_insert_front(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                                                                                                          ^
+      |                                                                                                                                          ;
+src/ds/doubly_list.c:69:145: error: redefinition of 'data'
+   69 | ds_error_t ds_doubly_list_insert_front(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                                                                                                                 ^
+src/ds/doubly_list.c:69:70: note: previous definition is here
+   69 | ds_error_t ds_doubly_list_insert_front(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                                      ^
+src/ds/doubly_list.c:82:95: error: redefinition of 'list'
+   82 | ds_error_t ds_doubly_list_insert_back(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                                                               ^
+src/ds/doubly_list.c:82:57: note: previous definition is here
+   82 | ds_error_t ds_doubly_list_insert_back(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                         ^
+src/ds/doubly_list.c:82:101: error: expected identifier or '('
+   82 | ds_error_t ds_doubly_list_insert_back(ds_doubly_list_t* list, void* data) { ds_doubly_list_t* list, void* data = ds_doubly_list_t* list, void* data; 
+      |                                                                                                     ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+In file included from src/ds/hashmap.c:5:
+In file included from include/hashmap.h:5:
+include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/hashmap.c:6:
+include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+include/hashmap.h:5:10: note: 'include/data_structures.h' included multiple times, additional include site here
+    5 | #include "data_structures.h"
+      |          ^
+src/ds/hashmap.c:6:10: note: 'include/data_structures.h' included multiple times, additional include site here
+    6 | #include "data_structures.h"   
+      |          ^
+include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/hashmap.c:6:
+include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/ds/hashmap.c:27:69: error: redefinition of 'str'
+   27 | static unsigned long ds_hashmap_hash(const char* str) { const char* str = const char* str; 
+      |                                                                     ^
+src/ds/hashmap.c:27:50: note: previous definition is here
+   27 | static unsigned long ds_hashmap_hash(const char* str) { const char* str = const char* str; 
+      |                                                  ^
+src/ds/hashmap.c:27:75: error: expected expression
+   27 | static unsigned long ds_hashmap_hash(const char* str) { const char* str = const char* str; 
+      |                                                                           ^
+src/ds/hashmap.c:36:93: error: redefinition of 'key'
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                             ^
+src/ds/hashmap.c:36:61: note: previous definition is here
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                             ^
+src/ds/hashmap.c:36:98: error: expected identifier or '('
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                  ^
+src/ds/hashmap.c:36:97: error: expected ';' at end of declaration
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                 ^
+      |                                                                                                 ;
+src/ds/hashmap.c:36:104: error: redefinition of 'value'
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                        ^
+src/ds/hashmap.c:36:72: note: previous definition is here
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                        ^
+src/ds/hashmap.c:36:112: error: expected expression
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                                ^
+src/ds/hashmap.c:36:129: error: expected identifier or '('
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                                                 ^
+src/ds/hashmap.c:36:128: error: expected ';' at end of declaration
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                                                ^
+      |                                                                                                                                ;
+src/ds/hashmap.c:36:135: error: redefinition of 'value'
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                                                       ^
+src/ds/hashmap.c:36:72: note: previous definition is here
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                        ^
+src/ds/hashmap.c:56:121: error: redefinition of 'capacity'
+   56 | ds_hashmap_t* ds_hashmap_create(size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free) { size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free = size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free; 
+      |                                                                                                                         ^
+src/ds/hashmap.c:56:40: note: previous definition is here
+   56 | ds_hashmap_t* ds_hashmap_create(size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free) { size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free = size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free; 
+      |                                        ^
+src/ds/hashmap.c:56:151: error: expected ';' at end of declaration
+   56 | ds_hashmap_t* ds_hashmap_create(size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free) { size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free = size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free; 
+      |                                                                                                                                                       ^
+      |                                                                                                                                                       ;
+src/ds/hashmap.c:78:66: error: redefinition of 'map'
+   78 | ds_error_t ds_hashmap_destroy(ds_hashmap_t* map) { ds_hashmap_t* map = ds_hashmap_t* map; 
+      |                                                                  ^
+src/ds/hashmap.c:78:45: note: previous definition is here
+   78 | ds_error_t ds_hashmap_destroy(ds_hashmap_t* map) { ds_hashmap_t* map = ds_hashmap_t* map; 
+      |                                             ^
+src/ds/hashmap.c:78:72: error: unexpected type name 'ds_hashmap_t': expected expression
+   78 | ds_error_t ds_hashmap_destroy(ds_hashmap_t* map) { ds_hashmap_t* map = ds_hashmap_t* map; 
+      |                                                                        ^
+src/ds/hashmap.c:82:23: error: explicitly assigning value of variable of type 'ds_hashmap_entry_t *' (aka 'struct ds_hashmap_entry *') to itself [-Werror,-Wself-assign]
+   82 |         while (e) { e = e; 
+      |                     ~ ^ ~
+src/ds/hashmap.c:98:92: error: redefinition of 'map'
+   98 | ds_error_t ds_hashmap_put(ds_hashmap_t* map, const char* key, void* value) { ds_hashmap_t* map, const char* key, void* value = ds_hashmap_t* map, const char* key, void* value; 
+      |                                                                                            ^
+src/ds/hashmap.c:98:41: note: previous definition is here
+   98 | ds_error_t ds_hashmap_put(ds_hashmap_t* map, const char* key, void* value) { ds_hashmap_t* map, const char* key, void* value = ds_hashmap_t* map, const char* key, void* value; 
+      |                                         ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+In file included from src/ds/history_system.c:2:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/history_system.c:3:
+In file included from include/hashmap.h:5:
+src/ds/../../include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+src/ds/history_system.c:2:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    2 | #include "../../include/data_structures.h"
+      |          ^
+include/hashmap.h:5:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    5 | #include "data_structures.h"
+      |          ^
+src/ds/../../include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/history_system.c:3:
+In file included from include/hashmap.h:5:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at src/ds/../../include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/ds/history_system.c:27:69: error: redefinition of 'str'
+   27 | static unsigned long ds_hashmap_hash(const char* str) { const char* str = const char* str; 
+      |                                                                     ^
+src/ds/history_system.c:27:50: note: previous definition is here
+   27 | static unsigned long ds_hashmap_hash(const char* str) { const char* str = const char* str; 
+      |                                                  ^
+src/ds/history_system.c:27:75: error: expected expression
+   27 | static unsigned long ds_hashmap_hash(const char* str) { const char* str = const char* str; 
+      |                                                                           ^
+src/ds/history_system.c:36:93: error: redefinition of 'key'
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                             ^
+src/ds/history_system.c:36:61: note: previous definition is here
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                             ^
+src/ds/history_system.c:36:98: error: expected identifier or '('
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                  ^
+src/ds/history_system.c:36:97: error: expected ';' at end of declaration
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                 ^
+      |                                                                                                 ;
+src/ds/history_system.c:36:104: error: redefinition of 'value'
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                        ^
+src/ds/history_system.c:36:72: note: previous definition is here
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                        ^
+src/ds/history_system.c:36:112: error: expected expression
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                                ^
+src/ds/history_system.c:36:129: error: expected identifier or '('
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                                                 ^
+src/ds/history_system.c:36:128: error: expected ';' at end of declaration
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                                                ^
+      |                                                                                                                                ;
+src/ds/history_system.c:36:135: error: redefinition of 'value'
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                                                                                       ^
+src/ds/history_system.c:36:72: note: previous definition is here
+   36 | static ds_hashmap_entry_t* ds_hashmap_new_entry(const char* key, void* value) { const char* key, void* value = const char* key, void* value; 
+      |                                                                        ^
+src/ds/history_system.c:56:121: error: redefinition of 'capacity'
+   56 | ds_hashmap_t* ds_hashmap_create(size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free) { size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free = size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free; 
+      |                                                                                                                         ^
+src/ds/history_system.c:56:40: note: previous definition is here
+   56 | ds_hashmap_t* ds_hashmap_create(size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free) { size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free = size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free; 
+      |                                        ^
+src/ds/history_system.c:56:151: error: expected ';' at end of declaration
+   56 | ds_hashmap_t* ds_hashmap_create(size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free) { size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free = size_t capacity, ds_hashmap_free_func key_free, ds_hashmap_free_func val_free; 
+      |                                                                                                                                                       ^
+      |                                                                                                                                                       ;
+src/ds/history_system.c:79:92: error: redefinition of 'map'
+   79 | ds_error_t ds_hashmap_put(ds_hashmap_t* map, const char* key, void* value) { ds_hashmap_t* map, const char* key, void* value = ds_hashmap_t* map, const char* key, void* value; 
+      |                                                                                            ^
+src/ds/history_system.c:79:41: note: previous definition is here
+   79 | ds_error_t ds_hashmap_put(ds_hashmap_t* map, const char* key, void* value) { ds_hashmap_t* map, const char* key, void* value = ds_hashmap_t* map, const char* key, void* value; 
+      |                                         ^
+src/ds/history_system.c:79:97: error: expected identifier or '('
+   79 | ds_error_t ds_hashmap_put(ds_hashmap_t* map, const char* key, void* value) { ds_hashmap_t* map, const char* key, void* value = ds_hashmap_t* map, const char* key, void* value; 
+      |                                                                                                 ^
+src/ds/history_system.c:79:96: error: expected ';' at end of declaration
+   79 | ds_error_t ds_hashmap_put(ds_hashmap_t* map, const char* key, void* value) { ds_hashmap_t* map, const char* key, void* value = ds_hashmap_t* map, const char* key, void* value; 
+      |                                                                                                ^
+      |                                                                                                ;
+src/ds/history_system.c:79:109: error: redefinition of 'key'
+   79 | ds_error_t ds_hashmap_put(ds_hashmap_t* map, const char* key, void* value) { ds_hashmap_t* map, const char* key, void* value = ds_hashmap_t* map, const char* key, void* value; 
+      |                                                                                                             ^
+src/ds/history_system.c:79:58: note: previous definition is here
+   79 | ds_error_t ds_hashmap_put(ds_hashmap_t* map, const char* key, void* value) { ds_hashmap_t* map, const char* key, void* value = ds_hashmap_t* map, const char* key, void* value; 
+      |                                                          ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+In file included from src/ds/lru_cache.c:2:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/lru_cache.c:3:
+In file included from src/ds/../../include/ds/lru_cache.h:5:
+src/ds/../../include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+src/ds/lru_cache.c:2:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    2 | #include "../../include/data_structures.h"
+      |          ^
+src/ds/../../include/ds/lru_cache.h:5:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    5 | #include "data_structures.h"
+      |          ^
+src/ds/../../include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/lru_cache.c:3:
+In file included from src/ds/../../include/ds/lru_cache.h:5:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at src/ds/../../include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/ds/lru_cache.c:27:52: error: redefinition of 'key'
+   27 | static size_t hash(int key, size_t map_size) { int key, size_t map_size = int key, size_t map_size; 
+      |                                                    ^
+src/ds/lru_cache.c:27:24: note: previous definition is here
+   27 | static size_t hash(int key, size_t map_size) { int key, size_t map_size = int key, size_t map_size; 
+      |                        ^
+src/ds/lru_cache.c:27:63: error: expected ';' at end of declaration
+   27 | static size_t hash(int key, size_t map_size) { int key, size_t map_size = int key, size_t map_size; 
+      |                                                               ^
+      |                                                               ;
+src/ds/lru_cache.c:28:21: error: expected ')'
+   28 |     return ((size_t)key) % map_size;
+      |                     ^
+src/ds/lru_cache.c:28:12: note: to match this '('
+   28 |     return ((size_t)key) % map_size;
+      |            ^
+src/ds/lru_cache.c:27:24: error: unused parameter 'key' [-Werror,-Wunused-parameter]
+   27 | static size_t hash(int key, size_t map_size) { int key, size_t map_size = int key, size_t map_size; 
+      |                        ^
+src/ds/lru_cache.c:31:84: error: redefinition of 'cache'
+   31 | static void remove_node(ds_lru_cache_t* cache, lru_node_t* node) { ds_lru_cache_t* cache, lru_node_t* node = ds_lru_cache_t* cache, lru_node_t* node; 
+      |                                                                                    ^
+src/ds/lru_cache.c:31:41: note: previous definition is here
+   31 | static void remove_node(ds_lru_cache_t* cache, lru_node_t* node) { ds_lru_cache_t* cache, lru_node_t* node = ds_lru_cache_t* cache, lru_node_t* node; 
+      |                                         ^
+src/ds/lru_cache.c:31:101: error: expected ';' at end of declaration
+   31 | static void remove_node(ds_lru_cache_t* cache, lru_node_t* node) { ds_lru_cache_t* cache, lru_node_t* node = ds_lru_cache_t* cache, lru_node_t* node; 
+      |                                                                                                     ^
+      |                                                                                                     ;
+src/ds/lru_cache.c:39:85: error: redefinition of 'cache'
+   39 | static void insert_front(ds_lru_cache_t* cache, lru_node_t* node) { ds_lru_cache_t* cache, lru_node_t* node = ds_lru_cache_t* cache, lru_node_t* node; 
+      |                                                                                     ^
+src/ds/lru_cache.c:39:42: note: previous definition is here
+   39 | static void insert_front(ds_lru_cache_t* cache, lru_node_t* node) { ds_lru_cache_t* cache, lru_node_t* node = ds_lru_cache_t* cache, lru_node_t* node; 
+      |                                          ^
+src/ds/lru_cache.c:39:102: error: expected ';' at end of declaration
+   39 | static void insert_front(ds_lru_cache_t* cache, lru_node_t* node) { ds_lru_cache_t* cache, lru_node_t* node = ds_lru_cache_t* cache, lru_node_t* node; 
+      |                                                                                                      ^
+      |                                                                                                      ;
+src/ds/lru_cache.c:48:63: error: redefinition of 'capacity'
+   48 | ds_lru_cache_t* ds_lru_cache_create(size_t capacity) { size_t capacity = size_t capacity; 
+      |                                                               ^
+src/ds/lru_cache.c:48:44: note: previous definition is here
+   48 | ds_lru_cache_t* ds_lru_cache_create(size_t capacity) { size_t capacity = size_t capacity; 
+      |                                            ^
+src/ds/lru_cache.c:48:74: error: unexpected type name 'size_t': expected expression
+   48 | ds_lru_cache_t* ds_lru_cache_create(size_t capacity) { size_t capacity = size_t capacity; 
+      |                                                                          ^
+src/ds/lru_cache.c:48:80: error: expected ';' at end of declaration
+   48 | ds_lru_cache_t* ds_lru_cache_create(size_t capacity) { size_t capacity = size_t capacity; 
+      |                                                                                ^
+      |                                                                                ;
+src/ds/lru_cache.c:73:74: error: redefinition of 'cache'
+   73 | ds_error_t ds_lru_cache_destroy(ds_lru_cache_t* cache) { ds_lru_cache_t* cache = ds_lru_cache_t* cache; 
+      |                                                                          ^
+src/ds/lru_cache.c:73:49: note: previous definition is here
+   73 | ds_error_t ds_lru_cache_destroy(ds_lru_cache_t* cache) { ds_lru_cache_t* cache = ds_lru_cache_t* cache; 
+      |                                                 ^
+src/ds/lru_cache.c:73:82: error: unexpected type name 'ds_lru_cache_t': expected expression
+   73 | ds_error_t ds_lru_cache_destroy(ds_lru_cache_t* cache) { ds_lru_cache_t* cache = ds_lru_cache_t* cache; 
+      |                                                                                  ^
+src/ds/lru_cache.c:76:25: error: explicitly assigning value of variable of type 'lru_node_t *' (aka 'struct lru_node *') to itself [-Werror,-Wself-assign]
+   76 |     while (node) { node = node; 
+      |                    ~~~~ ^ ~~~~
+src/ds/lru_cache.c:88:93: error: redefinition of 'cache'
+   88 | ds_error_t ds_lru_cache_get(ds_lru_cache_t* cache, int key, void** value) { ds_lru_cache_t* cache, int key, void** value = ds_lru_cache_t* cache, int key, void** value; 
+      |                                                                                             ^
+src/ds/lru_cache.c:88:45: note: previous definition is here
+   88 | ds_error_t ds_lru_cache_get(ds_lru_cache_t* cache, int key, void** value) { ds_lru_cache_t* cache, int key, void** value = ds_lru_cache_t* cache, int key, void** value; 
+      |                                             ^
+src/ds/lru_cache.c:88:100: error: expected identifier or '('
+   88 | ds_error_t ds_lru_cache_get(ds_lru_cache_t* cache, int key, void** value) { ds_lru_cache_t* cache, int key, void** value = ds_lru_cache_t* cache, int key, void** value; 
+      |                                                                                                    ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+In file included from src/ds/next_next_practice.c:2:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/next_next_practice.c:3:
+In file included from src/ds/../../include/ds/next_next_practice.h:6:
+src/ds/../../include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+src/ds/next_next_practice.c:2:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    2 | #include "../../include/data_structures.h"
+      |          ^
+src/ds/../../include/ds/next_next_practice.h:6:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    6 | #include "../data_structures.h"
+      |          ^
+src/ds/../../include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/next_next_practice.c:3:
+In file included from src/ds/../../include/ds/next_next_practice.h:6:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at src/ds/../../include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/ds/next_next_practice.c:41:62: error: expected identifier or '('
+   41 | next_next_practice_t* next_next_practice_create(void) { void = void; 
+      |                                                              ^
+src/ds/next_next_practice.c:51:84: error: redefinition of 'obj'
+   51 | void next_next_practice_destroy(next_next_practice_t* obj) { next_next_practice_t* obj = next_next_practice_t* obj; 
+      |                                                                                    ^
+src/ds/next_next_practice.c:51:55: note: previous definition is here
+   51 | void next_next_practice_destroy(next_next_practice_t* obj) { next_next_practice_t* obj = next_next_practice_t* obj; 
+      |                                                       ^
+src/ds/next_next_practice.c:51:90: error: unexpected type name 'next_next_practice_t': expected expression
+   51 | void next_next_practice_destroy(next_next_practice_t* obj) { next_next_practice_t* obj = next_next_practice_t* obj; 
+      |                                                                                          ^
+src/ds/next_next_practice.c:58:50: error: redefinition of 'data'
+   58 | static Node* create_node(int32_t data) { int32_t data = int32_t data; 
+      |                                                  ^
+src/ds/next_next_practice.c:58:34: note: previous definition is here
+   58 | static Node* create_node(int32_t data) { int32_t data = int32_t data; 
+      |                                  ^
+src/ds/next_next_practice.c:58:57: error: unexpected type name 'int32_t': expected expression
+   58 | static Node* create_node(int32_t data) { int32_t data = int32_t data; 
+      |                                                         ^
+src/ds/next_next_practice.c:58:64: error: expected ';' at end of declaration
+   58 | static Node* create_node(int32_t data) { int32_t data = int32_t data; 
+      |                                                                ^
+      |                                                                ;
+src/ds/next_next_practice.c:69:43: error: redefinition of 'node'
+   69 | static void free_node(Node* node) { Node* node = Node* node; 
+      |                                           ^
+src/ds/next_next_practice.c:69:29: note: previous definition is here
+   69 | static void free_node(Node* node) { Node* node = Node* node; 
+      |                             ^
+src/ds/next_next_practice.c:69:50: error: unexpected type name 'Node': expected expression
+   69 | static void free_node(Node* node) { Node* node = Node* node; 
+      |                                                  ^
+src/ds/next_next_practice.c:76:73: error: redefinition of 'list'
+   76 | static ds_error_t init_list(DoublyLinkedList* list) { DoublyLinkedList* list = DoublyLinkedList* list;  /* ... */ return DS_SUCCESS; }
+      |                                                                         ^
+src/ds/next_next_practice.c:76:47: note: previous definition is here
+   76 | static ds_error_t init_list(DoublyLinkedList* list) { DoublyLinkedList* list = DoublyLinkedList* list;  /* ... */ return DS_SUCCESS; }
+      |                                               ^
+src/ds/next_next_practice.c:76:80: error: unexpected type name 'DoublyLinkedList': expected expression
+   76 | static ds_error_t init_list(DoublyLinkedList* list) { DoublyLinkedList* list = DoublyLinkedList* list;  /* ... */ return DS_SUCCESS; }
+      |                                                                                ^
+src/ds/next_next_practice.c:77:88: error: redefinition of 'list'
+   77 | static ds_error_t stack_push(DoublyLinkedList* list, int32_t data) { DoublyLinkedList* list, int32_t data = DoublyLinkedList* list, int32_t data;  /* ... */ return DS_SUCCESS; }
+      |                                                                                        ^
+src/ds/next_next_practice.c:77:48: note: previous definition is here
+   77 | static ds_error_t stack_push(DoublyLinkedList* list, int32_t data) { DoublyLinkedList* list, int32_t data = DoublyLinkedList* list, int32_t data;  /* ... */ return DS_SUCCESS; }
+      |                                                ^
+src/ds/next_next_practice.c:77:101: error: expected ';' at end of declaration
+   77 | static ds_error_t stack_push(DoublyLinkedList* list, int32_t data) { DoublyLinkedList* list, int32_t data = DoublyLinkedList* list, int32_t data;  /* ... */ return DS_SUCCESS; }
+      |                                                                                                     ^
+      |                                                                                                     ;
+src/ds/next_next_practice.c:77:48: error: unused parameter 'list' [-Werror,-Wunused-parameter]
+   77 | static ds_error_t stack_push(DoublyLinkedList* list, int32_t data) { DoublyLinkedList* list, int32_t data = DoublyLinkedList* list, int32_t data;  /* ... */ return DS_SUCCESS; }
+      |                                                ^
+src/ds/next_next_practice.c:77:62: error: unused parameter 'data' [-Werror,-Wunused-parameter]
+   77 | static ds_error_t stack_push(DoublyLinkedList* list, int32_t data) { DoublyLinkedList* list, int32_t data = DoublyLinkedList* list, int32_t data;  /* ... */ return DS_SUCCESS; }
+      |                                                              ^
+src/ds/next_next_practice.c:78:88: error: redefinition of 'list'
+   78 | static ds_error_t stack_pop(DoublyLinkedList* list, int32_t* data) { DoublyLinkedList* list, int32_t* data = DoublyLinkedList* list, int32_t* data;  /* ... */ return DS_SUCCESS; }
+      |                                                                                        ^
+src/ds/next_next_practice.c:78:47: note: previous definition is here
+   78 | static ds_error_t stack_pop(DoublyLinkedList* list, int32_t* data) { DoublyLinkedList* list, int32_t* data = DoublyLinkedList* list, int32_t* data;  /* ... */ return DS_SUCCESS; }
+      |                                               ^
+src/ds/next_next_practice.c:78:101: error: expected ';' at end of declaration
+   78 | static ds_error_t stack_pop(DoublyLinkedList* list, int32_t* data) { DoublyLinkedList* list, int32_t* data = DoublyLinkedList* list, int32_t* data;  /* ... */ return DS_SUCCESS; }
+      |                                                                                                     ^
+      |                                                                                                     ;
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+In file included from src/ds/queue.c:3:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/queue.c:4:
+In file included from include/queue.h:6:
+src/ds/../../include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+src/ds/queue.c:3:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    3 | #include "../../include/data_structures.h"
+      |          ^
+include/queue.h:6:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    6 | #include "data_structures.h"
+      |          ^
+src/ds/../../include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/queue.c:4:
+In file included from include/queue.h:6:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at src/ds/../../include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/ds/queue.c:22:13: error: conflicting types for 'ds_queue_create'
+   22 | ds_queue_t* ds_queue_create(void) { void = void; 
+      |             ^
+include/queue.h:19:13: note: previous declaration is here
+   19 | ds_queue_t* ds_queue_create(size_t capacity);
+      |             ^
+src/ds/queue.c:22:42: error: expected identifier or '('
+   22 | ds_queue_t* ds_queue_create(void) { void = void; 
+      |                                          ^
+src/ds/queue.c:34:58: error: redefinition of 'q'
+   34 | ds_error_t ds_queue_destroy(ds_queue_t* q) { ds_queue_t* q = ds_queue_t* q; 
+      |                                                          ^
+src/ds/queue.c:34:41: note: previous definition is here
+   34 | ds_error_t ds_queue_destroy(ds_queue_t* q) { ds_queue_t* q = ds_queue_t* q; 
+      |                                         ^
+src/ds/queue.c:34:62: error: unexpected type name 'ds_queue_t': expected expression
+   34 | ds_error_t ds_queue_destroy(ds_queue_t* q) { ds_queue_t* q = ds_queue_t* q; 
+      |                                                              ^
+src/ds/queue.c:37:23: error: explicitly assigning value of variable of type 'ds_queue_node_t *' (aka 'struct ds_queue_node *') to itself [-Werror,-Wself-assign]
+   37 |     while (cur) { cur = cur; 
+      |                   ~~~ ^ ~~~
+src/ds/queue.c:47:70: error: redefinition of 'q'
+   47 | ds_error_t ds_queue_enqueue(ds_queue_t* q, void* data) { ds_queue_t* q, void* data = ds_queue_t* q, void* data; 
+      |                                                                      ^
+src/ds/queue.c:47:41: note: previous definition is here
+   47 | ds_error_t ds_queue_enqueue(ds_queue_t* q, void* data) { ds_queue_t* q, void* data = ds_queue_t* q, void* data; 
+      |                                         ^
+src/ds/queue.c:47:73: error: expected identifier or '('
+   47 | ds_error_t ds_queue_enqueue(ds_queue_t* q, void* data) { ds_queue_t* q, void* data = ds_queue_t* q, void* data; 
+      |                                                                         ^
+src/ds/queue.c:47:72: error: expected ';' at end of declaration
+   47 | ds_error_t ds_queue_enqueue(ds_queue_t* q, void* data) { ds_queue_t* q, void* data = ds_queue_t* q, void* data; 
+      |                                                                        ^
+      |                                                                        ;
+src/ds/queue.c:47:79: error: redefinition of 'data'
+   47 | ds_error_t ds_queue_enqueue(ds_queue_t* q, void* data) { ds_queue_t* q, void* data = ds_queue_t* q, void* data; 
+      |                                                                               ^
+src/ds/queue.c:47:50: note: previous definition is here
+   47 | ds_error_t ds_queue_enqueue(ds_queue_t* q, void* data) { ds_queue_t* q, void* data = ds_queue_t* q, void* data; 
+      |                                                  ^
+src/ds/queue.c:47:86: error: unexpected type name 'ds_queue_t': expected expression
+   47 | ds_error_t ds_queue_enqueue(ds_queue_t* q, void* data) { ds_queue_t* q, void* data = ds_queue_t* q, void* data; 
+      |                                                                                      ^
+src/ds/queue.c:47:101: error: expected identifier or '('
+   47 | ds_error_t ds_queue_enqueue(ds_queue_t* q, void* data) { ds_queue_t* q, void* data = ds_queue_t* q, void* data; 
+      |                                                                                                     ^
+src/ds/queue.c:47:100: error: expected ';' at end of declaration
+   47 | ds_error_t ds_queue_enqueue(ds_queue_t* q, void* data) { ds_queue_t* q, void* data = ds_queue_t* q, void* data; 
+      |                                                                                                    ^
+      |                                                                                                    ;
+src/ds/queue.c:47:107: error: redefinition of 'data'
+   47 | ds_error_t ds_queue_enqueue(ds_queue_t* q, void* data) { ds_queue_t* q, void* data = ds_queue_t* q, void* data; 
+      |                                                                                                           ^
+src/ds/queue.c:47:50: note: previous definition is here
+   47 | ds_error_t ds_queue_enqueue(ds_queue_t* q, void* data) { ds_queue_t* q, void* data = ds_queue_t* q, void* data; 
+      |                                                  ^
+src/ds/queue.c:67:71: error: redefinition of 'q'
+   67 | ds_error_t ds_queue_dequeue(ds_queue_t* q, void** data) { ds_queue_t* q, void** data = ds_queue_t* q, void** data; 
+      |                                                                       ^
+src/ds/queue.c:67:41: note: previous definition is here
+   67 | ds_error_t ds_queue_dequeue(ds_queue_t* q, void** data) { ds_queue_t* q, void** data = ds_queue_t* q, void** data; 
+      |                                         ^
+src/ds/queue.c:67:74: error: expected identifier or '('
+   67 | ds_error_t ds_queue_dequeue(ds_queue_t* q, void** data) { ds_queue_t* q, void** data = ds_queue_t* q, void** data; 
+      |                                                                          ^
+src/ds/queue.c:67:73: error: expected ';' at end of declaration
+   67 | ds_error_t ds_queue_dequeue(ds_queue_t* q, void** data) { ds_queue_t* q, void** data = ds_queue_t* q, void** data; 
+      |                                                                         ^
+      |                                                                         ;
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+In file included from src/ds/round_robin.c:3:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/round_robin.c:4:
+In file included from include/queue.h:6:
+src/ds/../../include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+src/ds/round_robin.c:3:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    3 | #include "../../include/data_structures.h"
+      |          ^
+include/queue.h:6:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    6 | #include "data_structures.h"
+      |          ^
+src/ds/../../include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/round_robin.c:4:
+In file included from include/queue.h:6:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at src/ds/../../include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/round_robin.c:5:
+In file included from src/ds/../../include/ds/round_robin.h:6:
+src/ds/../../include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+src/ds/round_robin.c:3:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    3 | #include "../../include/data_structures.h"
+      |          ^
+src/ds/../../include/ds/round_robin.h:6:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    6 | #include "../data_structures.h" // ds_process_t, ds_error_t など共通型の利用
+      |          ^
+src/ds/../../include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/round_robin.c:5:
+In file included from src/ds/../../include/ds/round_robin.h:6:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at src/ds/../../include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/ds/round_robin.c:21:85: error: redefinition of 'time_quantum'
+   21 | ds_round_robin_scheduler_t* ds_round_robin_scheduler_create(int time_quantum) { int time_quantum = int time_quantum; 
+      |                                                                                     ^
+src/ds/round_robin.c:21:65: note: previous definition is here
+   21 | ds_round_robin_scheduler_t* ds_round_robin_scheduler_create(int time_quantum) { int time_quantum = int time_quantum; 
+      |                                                                 ^
+src/ds/round_robin.c:21:100: error: expected expression
+   21 | ds_round_robin_scheduler_t* ds_round_robin_scheduler_create(int time_quantum) { int time_quantum = int time_quantum; 
+      |                                                                                                    ^
+src/ds/round_robin.c:27:36: error: too few arguments to function call, single argument 'capacity' was not specified
+   27 |     sched->queue = ds_queue_create();
+      |                    ~~~~~~~~~~~~~~~ ^
+include/queue.h:19:13: note: 'ds_queue_create' declared here
+   19 | ds_queue_t* ds_queue_create(size_t capacity);
+      |             ^               ~~~~~~~~~~~~~~~
+src/ds/round_robin.c:37:110: error: redefinition of 'sched'
+   37 | ds_error_t ds_round_robin_scheduler_destroy(ds_round_robin_scheduler_t* sched) { ds_round_robin_scheduler_t* sched = ds_round_robin_scheduler_t* sched; 
+      |                                                                                                              ^
+src/ds/round_robin.c:37:73: note: previous definition is here
+   37 | ds_error_t ds_round_robin_scheduler_destroy(ds_round_robin_scheduler_t* sched) { ds_round_robin_scheduler_t* sched = ds_round_robin_scheduler_t* sched; 
+      |                                                                         ^
+src/ds/round_robin.c:37:118: error: unexpected type name 'ds_round_robin_scheduler_t': expected expression
+   37 | ds_error_t ds_round_robin_scheduler_destroy(ds_round_robin_scheduler_t* sched) { ds_round_robin_scheduler_t* sched = ds_round_robin_scheduler_t* sched; 
+      |                                                                                                                      ^
+src/ds/round_robin.c:44:143: error: redefinition of 'sched'
+   44 | ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sched, const ds_process_t* process) { ds_round_robin_scheduler_t* sched, const ds_process_t* process = ds_round_robin_scheduler_t* sched, const ds_process_t* process; 
+      |                                                                                                                                               ^
+src/ds/round_robin.c:44:77: note: previous definition is here
+   44 | ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sched, const ds_process_t* process) { ds_round_robin_scheduler_t* sched, const ds_process_t* process = ds_round_robin_scheduler_t* sched, const ds_process_t* process; 
+      |                                                                             ^
+src/ds/round_robin.c:44:150: error: expected identifier or '('
+   44 | ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sched, const ds_process_t* process) { ds_round_robin_scheduler_t* sched, const ds_process_t* process = ds_round_robin_scheduler_t* sched, const ds_process_t* process; 
+      |                                                                                                                                                      ^
+src/ds/round_robin.c:44:149: error: expected ';' at end of declaration
+   44 | ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sched, const ds_process_t* process) { ds_round_robin_scheduler_t* sched, const ds_process_t* process = ds_round_robin_scheduler_t* sched, const ds_process_t* process; 
+      |                                                                                                                                                     ^
+      |                                                                                                                                                     ;
+src/ds/round_robin.c:44:170: error: redefinition of 'process'
+   44 | ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sched, const ds_process_t* process) { ds_round_robin_scheduler_t* sched, const ds_process_t* process = ds_round_robin_scheduler_t* sched, const ds_process_t* process; 
+      |                                                                                                                                                                          ^
+src/ds/round_robin.c:44:104: note: previous definition is here
+   44 | ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sched, const ds_process_t* process) { ds_round_robin_scheduler_t* sched, const ds_process_t* process = ds_round_robin_scheduler_t* sched, const ds_process_t* process; 
+      |                                                                                                        ^
+src/ds/round_robin.c:44:180: error: unexpected type name 'ds_round_robin_scheduler_t': expected expression
+   44 | ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sched, const ds_process_t* process) { ds_round_robin_scheduler_t* sched, const ds_process_t* process = ds_round_robin_scheduler_t* sched, const ds_process_t* process; 
+      |                                                                                                                                                                                    ^
+src/ds/round_robin.c:44:215: error: expected identifier or '('
+   44 | ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sched, const ds_process_t* process) { ds_round_robin_scheduler_t* sched, const ds_process_t* process = ds_round_robin_scheduler_t* sched, const ds_process_t* process; 
+      |                                                                                                                                                                                                                       ^
+src/ds/round_robin.c:44:214: error: expected ';' at end of declaration
+   44 | ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sched, const ds_process_t* process) { ds_round_robin_scheduler_t* sched, const ds_process_t* process = ds_round_robin_scheduler_t* sched, const ds_process_t* process; 
+      |                                                                                                                                                                                                                      ^
+      |                                                                                                                                                                                                                      ;
+src/ds/round_robin.c:44:235: error: redefinition of 'process'
+   44 | ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sched, const ds_process_t* process) { ds_round_robin_scheduler_t* sched, const ds_process_t* process = ds_round_robin_scheduler_t* sched, const ds_process_t* process; 
+      |                                                                                                                                                                                                                                           ^
+src/ds/round_robin.c:44:104: note: previous definition is here
+   44 | ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* sched, const ds_process_t* process) { ds_round_robin_scheduler_t* sched, const ds_process_t* process = ds_round_robin_scheduler_t* sched, const ds_process_t* process; 
+      |                                                                                                        ^
+src/ds/round_robin.c:56:146: error: redefinition of 'sched'
+   56 | ds_error_t ds_round_robin_scheduler_get_next_process(ds_round_robin_scheduler_t* sched, ds_process_t* process_out) { ds_round_robin_scheduler_t* sched, ds_process_t* process_out = ds_round_robin_scheduler_t* sched, ds_process_t* process_out; 
+      |                                                                                                                                                  ^
+src/ds/round_robin.c:56:82: note: previous definition is here
+   56 | ds_error_t ds_round_robin_scheduler_get_next_process(ds_round_robin_scheduler_t* sched, ds_process_t* process_out) { ds_round_robin_scheduler_t* sched, ds_process_t* process_out = ds_round_robin_scheduler_t* sched, ds_process_t* process_out; 
+      |                                                                                  ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+In file included from src/ds/rpn_calculator.c:1:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/rpn_calculator.c:2:
+In file included from include/stack.h:6:
+src/ds/../../include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+src/ds/rpn_calculator.c:1:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    1 | #include "../../include/data_structures.h"
+      |          ^
+include/stack.h:6:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    6 | #include "data_structures.h"
+      |          ^
+src/ds/../../include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/rpn_calculator.c:2:
+In file included from include/stack.h:6:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at src/ds/../../include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/rpn_calculator.c:3:
+In file included from src/ds/../../include/ds/rpn_calculator.h:5:
+src/ds/../../include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+src/ds/rpn_calculator.c:1:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    1 | #include "../../include/data_structures.h"
+      |          ^
+src/ds/../../include/ds/rpn_calculator.h:5:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    5 | #include "../data_structures.h" // 共通型（ds_error_tなど）
+      |          ^
+src/ds/../../include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/rpn_calculator.c:3:
+In file included from src/ds/../../include/ds/rpn_calculator.h:5:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at src/ds/../../include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/ds/rpn_calculator.c:35:35: error: too few arguments to function call, single argument 'capacity' was not specified
+   35 |     calc->stack = ds_stack_create();
+      |                   ~~~~~~~~~~~~~~~ ^
+include/stack.h:19:13: note: 'ds_stack_create' declared here
+   19 | ds_stack_t* ds_stack_create(size_t capacity);
+      |             ^               ~~~~~~~~~~~~~~~
+src/ds/rpn_calculator.c:45:38: error: expected parameter declarator
+   45 | ds_error_t ds_rpn_calculator_destroy(__attribute__((unused)) 0)
+      |                                      ^
+src/ds/rpn_calculator.c:45:62: error: expected ')'
+   45 | ds_error_t ds_rpn_calculator_destroy(__attribute__((unused)) 0)
+      |                                                              ^
+src/ds/rpn_calculator.c:45:37: note: to match this '('
+   45 | ds_error_t ds_rpn_calculator_destroy(__attribute__((unused)) 0)
+      |                                     ^
+src/ds/rpn_calculator.c:45:12: error: conflicting types for 'ds_rpn_calculator_destroy'
+   45 | ds_error_t ds_rpn_calculator_destroy(__attribute__((unused)) 0)
+      |            ^
+src/ds/../../include/ds/rpn_calculator.h:15:12: note: previous declaration is here
+   15 | ds_error_t ds_rpn_calculator_destroy(ds_rpn_calculator_t* calc);
+      |            ^
+src/ds/rpn_calculator.c:47:10: error: use of undeclared identifier 'calc'; did you mean 'scalb'?
+   47 |     if (!calc)
+      |          ^~~~
+      |          scalb
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/math.h:705:15: note: 'scalb' declared here
+  705 | extern double scalb(double, double); 
+      |               ^
+src/ds/rpn_calculator.c:47:10: error: address of function 'scalb' will always evaluate to 'true' [-Werror,-Wpointer-bool-conversion]
+   47 |     if (!calc)
+      |         ~^~~~
+src/ds/rpn_calculator.c:47:10: note: prefix with the address-of operator to silence this warning
+   47 |     if (!calc)
+      |          ^
+      |          &
+src/ds/rpn_calculator.c:49:22: error: use of undeclared identifier 'calc'
+   49 |     ds_stack_destroy(calc->stack);
+      |                      ^
+src/ds/rpn_calculator.c:50:13: error: use of undeclared identifier 'calc'; did you mean 'scalb'?
+   50 |     ds_free(calc);
+      |             ^~~~
+      |             scalb
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/math.h:705:15: note: 'scalb' declared here
+  705 | extern double scalb(double, double); 
+      |               ^
+src/ds/rpn_calculator.c:54:36: error: expected parameter declarator
+   54 | ds_error_t ds_rpn_calculator_reset(__attribute__((unused)) 0)
+      |                                    ^
+src/ds/rpn_calculator.c:54:60: error: expected ')'
+   54 | ds_error_t ds_rpn_calculator_reset(__attribute__((unused)) 0)
+      |                                                            ^
+src/ds/rpn_calculator.c:54:35: note: to match this '('
+   54 | ds_error_t ds_rpn_calculator_reset(__attribute__((unused)) 0)
+      |                                   ^
+src/ds/rpn_calculator.c:54:12: error: conflicting types for 'ds_rpn_calculator_reset'
+   54 | ds_error_t ds_rpn_calculator_reset(__attribute__((unused)) 0)
+      |            ^
+src/ds/../../include/ds/rpn_calculator.h:18:12: note: previous declaration is here
+   18 | ds_error_t ds_rpn_calculator_reset(ds_rpn_calculator_t* calc);
+      |            ^
+src/ds/rpn_calculator.c:56:10: error: use of undeclared identifier 'calc'; did you mean 'scalb'?
+   56 |     if (!calc)
+      |          ^~~~
+      |          scalb
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/math.h:705:15: note: 'scalb' declared here
+  705 | extern double scalb(double, double); 
+      |               ^
+src/ds/rpn_calculator.c:56:10: error: address of function 'scalb' will always evaluate to 'true' [-Werror,-Wpointer-bool-conversion]
+   56 |     if (!calc)
+      |         ~^~~~
+src/ds/rpn_calculator.c:56:10: note: prefix with the address-of operator to silence this warning
+   56 |     if (!calc)
+      |          ^
+      |          &
+src/ds/rpn_calculator.c:58:12: error: call to undeclared function 'ds_stack_reset'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+   58 |     return ds_stack_reset(calc->stack);
+      |            ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+In file included from src/ds/stack.c:3:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/stack.c:4:
+In file included from include/stack.h:6:
+src/ds/../../include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+src/ds/stack.c:3:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    3 | #include "../../include/data_structures.h"
+      |          ^
+include/stack.h:6:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    6 | #include "data_structures.h"
+      |          ^
+src/ds/../../include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/stack.c:4:
+In file included from include/stack.h:6:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at src/ds/../../include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/ds/stack.c:23:55: error: redefinition of 'capacity'
+   23 | ds_stack_t* ds_stack_create(size_t capacity) { size_t capacity = size_t capacity; 
+      |                                                       ^
+src/ds/stack.c:23:36: note: previous definition is here
+   23 | ds_stack_t* ds_stack_create(size_t capacity) { size_t capacity = size_t capacity; 
+      |                                    ^
+src/ds/stack.c:23:66: error: unexpected type name 'size_t': expected expression
+   23 | ds_stack_t* ds_stack_create(size_t capacity) { size_t capacity = size_t capacity; 
+      |                                                                  ^
+src/ds/stack.c:23:72: error: expected ';' at end of declaration
+   23 | ds_stack_t* ds_stack_create(size_t capacity) { size_t capacity = size_t capacity; 
+      |                                                                        ^
+      |                                                                        ;
+src/ds/stack.c:23:36: error: unused parameter 'capacity' [-Werror,-Wunused-parameter]
+   23 | ds_stack_t* ds_stack_create(size_t capacity) { size_t capacity = size_t capacity; 
+      |                                    ^
+src/ds/stack.c:43:12: error: conflicting types for 'ds_stack_destroy'
+   43 | ds_error_t ds_stack_destroy(ds_stack_t* stack) { ds_stack_t* stack = ds_stack_t* stack; 
+      |            ^
+include/stack.h:22:6: note: previous declaration is here
+   22 | void ds_stack_destroy(ds_stack_t* stack);
+      |      ^
+src/ds/stack.c:43:62: error: redefinition of 'stack'
+   43 | ds_error_t ds_stack_destroy(ds_stack_t* stack) { ds_stack_t* stack = ds_stack_t* stack; 
+      |                                                              ^
+src/ds/stack.c:43:41: note: previous definition is here
+   43 | ds_error_t ds_stack_destroy(ds_stack_t* stack) { ds_stack_t* stack = ds_stack_t* stack; 
+      |                                         ^
+src/ds/stack.c:43:70: error: unexpected type name 'ds_stack_t': expected expression
+   43 | ds_error_t ds_stack_destroy(ds_stack_t* stack) { ds_stack_t* stack = ds_stack_t* stack; 
+      |                                                                      ^
+src/ds/stack.c:53:71: error: redefinition of 'stack'
+   53 | ds_error_t ds_stack_push(ds_stack_t* stack, void* data) { ds_stack_t* stack, void* data = ds_stack_t* stack, void* data; 
+      |                                                                       ^
+src/ds/stack.c:53:38: note: previous definition is here
+   53 | ds_error_t ds_stack_push(ds_stack_t* stack, void* data) { ds_stack_t* stack, void* data = ds_stack_t* stack, void* data; 
+      |                                      ^
+src/ds/stack.c:53:78: error: expected identifier or '('
+   53 | ds_error_t ds_stack_push(ds_stack_t* stack, void* data) { ds_stack_t* stack, void* data = ds_stack_t* stack, void* data; 
+      |                                                                              ^
+src/ds/stack.c:53:77: error: expected ';' at end of declaration
+   53 | ds_error_t ds_stack_push(ds_stack_t* stack, void* data) { ds_stack_t* stack, void* data = ds_stack_t* stack, void* data; 
+      |                                                                             ^
+      |                                                                             ;
+src/ds/stack.c:53:84: error: redefinition of 'data'
+   53 | ds_error_t ds_stack_push(ds_stack_t* stack, void* data) { ds_stack_t* stack, void* data = ds_stack_t* stack, void* data; 
+      |                                                                                    ^
+src/ds/stack.c:53:51: note: previous definition is here
+   53 | ds_error_t ds_stack_push(ds_stack_t* stack, void* data) { ds_stack_t* stack, void* data = ds_stack_t* stack, void* data; 
+      |                                                   ^
+src/ds/stack.c:53:91: error: unexpected type name 'ds_stack_t': expected expression
+   53 | ds_error_t ds_stack_push(ds_stack_t* stack, void* data) { ds_stack_t* stack, void* data = ds_stack_t* stack, void* data; 
+      |                                                                                           ^
+src/ds/stack.c:53:110: error: expected identifier or '('
+   53 | ds_error_t ds_stack_push(ds_stack_t* stack, void* data) { ds_stack_t* stack, void* data = ds_stack_t* stack, void* data; 
+      |                                                                                                              ^
+src/ds/stack.c:53:109: error: expected ';' at end of declaration
+   53 | ds_error_t ds_stack_push(ds_stack_t* stack, void* data) { ds_stack_t* stack, void* data = ds_stack_t* stack, void* data; 
+      |                                                                                                             ^
+      |                                                                                                             ;
+src/ds/stack.c:53:116: error: redefinition of 'data'
+   53 | ds_error_t ds_stack_push(ds_stack_t* stack, void* data) { ds_stack_t* stack, void* data = ds_stack_t* stack, void* data; 
+      |                                                                                                                    ^
+src/ds/stack.c:53:51: note: previous definition is here
+   53 | ds_error_t ds_stack_push(ds_stack_t* stack, void* data) { ds_stack_t* stack, void* data = ds_stack_t* stack, void* data; 
+      |                                                   ^
+src/ds/stack.c:75:75: error: redefinition of 'stack'
+   75 | ds_error_t ds_stack_pop(ds_stack_t* stack, void** out_data) { ds_stack_t* stack, void** out_data = ds_stack_t* stack, void** out_data; 
+      |                                                                           ^
+src/ds/stack.c:75:37: note: previous definition is here
+   75 | ds_error_t ds_stack_pop(ds_stack_t* stack, void** out_data) { ds_stack_t* stack, void** out_data = ds_stack_t* stack, void** out_data; 
+      |                                     ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+In file included from src/ds/statistics.c:1:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/statistics.c:2:
+include/statistics.h:30:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t')
+   30 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/ds/statistics.c:6:12: error: static declaration of 'sum' follows non-static declaration
+    6 | static int sum(const int *data, size_t size) { const int *data, size_t size = const int *data, size_t size; 
+      |            ^
+include/statistics.h:40:5: note: previous declaration is here
+   40 | int sum(const int *data, size_t size);
+      |     ^
+src/ds/statistics.c:6:59: error: redefinition of 'data'
+    6 | static int sum(const int *data, size_t size) { const int *data, size_t size = const int *data, size_t size; 
+      |                                                           ^
+src/ds/statistics.c:6:27: note: previous definition is here
+    6 | static int sum(const int *data, size_t size) { const int *data, size_t size = const int *data, size_t size; 
+      |                           ^
+src/ds/statistics.c:6:71: error: expected ';' at end of declaration
+    6 | static int sum(const int *data, size_t size) { const int *data, size_t size = const int *data, size_t size; 
+      |                                                                       ^
+      |                                                                       ;
+src/ds/statistics.c:8:17: error: expected ';' in 'for' statement specifier
+    8 |     for (size_t i = 0; i < size; i++) s += data[i];
+      |                 ^
+src/ds/statistics.c:8:19: error: using the result of an assignment as a condition without parentheses [-Werror,-Wparentheses]
+    8 |     for (size_t i = 0; i < size; i++) s += data[i];
+      |                 ~~^~~
+src/ds/statistics.c:8:19: note: place parentheses around the assignment to silence this warning
+    8 |     for (size_t i = 0; i < size; i++) s += data[i];
+      |                   ^  
+      |                 (    )
+src/ds/statistics.c:8:19: note: use '==' to turn this assignment into an equality comparison
+    8 |     for (size_t i = 0; i < size; i++) s += data[i];
+      |                   ^
+      |                   ==
+src/ds/statistics.c:8:17: error: use of undeclared identifier 'i'
+    8 |     for (size_t i = 0; i < size; i++) s += data[i];
+      |                 ^
+src/ds/statistics.c:8:24: error: use of undeclared identifier 'i'
+    8 |     for (size_t i = 0; i < size; i++) s += data[i];
+      |                        ^
+src/ds/statistics.c:8:32: error: expected ')'
+    8 |     for (size_t i = 0; i < size; i++) s += data[i];
+      |                                ^
+src/ds/statistics.c:8:9: note: to match this '('
+    8 |     for (size_t i = 0; i < size; i++) s += data[i];
+      |         ^
+src/ds/statistics.c:8:34: error: use of undeclared identifier 'i'
+    8 |     for (size_t i = 0; i < size; i++) s += data[i];
+      |                                  ^
+src/ds/statistics.c:8:10: error: expression result unused [-Werror,-Wunused-value]
+    8 |     for (size_t i = 0; i < size; i++) s += data[i];
+      |          ^~~~~~
+src/ds/statistics.c:12:12: error: static declaration of 'min' follows non-static declaration
+   12 | static int min(const int *data, size_t size) { const int *data, size_t size = const int *data, size_t size; 
+      |            ^
+include/statistics.h:41:5: note: previous declaration is here
+   41 | int min(const int *data, size_t size);
+      |     ^
+src/ds/statistics.c:12:59: error: redefinition of 'data'
+   12 | static int min(const int *data, size_t size) { const int *data, size_t size = const int *data, size_t size; 
+      |                                                           ^
+src/ds/statistics.c:12:27: note: previous definition is here
+   12 | static int min(const int *data, size_t size) { const int *data, size_t size = const int *data, size_t size; 
+      |                           ^
+src/ds/statistics.c:12:71: error: expected ';' at end of declaration
+   12 | static int min(const int *data, size_t size) { const int *data, size_t size = const int *data, size_t size; 
+      |                                                                       ^
+      |                                                                       ;
+src/ds/statistics.c:14:17: error: expected ';' in 'for' statement specifier
+   14 |     for (size_t i = 1; i < size; i++) if (data[i] < m) m = data[i];
+      |                 ^
+src/ds/statistics.c:14:19: error: using the result of an assignment as a condition without parentheses [-Werror,-Wparentheses]
+   14 |     for (size_t i = 1; i < size; i++) if (data[i] < m) m = data[i];
+      |                 ~~^~~
+src/ds/statistics.c:14:19: note: place parentheses around the assignment to silence this warning
+   14 |     for (size_t i = 1; i < size; i++) if (data[i] < m) m = data[i];
+      |                   ^  
+      |                 (    )
+src/ds/statistics.c:14:19: note: use '==' to turn this assignment into an equality comparison
+   14 |     for (size_t i = 1; i < size; i++) if (data[i] < m) m = data[i];
+      |                   ^
+      |                   ==
+src/ds/statistics.c:14:17: error: use of undeclared identifier 'i'
+   14 |     for (size_t i = 1; i < size; i++) if (data[i] < m) m = data[i];
+      |                 ^
+src/ds/statistics.c:14:24: error: use of undeclared identifier 'i'
+   14 |     for (size_t i = 1; i < size; i++) if (data[i] < m) m = data[i];
+      |                        ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+In file included from src/ds/url_shortener.c:2:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct ds_stats_t' vs 'struct ds_stats_t' (aka 'ds_stats_t'))
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+In file included from src/ds/url_shortener.c:3:
+In file included from src/ds/../../include/ds/url_shortener.h:6:
+src/ds/../../include/data_structures.h:80:16: error: redefinition of 'ds_stats_t'
+   80 | typedef struct ds_stats_t {
+      |                ^
+src/ds/url_shortener.c:2:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    2 | #include "../../include/data_structures.h"
+      |          ^
+src/ds/../../include/ds/url_shortener.h:6:10: note: 'src/ds/../../include/data_structures.h' included multiple times, additional include site here
+    6 | #include "../data_structures.h"// ds_error_t型など共通定義
+      |          ^
+src/ds/../../include/data_structures.h:80:16: note: unguarded header; consider using #ifdef guards or #pragma once
+   80 | typedef struct ds_stats_t {
+      |                ^
+In file included from src/ds/url_shortener.c:3:
+In file included from src/ds/../../include/ds/url_shortener.h:6:
+src/ds/../../include/data_structures.h:87:3: error: typedef redefinition with different types ('struct (unnamed struct at src/ds/../../include/data_structures.h:80:16)' vs 'struct ds_stats_t')
+   87 | } ds_stats_t;
+      |   ^
+src/ds/../../include/data_structures.h:54:3: note: previous definition is here
+   54 | } ds_stats_t;
+      |   ^
+src/ds/url_shortener.c:18:92: error: redefinition of 'url'
+   18 | static void generate_short_code(const char* url, char* out, size_t out_size) { const char* url, char* out, size_t out_size = const char* url, char* out, size_t out_size; 
+      |                                                                                            ^
+src/ds/url_shortener.c:18:45: note: previous definition is here
+   18 | static void generate_short_code(const char* url, char* out, size_t out_size) { const char* url, char* out, size_t out_size = const char* url, char* out, size_t out_size; 
+      |                                             ^
+src/ds/url_shortener.c:18:97: error: expected identifier or '('
+   18 | static void generate_short_code(const char* url, char* out, size_t out_size) { const char* url, char* out, size_t out_size = const char* url, char* out, size_t out_size; 
+      |                                                                                                 ^
+src/ds/url_shortener.c:18:96: error: expected ';' at end of declaration
+   18 | static void generate_short_code(const char* url, char* out, size_t out_size) { const char* url, char* out, size_t out_size = const char* url, char* out, size_t out_size; 
+      |                                                                                                ^
+      |                                                                                                ;
+src/ds/url_shortener.c:18:103: error: redefinition of 'out'
+   18 | static void generate_short_code(const char* url, char* out, size_t out_size) { const char* url, char* out, size_t out_size = const char* url, char* out, size_t out_size; 
+      |                                                                                                       ^
+src/ds/url_shortener.c:18:56: note: previous definition is here
+   18 | static void generate_short_code(const char* url, char* out, size_t out_size) { const char* url, char* out, size_t out_size = const char* url, char* out, size_t out_size; 
+      |                                                        ^
+src/ds/url_shortener.c:18:114: error: expected ';' at end of declaration
+   18 | static void generate_short_code(const char* url, char* out, size_t out_size) { const char* url, char* out, size_t out_size = const char* url, char* out, size_t out_size; 
+      |                                                                                                                  ^
+      |                                                                                                                  ;
+src/ds/url_shortener.c:27:58: error: expected identifier or '('
+   27 | ds_url_shortener_t* ds_url_shortener_create(void) { void = void; 
+      |                                                          ^
+src/ds/url_shortener.c:37:83: error: redefinition of 'us'
+   37 | ds_error_t ds_url_shortener_destroy(ds_url_shortener_t* us) { ds_url_shortener_t* us = ds_url_shortener_t* us; 
+      |                                                                                   ^
+src/ds/url_shortener.c:37:57: note: previous definition is here
+   37 | ds_error_t ds_url_shortener_destroy(ds_url_shortener_t* us) { ds_url_shortener_t* us = ds_url_shortener_t* us; 
+      |                                                         ^
+src/ds/url_shortener.c:37:88: error: unexpected type name 'ds_url_shortener_t': expected expression
+   37 | ds_error_t ds_url_shortener_destroy(ds_url_shortener_t* us) { ds_url_shortener_t* us = ds_url_shortener_t* us; 
+      |                                                                                        ^
+src/ds/url_shortener.c:43:134: error: redefinition of 'us'
+   43 | ds_error_t ds_url_shortener_shorten(ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size) { ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size = ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size; 
+      |                                                                                                                                      ^
+src/ds/url_shortener.c:43:57: note: previous definition is here
+   43 | ds_error_t ds_url_shortener_shorten(ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size) { ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size = ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size; 
+      |                                                         ^
+src/ds/url_shortener.c:43:138: error: expected identifier or '('
+   43 | ds_error_t ds_url_shortener_shorten(ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size) { ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size = ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size; 
+      |                                                                                                                                          ^
+src/ds/url_shortener.c:43:137: error: expected ';' at end of declaration
+   43 | ds_error_t ds_url_shortener_shorten(ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size) { ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size = ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size; 
+      |                                                                                                                                         ^
+      |                                                                                                                                         ;
+src/ds/url_shortener.c:43:150: error: redefinition of 'url'
+   43 | ds_error_t ds_url_shortener_shorten(ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size) { ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size = ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size; 
+      |                                                                                                                                                      ^
+src/ds/url_shortener.c:43:73: note: previous definition is here
+   43 | ds_error_t ds_url_shortener_shorten(ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size) { ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size = ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size; 
+      |                                                                         ^
+src/ds/url_shortener.c:43:155: error: expected identifier or '('
+   43 | ds_error_t ds_url_shortener_shorten(ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size) { ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size = ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size; 
+      |                                                                                                                                                           ^
+src/ds/url_shortener.c:43:154: error: expected ';' at end of declaration
+   43 | ds_error_t ds_url_shortener_shorten(ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size) { ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size = ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size; 
+      |                                                                                                                                                          ^
+      |                                                                                                                                                          ;
+src/ds/url_shortener.c:43:161: error: redefinition of 'out_short'
+   43 | ds_error_t ds_url_shortener_shorten(ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size) { ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size = ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size; 
+      |                                                                                                                                                                 ^
+src/ds/url_shortener.c:43:84: note: previous definition is here
+   43 | ds_error_t ds_url_shortener_shorten(ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size) { ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size = ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size; 
+      |                                                                                    ^
+src/ds/url_shortener.c:43:178: error: expected ';' at end of declaration
+   43 | ds_error_t ds_url_shortener_shorten(ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size) { ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size = ds_url_shortener_t* us, const char* url, char* out_short, size_t out_size; 
+      |                                                                                                                                                                                  ^
+      |                                                                                                                                                                                  ;
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+make: *** [build] Error 1

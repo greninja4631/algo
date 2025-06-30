@@ -1,0 +1,8 @@
+typedef struct ds_stats_t {
+    int sum;
+    int min;
+    int max;
+    double average;
+    double median;
+    int mode;
+} ds_stats_t;
