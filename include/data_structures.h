@@ -5,8 +5,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
+#include "logger.h"  // ロガー機能が必要ならここでinclude
 
-// ---------- エラー・ログ定義 ----------
+// ---------- エラー定義 ----------
 typedef enum {
     DS_SUCCESS = 0,
     DS_ERR_NULL_POINTER,
@@ -22,19 +23,11 @@ typedef enum {
     DS_ERR_SYSTEM_FAILURE
 } ds_error_t;
 
-typedef enum {
-    DS_LOG_DEBUG = 0,
-    DS_LOG_INFO,
-    DS_LOG_WARN,
-    DS_LOG_ERROR,
-    DS_LOG_FATAL
-} ds_log_level_t;
-
-typedef void (*ds_log_func_t)(ds_log_level_t level, const char* fmt, ...);
-
 // ---------- メモリアロケータ型定義 ----------
 typedef void* (*ds_malloc_func_t)(size_t);
 typedef void  (*ds_free_func_t)(void*);
+
+void ds_set_memory_functions(ds_malloc_func_t malloc_func, ds_free_func_t free_func);
 
 // ---------- 共通ユーティリティ・統計 ----------
 typedef struct ds_stats {
@@ -43,11 +36,6 @@ typedef struct ds_stats {
     size_t   operations_count;
     uint64_t creation_timestamp;
 } ds_stats_t;
-
-// ---------- 共通ユーティリティAPI ----------
-void ds_set_log_function(ds_log_func_t func);
-void ds_log(ds_log_level_t level, const char* fmt, ...);
-void ds_set_memory_functions(ds_malloc_func_t malloc_func, ds_free_func_t free_func);
 
 // ---------- スタック ----------
 typedef struct ds_stack ds_stack_t;
