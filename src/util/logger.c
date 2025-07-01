@@ -1,6 +1,14 @@
 #include "logger.h"
+<<<<<<< HEAD
 // src/util/logger.c
 #include "../../include/data_structures.h"
+=======
+#ifndef DATA_STRUCTURES_H
+#define DATA_STRUCTURES_H
+
+#include "data_structures.h"
+#include <stdarg.h>
+>>>>>>> feature
 #include <stdio.h>
 <<<<<<< HEAD
 #include <stdarg.h>

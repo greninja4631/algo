@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
-#include "logger.h"  // ロガー機能が必要ならここでinclude
+
 
 
 typedef enum {

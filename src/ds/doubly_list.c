@@ -1,5 +1,6 @@
 #include "logger.h"
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "../../include/data_structures.h"
 #include "../../include/ds/doubly_list.h"
 #include "ds/doubly_list.h"
@@ -186,6 +187,8 @@ ds_error_t ds_doubly_list_get_stats(const ds_doubly_list_t* list, ds_stats_t* st
     return DS_SUCCESS;
 }
 =======
+=======
+>>>>>>> feature
 #include <stdio.h>
 #ifndef DATA_STRUCTURES_H
 #define DATA_STRUCTURES_H

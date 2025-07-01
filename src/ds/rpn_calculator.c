@@ -1,9 +1,12 @@
 #include "logger.h"
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "../../include/data_structures.h"
 #include "../../include/ds/stack.h"          // ← 追加！！！！
 #include "../../include/ds/rpn_calculator.h"
 =======
+=======
+>>>>>>> feature
 #include <stdbool.h>
 #include "data_structures.h"
 >>>>>>> feature
