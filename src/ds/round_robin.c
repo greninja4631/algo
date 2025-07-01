@@ -1,3 +1,4 @@
+#include "logger.h"
 #include <stdio.h>
 #ifndef DATA_STRUCTURES_H
 #define DATA_STRUCTURES_H

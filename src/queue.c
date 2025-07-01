@@ -1,3 +1,4 @@
+#include "logger.h"
 // queue.c
 
 #include <stdbool.h>

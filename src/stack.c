@@ -1,3 +1,4 @@
+#include "logger.h"
 #include <stdbool.h>
 #include "data_structures.h"
 #include <stdlib.h>

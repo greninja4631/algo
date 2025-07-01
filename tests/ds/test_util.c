@@ -1,3 +1,4 @@
+#include "logger.h"
 /**
  * @file test_util.c
  * @brief ログ・メトリクス・メモリ管理ユーティリティ層ユニットテスト
