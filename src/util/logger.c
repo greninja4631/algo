@@ -4,6 +4,7 @@
 #include "data_structures.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 // ----- エラーコード -----
 typedef enum {

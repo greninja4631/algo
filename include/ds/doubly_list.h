@@ -1,7 +1,7 @@
 #ifndef DOUBLY_LIST_H
 #define DOUBLY_LIST_H
 
-#include "../data_structures.h" // ds_error_t, ds_stats_t など共通型
+#include "data_structures.h"// ds_error_t, ds_stats_t など共通型
 
 #ifdef __cplusplus
 extern "C" {

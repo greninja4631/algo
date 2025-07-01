@@ -11,7 +11,7 @@
  * - 型安全、戻り値検証、リソースリークなし
  */
 
- #include "../include/data_structures.h"
+#include "data_structures.h"
  #include <stdio.h>
  #include <assert.h>
 

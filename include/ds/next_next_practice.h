@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "../data_structures.h"
+#include "data_structures.h"
+
 
 #ifdef __cplusplus
 extern "C" {

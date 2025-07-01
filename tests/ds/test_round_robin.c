@@ -10,7 +10,7 @@
  * - 拡張・リファクタ容易なテスト設計
  */
 
- #include "../include/data_structures.h"
+#include "data_structures.h"
  #include <stdio.h>
  #include <assert.h>
  #include <string.h>

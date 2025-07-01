@@ -1,7 +1,11 @@
-#include "../include/data_structures.h"
+// queue.c
+
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include "data_structures.h"
 
 // 内部ノード型
 typedef struct ds_queue_node {
@@ -16,13 +20,12 @@ struct ds_queue {
     size_t size;
 };
 
-// メモリ・ログ関数
+// --- グローバル関数ポインタ（staticで明示！） ---
 static ds_malloc_func_t ds_malloc = malloc;
 static ds_free_func_t ds_free = free;
-static void default_log(ds_log_level_t level, const char* fmt, ...);
-static ds_log_func_t ds_log = default_log;
+static ds_log_func_t ds_log = NULL;  // ポイント: staticで定義
 
-// デフォルトログ関数
+// デフォルトログ関数（staticで明示）
 static void default_log(ds_log_level_t level, const char* fmt, ...) {
     (void)level;
     va_list args;
@@ -36,7 +39,8 @@ static void default_log(ds_log_level_t level, const char* fmt, ...) {
  *----------------------------------*/
 
 // Queue Create
-ds_queue_t* ds_queue_create(void) {
+ds_error_t ds_queue_create(ds_queue_t** out_queue) {
+    if (!out_queue) return DS_ERR_NULL_POINTER;
     if (!ds_malloc) ds_malloc = malloc;
     if (!ds_free) ds_free = free;
     if (!ds_log) ds_log = default_log;
@@ -44,11 +48,12 @@ ds_queue_t* ds_queue_create(void) {
     ds_queue_t* q = (ds_queue_t*)ds_malloc(sizeof(ds_queue_t));
     if (!q) {
         ds_log(DS_LOG_ERROR, "[ds_queue_create] Memory allocation failed\n");
-        return NULL;
+        return DS_ERR_ALLOC;
     }
     q->front = q->rear = NULL;
     q->size = 0;
-    return q;
+    *out_queue = q;
+    return DS_SUCCESS;
 }
 
 // Queue Destroy
@@ -57,10 +62,10 @@ ds_error_t ds_queue_destroy(ds_queue_t* queue) {
     ds_queue_node_t* curr = queue->front;
     while (curr) {
         ds_queue_node_t* next = curr->next;
-        if (ds_free) ds_free(curr);
+        ds_free(curr);
         curr = next;
     }
-    if (ds_free) ds_free(queue);
+    ds_free(queue);
     return DS_SUCCESS;
 }
 
@@ -90,7 +95,7 @@ ds_error_t ds_queue_dequeue(ds_queue_t* queue, void** data) {
     *data = node->data;
     queue->front = node->next;
     if (!queue->front) queue->rear = NULL;
-    if (ds_free) ds_free(node);
+    ds_free(node);
     queue->size--;
     return DS_SUCCESS;
 }
@@ -109,7 +114,7 @@ bool ds_queue_is_empty(const ds_queue_t* queue) {
     return queue->size == 0;
 }
 
-// **Size getter (統一！)**
+// Size getter
 size_t ds_queue_size(const ds_queue_t* queue) {
     return queue ? queue->size : 0;
 }
@@ -124,12 +129,12 @@ ds_error_t ds_queue_get_stats(const ds_queue_t* queue, ds_stats_t* stats) {
     return DS_SUCCESS;
 }
 
-// Log function setter
+// ログ関数のsetter
 void ds_set_log_function(ds_log_func_t func) {
     ds_log = func ? func : default_log;
 }
 
-// Memory function setter
+// メモリ関数のsetter
 void ds_set_memory_functions(ds_malloc_func_t malloc_func, ds_free_func_t free_func) {
     ds_malloc = malloc_func ? malloc_func : malloc;
     ds_free = free_func ? free_func : free;

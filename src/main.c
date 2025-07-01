@@ -1,3 +1,5 @@
+#include <stdbool.h>
+#include <stdio.h>
 #include "statistics.h"
 #include <assert.h>
 

@@ -1,7 +1,8 @@
+#include <stdio.h>
 #ifndef DATA_STRUCTURES_H
 #define DATA_STRUCTURES_H
 
-#include "../include/data_structures.h"
+#include "data_structures.h"
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>

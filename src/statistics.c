@@ -1,3 +1,4 @@
+#include <stdbool.h>
 //statistics.cで関数の具体的な計算内容を書く目的だ。
 
 #include "statistics.h"

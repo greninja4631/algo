@@ -10,7 +10,7 @@
  * - サンプル数式を網羅的にテストし、実装品質を担保
  */
 
- #include "../include/data_structures.h"
+#include "data_structures.h"
  #include <stdio.h>
  #include <assert.h>
  #include <string.h>

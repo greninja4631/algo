@@ -2,45 +2,122 @@ docker build -t algo-ci . && docker run --rm -it algo-ci ./run_ci.sh
 
 
 
-✅ エラーを解消するための「修正すべき項目リスト」
 
-1. 全ヘッダの #include パスを正しいものに修正  
-   - 例:  
-     - `#include "../data_structures.h"` → `#include "data_structures.h"`
-     - `#include "lru_cache.h"` → `#include "ds/lru_cache.h"` など  
-     （Makefileの `-I` で `include` ディレクトリが通っている前提）
 
-2. 必要なヘッダファイルが本当に存在しているか確認  
-   - 例: `include/ds/lru_cache.h`, `include/ds/circular_list.h` など
+CプロジェクトAPI設計・実装の統一基準
+1. 型・構造体
+すべての構造体型名は ds_xxx_t で統一
+例：typedef struct ds_stack ds_stack_t;
 
-3. すべての「不透明型」宣言をヘッダで行う  
-   - 例:  
-     ```c
-     typedef struct ds_lru_cache ds_lru_cache_t;
-     ```
-     - 使用する型・関数は必ず正しいヘッダで宣言/include
+関数ポインタ型は ds_xxx_func_t で統一
+例：typedef void (*ds_hashmap_free_func_t)(void*);
 
-4. 型や関数プロトタイプ宣言の漏れをなくす  
-   - `Statistics` 型、`calculate_statistics()` などは使う前に必ず宣言/include
+API引数としては_tを絶対に使わないこと（例外なし）
+例：ds_hashmap_create(size_t cap, ds_hashmap_free_func_t key_free, ...) のように、関数ポインタ型はそのまま使う。
 
-5. C標準型（bool, size_tなど）を使うファイルでヘッダを追加  
-   - 例:  
-     - `#include <stdbool.h>`
-     - `#include <stddef.h>`
+2. 関数名
+API関数名は ds_xxx_yyy() で統一（xxx=モジュール名, yyy=機能名）
 
-6. 同名関数・変数の二重定義を避ける  
-   - 例:  
-     - `ds_log` のグローバル関数とstatic変数名の衝突を解消  
-     - 名前を変える、もしくはstatic変数を削除
+3. エラー設計
+すべてのAPIは ds_error_t 型を戻り値として返す
 
-7. `LOG_ERROR` などの独自マクロやロギングを `ds_log` に統一する
+エラー値は DS_SUCCESS / DS_ERR_XXX で統一
 
-8. `ds_stats_t` など不明な型を使う場合は型定義する  
-   - もしくは、使わない実装に変更する
+モジュールごとに固有エラーは DS_ERR_XXX_YYY で拡張OK
 
-9. `printf` 未定義エラーの場合は `<stdio.h>` を必ず include
+4. 出力値・インスタンス取得の設計
+関数の出力値は outポインタ経由で返す
+例：ds_error_t ds_stack_pop(ds_stack_t* stack, void** out_value);
 
-10. MakefileやDockerfileの `-I` で `include` フォルダが必ず通っているか確認
+5. サイズ・インデックス
+サイズ・個数・インデックス等はすべて size_t で統一
+
+6. .hファイルとinclude設計
+全API用 .hファイルは include/ds/ 配下に置く
+
+#include "ds/xxx.h" で統一
+
+ビルドフラグには -Iinclude -Iinclude/ds を追加
+
+7. 命名規則の徹底
+エラーenumやコールバック関数型も一貫してモジュールprefix付きで命名
+例：ds_hashmap_free_func_t
+
+8. ロガー・アロケータAPI
+共通のロガー、アロケータも外部注入APIとして提供
+例：void ds_set_log_function(ds_log_func_t func);
+
+9. .h/.c設計原則
+構造体本体は.cで定義し、.hはforward宣言のみ
+
+API設計は必ずヘッダー主導（先に.hを書く）
+
+10. Makefile/CMake
+ビルドコマンドは -Iinclude -Iinclude/ds を必ず追加
+
+全てのソースで #include "ds/xxx.h" でOKになるよう設計
+
+11. テストディレクトリ
+テストは tests/ 配下で管理、testファイルも #include "ds/xxx.h" で統一
+
+12. その他
+型名・関数名・enum名は全て「ds_」+モジュール名で衝突防止
+
+拡張性・外部利用しやすさ・CI/CD・大規模開発・リファクタ容易性を最優先
+
+
+13 共通ユーティリティ・型の標準化
+複数モジュールで使う構造体やエラー/ログ型（例: ds_stats_t）は data_structures.h 等の基幹ヘッダに明示的に定義・管理。
+
+14 標準Cヘッダのインクルード徹底
+全ての .h/.c ファイルで #include <stddef.h> #include <stdbool.h> など標準型を直接 include すること。
+
+15. API宣言・実装の型一致
+.hと.cのAPIシグネチャは100%一致させる。食い違いがあればコンパイルエラーで検出される設計にする。
+
+16. デフォルト実装・外部差し替え
+外部注入API（例：ds_log, ds_malloc）はstatic関数ポインタを用意し、常にデフォルト実装を明示。
+
+17. 実装・運用時の注意点（頻発エラーの防止ガイド）
+- APIのシグネチャ（定義/宣言）は100%一致させる
+- bool型利用時は #include <stdbool.h> を各ファイルで
+- グローバル関数ポインタ（ds_log等）はstatic/externの管理に注意
+- typedef, 構造体定義の重複禁止（基幹ヘッダで1回のみ）
+- 外部注入APIはstatic関数ポインタ＋デフォルト実装で
+- Makefile/CMakeで -Iinclude -Iinclude/ds を必ず追加
+
+18. ロガー・グローバル関数ポインタの明示的定義
+グローバル関数ポインタ（例：ds_log）は、必ず static な関数ポインタ変数として各.cファイルに定義すること！
+
+例:
+
+c
+Copy
+Edit
+// queue.c の先頭付近
+static ds_log_func_t ds_log = NULL;
+static void default_log(ds_log_level_t level, const char* fmt, ...);
+デフォルト実装（例：default_log）は必ずstaticで定義し、切替APIで上書きすること
+
+19. APIシグネチャの徹底統一
+.hファイルのAPI宣言と.cファイルのAPI実装は、戻り値・引数を1バイトも違えず完全一致させること
+
+例（NG）：
+
+.h: ds_error_t ds_stack_create(ds_stack_t** out_stack);
+
+.c: ds_stack_t* ds_stack_create(void) { ... }
+→ これは絶対NG。食い違いは即コンパイルエラー！
+
+例（OK）：
+
+.h: ds_error_t ds_stack_create(ds_stack_t** out_stack);
+
+.c: ds_error_t ds_stack_create(ds_stack_t** out_stack) { ... }
+
+
+
+
 
 
 ## 目次

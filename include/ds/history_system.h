@@ -4,7 +4,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include "../data_structures.h"  // ds_command_t型をここから参照
+#include "data_structures.h"
 
 #ifdef __cplusplus
 extern "C" {

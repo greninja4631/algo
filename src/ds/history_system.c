@@ -1,3 +1,5 @@
+#include <stdbool.h>
+#include <stdio.h>
 /**
  * @file history_system.c
  * @brief Undo/Redo履歴システム ADT 実装
@@ -10,7 +12,7 @@
  * - エラー処理・テスト容易性・依存性注入・情報隠蔽を徹底
  */
 
-#include "../include/data_structures.h"
+#include "data_structures.h"
  #include <stdlib.h>
  #include <string.h>
  

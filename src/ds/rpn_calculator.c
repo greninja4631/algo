@@ -1,4 +1,5 @@
-#include "../include/data_structures.h"
+#include <stdbool.h>
+#include "data_structures.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,7 +10,6 @@
 // ---- 依存性注入メモリ/ログ関数（.cファイル内で本当に必要な場合のみstaticで宣言！） ----
 static ds_malloc_func_t ds_malloc = malloc;
 static ds_free_func_t ds_free = free;
-static ds_log_func_t ds_log = NULL;
 
 // デフォルトログ関数（外部から切り替え可能）
 static void default_log(ds_log_level_t level, const char* fmt, ...) {

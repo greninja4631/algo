@@ -1,4 +1,5 @@
-#include "../include/data_structures.h"
+#include <stdbool.h>
+#include "data_structures.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>

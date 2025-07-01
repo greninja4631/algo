@@ -1,9 +1,10 @@
+#include <stdbool.h>
 /**
  * @file url_shortener.c
  * @brief UuRL短縮サービスのサンプル（LRU+HashMap利用例、クラウド・WebAPI化容易）
  */
-#include "../include/data_structures.h"
-#include "lru_cache.h"
+#include "data_structures.h"
+#include "ds/lru_cache.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

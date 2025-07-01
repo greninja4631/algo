@@ -1,12 +1,6 @@
-# ================================
-# Makefile (統計API + 多層構造 生合成)
-# ================================
-
-# --- 変数定義 ---
 CC      := gcc
-CFLAGS  := -Wall -Wextra -Werror -g -O2 -Iinclude
+CFLAGS  := -Wall -Wextra -Werror -g -O2 -Iinclude -Iinclude/ds
 SRC     := $(wildcard src/*.c) $(wildcard src/util/*.c)
-INC     := -Iinclude
 OBJ_DIR := build
 BIN     := $(OBJ_DIR)/main
 DOCS_DIR := docs
@@ -15,9 +9,8 @@ DOCS_DIR := docs
 TESTS   := $(wildcard tests/test_*.c)
 TEST_BIN := $(OBJ_DIR)/test_bin
 
-# 統計API用（個別ビルドにも対応：互換性維持）
+# 統計API用
 STAT_SRC := src/statistics.c src/main.c
-STAT_INC := src/statistics.h
 STAT_BIN := $(OBJ_DIR)/stats
 
 STAT_TEST_SRC := test/test_main.c
@@ -31,39 +24,39 @@ all: build
 # --- ビルド(main) ---
 build: $(SRC)
 	@mkdir -p $(OBJ_DIR)
-	$(CC) $(CFLAGS) $(INC) -o $(BIN) $(SRC)
+	$(CC) $(CFLAGS) -o $(BIN) $(SRC)
 
-# --- 統計APIのみビルド（既存流儀との生合成）---
+# --- 統計APIのみビルド ---
 stats: $(STAT_SRC)
 	@mkdir -p $(OBJ_DIR)
-	$(CC) $(CFLAGS) -Isrc -o $(STAT_BIN) $(STAT_SRC)
+	$(CC) $(CFLAGS) -o $(STAT_BIN) $(STAT_SRC)
 
-# --- ユニットテスト：tests/test_*.cを全て自動実行 ---
+# --- ユニットテスト ---
 test: build
 	@for file in $(TESTS); do \
 		echo "===== RUN: $$file ====="; \
-		$(CC) $(CFLAGS) $(INC) -o $(TEST_BIN) $$file $(SRC); \
+		$(CC) $(CFLAGS) -o $(TEST_BIN) $$file $(SRC); \
 		./$(TEST_BIN); \
 		rm -f $(TEST_BIN); \
 	done
 	@echo "All unit tests passed."
 
-# --- 統計API用テスト（互換性のため残す）---
+# --- 統計API用テスト ---
 stat_test:
 	@mkdir -p $(OBJ_DIR)
-	$(CC) $(CFLAGS) -Isrc -o $(STAT_TEST_BIN) $(STAT_TEST_SRC) src/statistics.c
+	$(CC) $(CFLAGS) -o $(STAT_TEST_BIN) $(STAT_TEST_SRC) src/statistics.c
 	./$(STAT_TEST_BIN)
 
-# --- 静的解析（現場CI/CD・品質担保） ---
+# --- 静的解析 ---
 lint:
 	cppcheck --enable=all --inconclusive --error-exitcode=1 src/ include/
-	clang-tidy src/*.c src/util/*.c -- -Iinclude || true
+	clang-tidy src/*.c src/util/*.c -- -Iinclude -Iinclude/ds || true
 
-# --- ドキュメント生成（Doxygen想定） ---
+# --- ドキュメント生成 ---
 docs:
 	doxygen Doxyfile
 
-# --- メモリリーク検出（valgrind） ---
+# --- メモリリーク検出 ---
 memcheck: test
 	valgrind --leak-check=full $(OBJ_DIR)/test_bin
 

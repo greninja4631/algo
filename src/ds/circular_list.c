@@ -1,5 +1,5 @@
 #include "data_structures.h"
-#include "circular_list.h"
+#include "ds/circular_list.h"
 #include <stdlib.h>
 
 // リスト構造体定義
