@@ -1,3 +1,4 @@
+#include "logger.h"
 <<<<<<< HEAD
 #include "../../include/data_structures.h"
 #include "../../include/ds/url_shortener.h"

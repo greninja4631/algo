@@ -1,3 +1,4 @@
+#include "logger.h"
 <<<<<<< HEAD
 // src/ds/round_robin.c
 #include "../../include/data_structures.h"

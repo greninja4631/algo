@@ -1,3 +1,4 @@
+#include "logger.h"
 // src/util/logger.c
 #include "../../include/data_structures.h"
 #include <stdio.h>

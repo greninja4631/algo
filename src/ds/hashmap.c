@@ -1,3 +1,4 @@
+#include "logger.h"
 #include "../../include/data_structures.h"
 #include "../../include/hashmap.h"
 #include <stdlib.h>
