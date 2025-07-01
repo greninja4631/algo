@@ -45,4 +45,10 @@ double median(const int *data, int size);
 int mode(const int *data, int size);
 Statistics calculate_statistics(const int *data, int size);
 
+<<<<<<< HEAD
 #endif // STATISTICS_H
+=======
+#endif // STATISTICS_H
+
+//成功しました
+>>>>>>> feature

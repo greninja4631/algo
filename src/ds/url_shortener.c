@@ -1,9 +1,20 @@
+<<<<<<< HEAD
 #include "../../include/data_structures.h"
 #include "../../include/ds/url_shortener.h"
+=======
+#include <stdbool.h>
+/**
+ * @file url_shortener.c
+ * @brief UuRL短縮サービスのサンプル（LRU+HashMap利用例、クラウド・WebAPI化容易）
+ */
+#include "data_structures.h"
+#include "ds/lru_cache.h"
+>>>>>>> feature
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+<<<<<<< HEAD
 // ---- 構造体定義 ----
 
 struct ds_url_shortener {
@@ -80,3 +91,43 @@ ds_error_t ds_url_shortener_expand(ds_url_shortener_t* us, const char* short_url
     ds_log(DS_LOG_WARN, "[url_shortener] 該当する短縮URLが見つかりません: %s\n", short_url);
     return DS_ERR_NOT_FOUND;
 }
+=======
+// 超シンプルなID生成（現場ではハッシュ化/乱数/UUID推奨）
+static int next_id = 1;
+static void encode_id(int id, char* out, size_t outlen) {
+    snprintf(out, outlen, "%06d", id); // 6桁ゼロパディング
+}
+
+/// サービス構造体
+typedef struct {
+    lru_cache_t* cache;
+} url_shortener_t;
+
+/// API設計例
+url_shortener_t* url_shortener_create(size_t cap) {
+    url_shortener_t* s = calloc(1, sizeof(url_shortener_t));
+    s->cache = lru_cache_create(cap);
+    return s;
+}
+void url_shortener_destroy(url_shortener_t* s) {
+    if (!s) return;
+    lru_cache_destroy(s->cache);
+    free(s);
+}
+
+/// 新規URL追加（短縮ID返す）
+char* url_shortener_add(url_shortener_t* s, const char* url) {
+    char* id = malloc(8);
+    encode_id(next_id++, id, 8);
+    lru_cache_put(s->cache, id, strdup(url));
+    return id;
+}
+
+/// 短縮ID→元URLを取得
+const char* url_shortener_get(url_shortener_t* s, const char* id) {
+    void* url = NULL;
+    if (lru_cache_get(s->cache, id, &url) == HM_OK)
+        return (const char*)url;
+    return NULL;
+}
+>>>>>>> feature

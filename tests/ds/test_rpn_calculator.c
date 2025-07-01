@@ -3,8 +3,15 @@
 #include <assert.h>
 #include <string.h>
 
+<<<<<<< HEAD:tests/test_rpn_calculator.c
 int main(void) {
     printf("=== RPN Calculator ADT Unit Test Start ===\n");
+=======
+#include "data_structures.h"
+ #include <stdio.h>
+ #include <assert.h>
+ #include <string.h>
+>>>>>>> feature:tests/ds/test_rpn_calculator.c
 
     // 1. 電卓インスタンス生成
     ds_rpn_calculator_t* calc = ds_rpn_calculator_create();

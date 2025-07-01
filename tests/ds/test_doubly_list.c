@@ -1,4 +1,8 @@
+<<<<<<< HEAD:tests/test_doubly_list.c
 #include "../include/ds/doubly_list.h"
+=======
+#include "data_structures.h"
+>>>>>>> feature:tests/ds/test_doubly_list.c
 #include <stdio.h>
 #include <assert.h>
 

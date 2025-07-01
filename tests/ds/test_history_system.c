@@ -1,5 +1,9 @@
+<<<<<<< HEAD:tests/test_history_system.c
 #include "../include/ds/doubly_list.h"
 #include "../include/ds/history_system.h"
+=======
+#include "data_structures.h"
+>>>>>>> feature:tests/ds/test_history_system.c
 #include <stdio.h>
 #include <assert.h>
 

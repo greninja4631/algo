@@ -1,3 +1,4 @@
+<<<<<<< HEAD:tests/test_circular_list.c
 /**
  * @file test_circular_list.c
  * @brief 円環リストADTユニットテスト
@@ -10,6 +11,9 @@
  */
 
 #include "../include/ds/circular_list.h"
+=======
+#include "data_structures.h"
+>>>>>>> feature:tests/ds/test_circular_list.c
 #include <stdio.h>
 #include <assert.h>
 

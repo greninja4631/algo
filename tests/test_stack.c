@@ -19,6 +19,7 @@
  * - stats.total_elementsの値やポインタの値で仕様通りか確認
  */
 
+<<<<<<< HEAD
 #include "../include/ds/stack.h"
 #include <stdio.h>
 #include <assert.h>
@@ -58,6 +59,11 @@ int main(void) {
 
     // 7. 空状態の確認
     assert(ds_stack_is_empty(stack) == true);
+=======
+#include "data_structures.h"
+ #include <stdio.h>
+ #include <assert.h>
+>>>>>>> feature
 
     // 8. 空ポップ・空ピーク時のエラー動作
     assert(ds_stack_pop(stack, &pop_ptr) == DS_ERR_EMPTY_CONTAINER);

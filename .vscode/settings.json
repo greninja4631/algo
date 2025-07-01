@@ -9,6 +9,7 @@
         "string_view": "c",
         "vector": "c",
         "main_practice_c": "c",
+<<<<<<< HEAD
         "time.h": "c",
         "statistics.h": "c",
         "data_structures.h": "c",
@@ -33,3 +34,10 @@
 }
 
 
+=======
+        "time.h": "c"
+    },
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000  // 1000ミリ秒=1秒後に自動保存
+}
+>>>>>>> feature

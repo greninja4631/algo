@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 #include "../../include/data_structures.h"
 #include "../../include/ds/circular_list.h"
+=======
+#include "data_structures.h"
+#include "ds/circular_list.h"
+>>>>>>> feature
 #include <stdlib.h>
 
 // ノード構造体定義（必須）

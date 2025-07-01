@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
@@ -12,6 +13,12 @@ ds_error_t test_stack_operations(void);
 ds_error_t test_queue_operations(void);
 ds_error_t test_undo_redo_system(void);
 ds_error_t test_circular_and_round_robin(void);
+=======
+#include <stdbool.h>
+#include <stdio.h>
+#include "statistics.h"
+#include <assert.h>
+>>>>>>> feature
 
 int main(void) {
     printf("=================================================\n");

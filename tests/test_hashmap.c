@@ -1,4 +1,27 @@
+<<<<<<< HEAD
 #include "../include/ds/hashmap.h"
+=======
+#include "data_structures.h"
+#include <stdio.h>
+
+void free_key(void* key)   { free(key); }
+void free_value(void* val) { free(val); }
+
+int main(void) {
+    ds_hashmap_t* map;
+    ds_hashmap_create(0, free_key, free_value, &map);
+
+    ds_hashmap_put(map, "foo", strdup("bar"));
+    char* val = NULL;
+    if (ds_hashmap_get(map, "foo", (void**)&val) == DS_SUCCESS) {
+        printf("Value: %s\n", val);
+    }
+    ds_hashmap_destroy(map);
+    return 0;
+}
+
+#include "hashmap.h"
+>>>>>>> feature
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

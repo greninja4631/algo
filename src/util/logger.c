@@ -1,7 +1,11 @@
 // src/util/logger.c
 #include "../../include/data_structures.h"
 #include <stdio.h>
+<<<<<<< HEAD
 #include <stdarg.h>
+=======
+#include <stdbool.h>
+>>>>>>> feature
 
 // ===== エラーコード → 文字列 =====
 const char* ds_error_string(ds_error_t err) {

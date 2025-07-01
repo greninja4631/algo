@@ -12,8 +12,14 @@
 #include <stdio.h>
 #include <assert.h>
 
+<<<<<<< HEAD
 int main(void) {
     printf("=== Queue ADT Unit Test Start ===\n");
+=======
+#include "data_structures.h"
+ #include <stdio.h>
+ #include <assert.h>
+>>>>>>> feature
 
     // 1. キュー作成
     ds_queue_t* queue = ds_queue_create();

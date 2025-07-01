@@ -3,8 +3,15 @@
 #include <assert.h>
 #include <string.h>
 
+<<<<<<< HEAD:tests/test_round_robin.c
 int main(void) {
     printf("=== Round Robin Scheduler ADT Unit Test Start ===\n");
+=======
+#include "data_structures.h"
+ #include <stdio.h>
+ #include <assert.h>
+ #include <string.h>
+>>>>>>> feature:tests/ds/test_round_robin.c
 
     ds_round_robin_scheduler_t* scheduler = ds_round_robin_scheduler_create(10);
     assert(scheduler != NULL);
