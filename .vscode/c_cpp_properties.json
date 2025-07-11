@@ -1,17 +1,21 @@
 {
-    "configurations": [
-        {
-            "name": "Mac",
-            "includePath": [
-                "${workspaceFolder}/include",
-                "${workspaceFolder}/include/ds",
-                "${workspaceFolder}/include/util",
-                "/usr/include",
-                "/usr/local/include"
-            ],
-            "defines": [],
-            "intelliSenseMode": "macos-gcc-arm64"
-        }
-    ],
-    "version": 4
+  "configurations": [
+    {
+      "name": "Mac",
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/include/**",
+        "${workspaceFolder}/tests/include",
+        "${workspaceFolder}/tests/include/ds",
+        "${workspaceFolder}/tests/include/util",
+        "${workspaceFolder}/tests/include/algo",
+        "${workspaceFolder}/tests/util",
+        "${workspaceFolder}/tests/ds",
+        "${workspaceFolder}/tests/algo"
+      ],
+      "defines": [],
+      "intelliSenseMode": "macos-gcc-arm64"
+    }
+  ],
+  "version": 4
 }

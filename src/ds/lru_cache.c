@@ -1,7 +1,6 @@
 #include <stdlib.h>
-#include "data_structures.h"
 #include "ds/lru_cache.h"
-#include "hashmap.h"
+#include "ds/hashmap.h"
 #include <string.h>
 
 

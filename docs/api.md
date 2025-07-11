@@ -4,147 +4,104 @@ docker build -t algo-ci . && docker run --rm -it algo-ci ./run_ci.sh
 
 
 
-CプロジェクトAPI設計・実装の統一基準
-1. 型・構造体
-すべての構造体型名は ds_xxx_t で統一
-例：typedef struct ds_stack ds_stack_t;
+上記と下記のコードを既存のコードを含めて、良い部分を残し、悪いい部分を削除して省略せずに再生成して下さい。　　　
 
-関数ポインタ型は ds_xxx_func_t で統一
-例：typedef void (*ds_hashmap_free_func_t)(void*);
+Cプロジェクト API設計・実装 ─ 完全統一ガイドライン
+（2025-07 / CI&CD最適化・テスト基準対応版）
 
-API引数としては_tを絶対に使わないこと（例外なし）
-例：ds_hashmap_create(size_t cap, ds_hashmap_free_func_t key_free, ...) のように、関数ポインタ型はそのまま使う。
+⸻
 
-2. 関数名
-API関数名は ds_xxx_yyy() で統一（xxx=モジュール名, yyy=機能名）
+■ 1. 型・構造体・関数・命名規約
+	•	すべての実体構造体は ds_<module> で宣言し、公開typedefは ds_<module>_t とする。
+	•	forward用typedefだけをヘッダに置き、構造体本体は .c に隠蔽（O-DRY原則）。
+	•	関数ポインタ型は ds_<module>_func_t。
+	•	API名は ds_<module>_<verb>() で統一。
+	•	エラーenum/コールバック型も ds_<module>_ERR_XXX / ds_<module>_callback_t に統一。
+	•	グローバル変数は禁止。必要な場合は ds_<module>_g_<name> で、thread-local/mutex管理を明示。
 
-3. エラー設計
-すべてのAPIは ds_error_t 型を戻り値として返す
+⸻
 
-エラー値は DS_SUCCESS / DS_ERR_XXX で統一
+■ 2. API設計・エラー／戻り値
+	•	すべて ds_error_t 戻り。成功は DS_SUCCESS のみ。
+	•	out引数は 必ず out_<name> プレフィクス。
+	•	返却サイズ・個数は size_t。符号付きは int64_t。
+	•	モジュール固有エラーは DS_ERR_<MODULE>_<CAUSE>。
 
-モジュールごとに固有エラーは DS_ERR_XXX_YYY で拡張OK
+⸻
 
-4. 出力値・インスタンス取得の設計
-関数の出力値は outポインタ経由で返す
-例：ds_error_t ds_stack_pop(ds_stack_t* stack, void** out_value);
+■ 3. ヘッダ/実装/include運用
+	•	include/ds/<module>.h … API宣言 & forward typedefのみ（本体定義は絶対書かない！）
+	•	共通型は include/data_structures.h に一元化。
+	•	外部ライブラリ（<stdio.h>等）は .c のみでinclude。
+	•	#pragma once 禁止。インクルードガード必須。
 
-5. サイズ・インデックス
-サイズ・個数・インデックス等はすべて size_t で統一
+⸻
 
-6. .hファイルとinclude設計
-全API用 .hファイルは include/ds/ 配下に置く
+■ 4. ロガー統一ルール（util/logger.h）
+	•	ログ関数は ds_log() ひとつだけ。
+	•	ログレベルenumは DS_LOG_LEVEL_DEBUG / INFO / WARNING / ERROR / FATAL のみ。
+	•	差し替えは ds_set_log_function() だけで行う。
+	•	printf族の直接呼び出しは禁止（テスト/CI専用コードを除く）。
 
-#include "ds/xxx.h" で統一
+⸻
 
-ビルドフラグには -Iinclude -Iinclude/ds を追加
+■ 5. テスト / CI・CD / 可搬性
 
-7. 命名規則の徹底
-エラーenumやコールバック関数型も一貫してモジュールprefix付きで命名
-例：ds_hashmap_free_func_t
+🟦 テスト設計・構成ルール
+	•	各テスト関数は void test__<module>_<case>(void); 形式で統一
+	•	例：test__stack_basic(void), test__queue_edge_cases(void)
+	•	“test” のあとダブルアンダースコア __ で区切る
+	•	宣言は tests/include/test_<module>.h に一元化
+	•	例：void test__stack_basic(void);
+	•	実装は tests/<module>/test_<module>.c のみ（実体重複厳禁）
+	•	main()は tests/test_main.c のみが持つ。
+	•	テストスイート呼び出しも必ず test__ 統一
+	•	例：void (*ds_tests[])(void) = { test__stack_basic, test__queue_edge_cases, ... };
+	•	Mock/ダミー実装は tests/mock/ に限定し、本番ビルドから除外
+	•	CIで -Wall -Wextra -Werror -pedantic -fanalyzer を必ず適用
+	•	Valgrind / ASan / UBSan をCIで全テストに毎push自動実行
 
-8. ロガー・アロケータAPI
-共通のロガー、アロケータも外部注入APIとして提供
-例：void ds_set_log_function(ds_log_func_t func);
+⸻
 
-9. .h/.c設計原則
-構造体本体は.cで定義し、.hはforward宣言のみ
+🟦 [追加] テスト用ヘッダの厳格なルール
+	•	テスト用関数宣言は必ず tests/include/test_<module>.h に集約すること
+	•	→ 各 test_<module>.h は、そのモジュールのテスト関数群の唯一の宣言場所になる
+	•	例：tests/include/test_stack.h, tests/include/test_queue.h など
+	•	必要に応じて、tests/include/ds/ などサブディレクトリも利用可
+	•	本体（例：struct ds_process { ... };）は、共通ヘッダやmain.cに“絶対に公開しない”**
+	•	抽象化・隠蔽による安全性・互換性維持のため
+	•	本体がどうしても必要な場合のみ、include/ds/<module>_test.h という「テスト専用ヘッダ」を作成
+	•	テストファイルだけで #include する
+	•	本体内容はここだけで公開。本番環境には絶対に公開しない
+	•	例：#include "ds/process_test.h"
+	•	または「すべてポインタ型で扱う設計」に統一し、ds_<module>_t* しか使わない運用でもOK
 
-API設計は必ずヘッダー主導（先に.hを書く）
+⸻
 
-10. Makefile/CMake
-ビルドコマンドは -Iinclude -Iinclude/ds を必ず追加
+✅ 理由
+	•	テスト設計の標準化＆メンテの一元化（どのテストが存在するかすぐにわかる）
+	•	“隠蔽”＝使う側に「APIだけ」を見せ、中身（実装詳細）は隠す
+	•	テストで本体アクセスが必要な場合だけ専用ヘッダでOK。本番には絶対公開しない
+	•	こうすることで、中身の変更・最適化・バージョンアップでも他への影響ゼロ
 
-全てのソースで #include "ds/xxx.h" でOKになるよう設計
+⸻
 
-11. テストディレクトリ
-テストは tests/ 配下で管理、testファイルも #include "ds/xxx.h" で統一
+■ 6. セキュリティ & パフォーマンス
+	•	動的メモリ管理の“所有権”は doxygenタグ @ownership で明示
+	•	memcpy/memmove にはfortifyチェック有効化（clang 17以降）
+	•	32bit環境でもsize_tが32bitに収まるかCIでビルド
+	•	未使用static関数は __attribute__((unused)) を付与（削除推奨）
 
-12. その他
-型名・関数名・enum名は全て「ds_」+モジュール名で衝突防止
+⸻
 
-拡張性・外部利用しやすさ・CI/CD・大規模開発・リファクタ容易性を最優先
+■ 7. README/CONTRIBUTING必須事項
+	•	コード規約全文・PRテンプレート・branch戦略の記載必須
+	•	logger運用例・スレッド安全性・バージョン付与規則を記載
+	•	CIパイプライン図（テスト→静的解析→ドキュメント→パッケージ生成）はMermaid記法で添付
 
+⸻
 
-13 共通ユーティリティ・型の標準化
-複数モジュールで使う構造体やエラー/ログ型（例: ds_stats_t）は data_structures.h 等の基幹ヘッダに明示的に定義・管理。
-
-14 標準Cヘッダのインクルード徹底
-全ての .h/.c ファイルで #include <stddef.h> #include <stdbool.h> など標準型を直接 include すること。
-
-15. API宣言・実装の型一致
-.hと.cのAPIシグネチャは100%一致させる。食い違いがあればコンパイルエラーで検出される設計にする。
-
-16. デフォルト実装・外部差し替え
-外部注入API（例：ds_log, ds_malloc）はstatic関数ポインタを用意し、常にデフォルト実装を明示。
-
-17. 実装・運用時の注意点（頻発エラーの防止ガイド）
-- APIのシグネチャ（定義/宣言）は100%一致させる
-- bool型利用時は #include <stdbool.h> を各ファイルで
-- グローバル関数ポインタ（ds_log等）はstatic/externの管理に注意
-- typedef, 構造体定義の重複禁止（基幹ヘッダで1回のみ）
-- 外部注入APIはstatic関数ポインタ＋デフォルト実装で
-- Makefile/CMakeで -Iinclude -Iinclude/ds を必ず追加
-
-18. ロガー・グローバル関数ポインタの明示的定義
-グローバル関数ポインタ（例：ds_log）は、必ず static な関数ポインタ変数として各.cファイルに定義すること！
-
-例:
-
-c
-Copy
-Edit
-// queue.c の先頭付近
-static ds_log_func_t ds_log = NULL;
-static void default_log(ds_log_level_t level, const char* fmt, ...);
-デフォルト実装（例：default_log）は必ずstaticで定義し、切替APIで上書きすること
-
-19. APIシグネチャの徹底統一
-.hファイルのAPI宣言と.cファイルのAPI実装は、戻り値・引数を1バイトも違えず完全一致させること
-
-例（NG）：
-
-.h: ds_error_t ds_stack_create(ds_stack_t** out_stack);
-
-.c: ds_stack_t* ds_stack_create(void) { ... }
-→ これは絶対NG。食い違いは即コンパイルエラー！
-
-例（OK）：
-
-.h: ds_error_t ds_stack_create(ds_stack_t** out_stack);
-
-.c: ds_error_t ds_stack_create(ds_stack_t** out_stack) { ... }
-
-
-
-
-
-
-## 目次
-
-1. [エラーコード / Error Codes](#error-codes)
-2. [ロギング / Logging](#logging)
-3. [メモリ管理 / Memory Management](#memory-management)
-4. [スタック / Stack](#stack)
-5. [キュー / Queue](#queue)
-6. [双方向リスト / Doubly Linked List](#doubly-linked-list)
-7. [逆ポーランド記法電卓 / RPN Calculator](#rpn-calculator)
-8. [ラウンドロビンスケジューラ / Round Robin Scheduler](#round-robin-scheduler)
-9. [Undo/Redo履歴システム / Undo/Redo History System]
-
----
-
-## 1. エラーコード / Error Codes
-
-```c
-typedef enum {
-    DS_SUCCESS = 0,
-    DS_ERROR_NULL_POINTER,
-    DS_ERROR_OUT_OF_MEMORY,
-    DS_ERROR_EMPTY_CONTAINER,
-    DS_ERROR_INVALID_ARGUMENT,
-    DS_ERROR_OVERFLOW,
-    DS_ERROR_UNDERFLOW,
-    DS_ERROR_NOT_FOUND,
-    DS_ERROR_SYSTEM_FAILURE
-} ds_error_t;
+💡 備考・既存コードへの反映について
+	•	既存テスト関数・宣言・呼び出しは「test___」形式へ必ず統一
+	•	重複実装・グローバル変数の乱立は禁止し、全ファイルでルールに準拠すること
+	•	新規作成/リファクタ時は、このガイドライン最新版を最上位基準とする

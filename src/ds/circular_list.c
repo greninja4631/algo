@@ -1,30 +1,34 @@
-#include "data_structures.h"
+
 #include "ds/circular_list.h"
 #include <stdlib.h>
 
-// リスト構造体定義
+struct ds_circular_node {
+    void* data;
+    struct ds_circular_node* next;
+};
+
 struct ds_circular_list {
-    ds_circular_node_t* tail; // 最後尾ノード（tail->nextがhead）
+    struct ds_circular_node* tail;
     size_t size;
 };
 
-// 生成
-ds_circular_list_t* ds_circular_list_create(void) {
+ds_error_t ds_circular_list_create(ds_circular_list_t** out_list) {
+    if (!out_list) return DS_ERR_NULL_POINTER;
     ds_circular_list_t* list = malloc(sizeof(ds_circular_list_t));
-    if (!list) return NULL;
+    if (!list) return DS_ERR_ALLOC;
     list->tail = NULL;
     list->size = 0;
-    return list;
+    *out_list = list;
+    return DS_SUCCESS;
 }
 
-// 破棄
 ds_error_t ds_circular_list_destroy(ds_circular_list_t* list) {
     if (!list) return DS_ERR_NULL_POINTER;
     if (list->tail) {
-        ds_circular_node_t* cur = list->tail->next; // head
-        ds_circular_node_t* stop = list->tail;
+        struct ds_circular_node* cur = list->tail->next;
+        struct ds_circular_node* stop = list->tail;
         while (cur != stop) {
-            ds_circular_node_t* tmp = cur;
+            struct ds_circular_node* tmp = cur;
             cur = cur->next;
             free(tmp);
         }
@@ -34,14 +38,13 @@ ds_error_t ds_circular_list_destroy(ds_circular_list_t* list) {
     return DS_SUCCESS;
 }
 
-// 末尾追加
 ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) {
     if (!list) return DS_ERR_NULL_POINTER;
-    ds_circular_node_t* node = malloc(sizeof(ds_circular_node_t));
+    struct ds_circular_node* node = malloc(sizeof(struct ds_circular_node));
     if (!node) return DS_ERR_ALLOC;
     node->data = data;
     if (!list->tail) {
-        node->next = node; // 1つ目
+        node->next = node;
         list->tail = node;
     } else {
         node->next = list->tail->next;
@@ -52,12 +55,11 @@ ds_error_t ds_circular_list_insert(ds_circular_list_t* list, void* data) {
     return DS_SUCCESS;
 }
 
-// 先頭削除
-ds_error_t ds_circular_list_remove(ds_circular_list_t* list, void** data) {
-    if (!list || !data) return DS_ERR_NULL_POINTER;
+ds_error_t ds_circular_list_remove(ds_circular_list_t* list, void** out_data) {
+    if (!list || !out_data) return DS_ERR_NULL_POINTER;
     if (!list->tail) return DS_ERR_EMPTY;
-    ds_circular_node_t* head = list->tail->next;
-    *data = head->data;
+    struct ds_circular_node* head = list->tail->next;
+    *out_data = head->data;
     if (list->tail == head) {
         free(head);
         list->tail = NULL;
@@ -69,12 +71,10 @@ ds_error_t ds_circular_list_remove(ds_circular_list_t* list, void** data) {
     return DS_SUCCESS;
 }
 
-// 空判定
 bool ds_circular_list_is_empty(const ds_circular_list_t* list) {
     return !list || !list->tail;
 }
 
-// サイズ取得
 size_t ds_circular_list_size(const ds_circular_list_t* list) {
     return list ? list->size : 0;
 }

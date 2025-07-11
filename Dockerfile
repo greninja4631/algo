@@ -1,20 +1,19 @@
-# ベースは gcc の最新版（軽量で互換性あり）
+# --- 1. ベースはgcc最新版&最軽量 ---
 FROM gcc:13.2.0
 
-# 作業ディレクトリをプロジェクトルートに設定
+# --- 2. プロジェクトルートに移動 ---
 WORKDIR /workspace
 
-# プロジェクトのすべてのファイルをイメージ内にコピー
+# --- 3. プロジェクト全体コピー（src/, include/, tests/, Makefile, run_ci.sh など全て） ---
 COPY . .
 
-# 必要なツール類をすべてインストール（make, git, doxygen, cppcheck, clang-tidy）
+# --- 4. 必要ツール類（静的解析・テスト全て）一括インストール ---
 RUN apt-get update && \
-    apt-get install -y make git doxygen cppcheck clang-tidy && \
+    apt-get install -y make git doxygen cppcheck clang-tidy valgrind && \
     rm -rf /var/lib/apt/lists/*
 
-# デフォルトでテストビルド（Makefileが存在し、testターゲットがあることが前提）
-RUN make test
+# --- 5. デフォルトでテスト&静的解析&ドキュメント&メモリチェック自動実行（run_ci.shが推奨）---
+RUN bash run_ci.sh
 
-# デバッグや手動操作のため、bashを起動
-CMD [ "bash" ]
-
+# --- 6. 手動デバッグ用bash起動もサポート ---
+CMD ["bash"]

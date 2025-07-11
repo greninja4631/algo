@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdio.h>
-#include "statistics.h"
+#include "ds/statistics.h"
+#include "data_structures.h" 
 #include <assert.h>
 
 int main(void) {
@@ -19,15 +20,7 @@ int main(void) {
     printf("  \"mode\": %d\n", stats.mode);
     printf("}\n");
 
-    // 以下はコメントアウトのままでOK
-    // assert(stats.sum == 41);
-    // assert(stats.min == 1);
-    // assert(stats.max == 9);
-    // assert((int)(stats.average * 100) == 455);
-    // assert((int)(stats.median * 100) == 500);
-    // assert(stats.mode == 5);
 
-    // LOG_INFO("Statistics test passed.\n");
     return 0;
 }
 

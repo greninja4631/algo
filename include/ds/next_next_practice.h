@@ -5,17 +5,13 @@
 #include <stddef.h>
 #include "data_structures.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// 本体の不透明型宣言
-typedef struct next_next_practice next_next_practice_t;
-
 // ファクトリ関数（API例）
-next_next_practice_t* next_next_practice_create(void);
-void next_next_practice_destroy(next_next_practice_t* obj);
+ds_next_next_practice_t* next_next_practice_create(void);
+void next_next_practice_destroy(ds_next_next_practice_t* obj);
 
 // テスト/デモ用
 ds_error_t demonstrate_array_operations(void);

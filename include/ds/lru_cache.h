@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-typedef struct ds_lru_cache ds_lru_cache_t;
-
 // LRUキャッシュの生成・破棄
 ds_error_t ds_lru_cache_create(size_t capacity, ds_lru_cache_t** out_cache);
 

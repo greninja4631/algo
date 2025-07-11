@@ -13,7 +13,7 @@
 
  #ifndef CONFIG_H
  #define CONFIG_H
- 
+
  /* -----------------------
   * バージョン・著作権情報
   * -----------------------
@@ -32,6 +32,13 @@
  #ifndef DS_DEBUG
  #define DS_DEBUG 1
  #endif
+
+
+ typedef struct ds_config ds_config_t;
+
+ds_config_t* ds_config_create(void);
+void ds_config_destroy(ds_config_t* config);
+ 
  
  // クラウド監視用メトリクス出力（ON:1/OFF:0）
  #ifndef DS_ENABLE_METRICS
@@ -82,7 +89,7 @@
  #else
    #define DS_PATH_SEPARATOR '/'
  #endif
- 
+
  /* -----------------------
   * その他将来拡張フック・外部サービス連携
   * -----------------------

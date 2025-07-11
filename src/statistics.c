@@ -1,7 +1,7 @@
 #include <stdbool.h>
 //statistics.cで関数の具体的な計算内容を書く目的だ。
 
-#include "statistics.h"
+#include "ds/statistics.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -101,46 +101,3 @@ Statistics calculate_statistics(const int *data, int size) {
     stats.mode    = mode(data, size);
     return stats;
 }
-//  🔵 自分の頭に叩き込むべき領域（設計・面接・転用力に直結）
-
-//  🧠 項目	✨ 内容	💡 なぜ覚えるべきか？
-//  typedef enum { ... } ErrorCode;	エラーの状態管理	状態パターン設計に不可欠。Go/Rustにも応用可能
-//  typedef struct { ... } Statistics;	抽象データ型（ADT）	型設計力を示す。どの言語でも活かせる本質スキル
-//  calculate_median, find_mode	アルゴリズム設計	ソート・カウント・統計処理はCSの基本力
-//  assert(), LOG_* マクロ	テスト・ログ設計	DevOpsやCI/CDスキルの土台。可観測性の考え方に通じる
-//  main() の構造設計	関数分離・抽象設計	CLI→APIへの拡張力を養う基礎。全言語で重要
- 
- 
-//  ⸻
- 
-//  🟢 AIに任せてよい・覚えなくてよい領域（定型・暗記不要）
- 
-//  🤖 項目	✨ 内容	🙆 理由
-//  #include <stdio.h> など	標準ヘッダ	毎回AI補完でOK。意味だけ分かればよい
-//  #define LOG_INFO(...)	マクロの定義	パターン化されており、毎回書く必要なし
-//  qsort()	組み込みソート関数	毎回ググってもOK。CS理解とは別問題
-//  memcpy(), malloc()	メモリ操作関数	使用タイミングだけ分かればよい。引数暗記不要
-//  printf() での JSON整形	文字列出力	形式的な処理なので自動化で十分
- 
- 
-//  ⸻
- 
-//  🧱 理解は必要・暗記は不要な構造
- 
-//  構造例	理解すべきポイント
-//  calculate_statistics() の関数委譲	「分離された関数群の役割分担」構造
-//  Statistics 構造体	「抽象データ型として何を表現しているか」
-//  各層でのエラー処理分離	「どの関数が何を責任範囲として持つか」
- 
- 
-//  ⸻
- 
-//  ✅ 最終まとめ（一覧表）
- 
-//  領域	自力で覚えるべき	AIに任せてよい
-//  🧱 構造設計（struct / enum / API）	✅	❌
-//  📊 アルゴリズム（中央値・最頻値など）	✅	❌
-//  ⚙️ 標準関数（printf, malloc など）	❌	✅
-//  🧩 マクロの書き方（LOG系）	❌（使い方だけ理解）	✅
-//  🧾 JSON整形出力	❌	✅
-
