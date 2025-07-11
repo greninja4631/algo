@@ -1,43 +1,42 @@
 {
+    /* ---------- 1. ヘッダ拡張子の言語関連付け ---------- */
     "files.associations": {
-        "assert.h": "c",
-        "stdlib.h": "c",
-        "math.h": "c",
-        "config.h": "c",
-        "array": "c",
-        "string": "c",
-        "string_view": "c",
-        "vector": "c",
-        "main_practice_c": "c",
-<<<<<<< HEAD
-        "time.h": "c",
-        "statistics.h": "c",
+        "assert.h":          "c",
+        "stdlib.h":          "c",
+        "math.h":            "c",
+        "config.h":          "c",
+        "array":             "c",
+        "string":            "c",
+        "string_view":       "c",
+        "vector":            "c",
+        "main_practice_c":   "c",
+        "time.h":            "c",
+        "statistics.h":      "c",
         "data_structures.h": "c",
-        "stdio.h": "c"
+        "stdio.h":           "c",
+        "string.h":          "c",
+        "history_system.h":  "c",
+        "stdarg.h":          "c"
     },
 
-    // ファイルを自動保存
-    "files.autoSave": "afterDelay",
-    "files.autoSaveDelay": 1000,
+    /* ---------- 2. 自動保存設定 ---------- */
+    "files.autoSave":       "afterDelay",
+    "files.autoSaveDelay":  1000,               // 単位: ms (1 秒)
 
-    // C/C++エラーや警告の常時表示
-    "C_Cpp.errorSquiggles": "Enabled",
-    "C_Cpp.intelliSenseEngine": "Default",
-
-    // 必須ではないが推奨
-    "editor.renderWhitespace": "all",
-    "editor.tabSize": 4,
-    "editor.wordWrap": "on",
-
-    // 保存時に自動フォーマット
-    "editor.formatOnSave": true
-}
-
-
-=======
-        "time.h": "c"
+    /* ---------- 3. Makefile 専用インデントルール ---------- */
+    "[makefile]": {
+        "editor.insertSpaces":      false,  // Tab ⇆ 空白の自動変換を無効
+        "editor.detectIndentation": false,  // 既存インデントに合わせない
+        "editor.tabSize":           4       // 表示幅だけ 4 に揃える（好みで変更可）
     },
-    "files.autoSave": "afterDelay",
-    "files.autoSaveDelay": 1000  // 1000ミリ秒=1秒後に自動保存
+
+    /* ---------- 4. C/C++ 関連設定 ---------- */
+    "C_Cpp.errorSquiggles":       "Enabled",
+    "C_Cpp.intelliSenseEngine":   "Default",
+
+    /* ---------- 5. エディタ表示 ---------- */
+    "editor.renderWhitespace":    "all",
+    "editor.tabSize":             4,
+    "editor.wordWrap":            "on",
+    "editor.formatOnSave":        true
 }
->>>>>>> feature

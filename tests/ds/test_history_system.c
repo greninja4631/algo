@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:tests/test_history_system.c
 #include "../include/ds/doubly_list.h"
 #include "../include/ds/history_system.h"
@@ -6,63 +7,102 @@
 >>>>>>> feature:tests/ds/test_history_system.c
 #include <stdio.h>
 #include <assert.h>
+=======
+/**
+ * @file test_history_system.c
+ * @brief ds_history_system_t モジュールの単体テスト
+ * @details 本ファイルは test_main.c から呼び出される。main関数は持たない。
+ */
+>>>>>>> feature
 
 
-int main(void) {
-    printf("=== Doubly List ADT Unit Test Start ===\n");
+#include "ds/history_system.h"
+#include "util/test_util.h" 
+#include "util/logger.h"
+// テスト用コマンド型・初期化を共通化
 
-    // 1. リスト生成
-    ds_doubly_list_t* list = ds_doubly_list_create();
-    assert(list != NULL);
+// テスト用アサーションマクロ
+#define DS_TEST_ASSERT(cond, msg) \
+    do { \
+        if (cond) { ds_log(DS_LOG_LEVEL_INFO, "[PASS] %s", msg); } \
+        else      { ds_log(DS_LOG_LEVEL_ERROR, "[FAIL] %s (%s:%d)", msg, __FILE__, __LINE__); } \
+    } while (0)
 
-    // 2. 初期状態の確認
-    assert(ds_doubly_list_is_empty(list) == true);
-    assert(ds_doubly_list_size(list) == 0);
+void ds_test_history_system_basic(void)
+{
+    ds_error_t err;
+    ds_history_system_t* hist = ds_history_system_create(3);
 
-    // 3. 先頭/末尾/指定位置への挿入
-    int a = 10, b = 20, c = 30, d = 40, e = 50;
-    assert(ds_doubly_list_insert_front(list, &a) == DS_SUCCESS); // [10]
-    assert(ds_doubly_list_insert_back(list, &b)  == DS_SUCCESS); // [10, 20]
-    assert(ds_doubly_list_insert_at(list, 1, &c) == DS_SUCCESS); // [10, 30, 20]
-    assert(ds_doubly_list_insert_back(list, &d)  == DS_SUCCESS); // [10, 30, 20, 40]
-    assert(ds_doubly_list_insert_front(list, &e) == DS_SUCCESS); // [50, 10, 30, 20, 40]
-    assert(ds_doubly_list_size(list) == 5);
+    // --- 生成検証 ---
+    DS_TEST_ASSERT(hist != NULL, "create: not NULL");
+    DS_TEST_ASSERT(!ds_history_system_can_undo(hist), "can_undo: false after create");
+    DS_TEST_ASSERT(!ds_history_system_can_redo(hist), "can_redo: false after create");
 
-    // 4. 指定位置の要素取得
-    void* ptr = NULL;
-    assert(ds_doubly_list_get_at(list, 0, &ptr) == DS_SUCCESS); // 先頭
-    assert(*(int*)ptr == 50);
-    assert(ds_doubly_list_get_at(list, 2, &ptr) == DS_SUCCESS); // 3番目
-    assert(*(int*)ptr == 30);
+    // --- コマンド登録 ---
+    test_command_t cmd1, cmd2, cmd3;
+    test_command_init(&cmd1, 1, 10);
+    test_command_init(&cmd2, 2, 20);
+    test_command_init(&cmd3, 3, 30);
 
-    // 5. 先頭/末尾/任意位置の削除
-    assert(ds_doubly_list_remove_front(list, &ptr) == DS_SUCCESS); // [10, 30, 20, 40]
-    assert(*(int*)ptr == 50);
-    assert(ds_doubly_list_remove_back(list, &ptr) == DS_SUCCESS);  // [10, 30, 20]
-    assert(*(int*)ptr == 40);
-    assert(ds_doubly_list_remove_at(list, 1, &ptr) == DS_SUCCESS); // [10, 20]
-    assert(*(int*)ptr == 30);
-    assert(ds_doubly_list_size(list) == 2);
+    err = ds_history_system_execute_command(hist, TEST_CMD_PTR(&cmd1));
+    DS_TEST_ASSERT(err == DS_SUCCESS, "execute_command: 1");
+    DS_TEST_ASSERT(ds_history_system_can_undo(hist), "can_undo: after exec 1");
+    DS_TEST_ASSERT(!ds_history_system_can_redo(hist), "can_redo: after exec 1");
 
-    // 6. 残りの要素も削除
-    assert(ds_doubly_list_remove_front(list, &ptr) == DS_SUCCESS); // [20]
-    assert(*(int*)ptr == 10);
-    assert(ds_doubly_list_remove_back(list, &ptr) == DS_SUCCESS);  // []
-    assert(*(int*)ptr == 20);
-    assert(ds_doubly_list_is_empty(list) == true);
+    err = ds_history_system_execute_command(hist, TEST_CMD_PTR(&cmd2));
+    DS_TEST_ASSERT(err == DS_SUCCESS, "execute_command: 2");
+    err = ds_history_system_execute_command(hist, TEST_CMD_PTR(&cmd3));
+    DS_TEST_ASSERT(err == DS_SUCCESS, "execute_command: 3");
 
-    // 7. 空時のエラー系
-    assert(ds_doubly_list_remove_front(list, &ptr) == DS_ERR_EMPTY_CONTAINER);
-    assert(ds_doubly_list_get_at(list, 0, &ptr) == DS_ERR_NOT_FOUND);
+    // --- undo ---
+    err = ds_history_system_undo(hist);
+    DS_TEST_ASSERT(err == DS_SUCCESS, "undo: 1");
+    DS_TEST_ASSERT(ds_history_system_can_undo(hist), "can_undo: after undo");
+    DS_TEST_ASSERT(ds_history_system_can_redo(hist), "can_redo: after undo");
 
-    // 8. 統計情報取得
-    ds_stats_t stats = {0};
-    assert(ds_doubly_list_get_stats(list, &stats) == DS_SUCCESS);
-    printf("Total elements (should be 0): %zu\n", stats.total_elements);
+    err = ds_history_system_undo(hist);
+    DS_TEST_ASSERT(err == DS_SUCCESS, "undo: 2");
 
-    // 9. リスト破棄
-    assert(ds_doubly_list_destroy(list) == DS_SUCCESS);
+    err = ds_history_system_undo(hist);
+    DS_TEST_ASSERT(err == DS_SUCCESS, "undo: 3");
+    DS_TEST_ASSERT(!ds_history_system_can_undo(hist), "can_undo: after all undo");
 
+<<<<<<< HEAD
     printf("=== Doubly List ADT Unit Test Passed ===\n");
     return 0;
 }
+=======
+    // --- redo ---
+    err = ds_history_system_redo(hist);
+    DS_TEST_ASSERT(err == DS_SUCCESS, "redo: 1");
+    err = ds_history_system_redo(hist);
+    DS_TEST_ASSERT(err == DS_SUCCESS, "redo: 2");
+    err = ds_history_system_redo(hist);
+    DS_TEST_ASSERT(err == DS_SUCCESS, "redo: 3");
+    DS_TEST_ASSERT(!ds_history_system_can_redo(hist), "can_redo: after all redo");
+
+    // --- clear ---
+    err = ds_history_system_clear(hist);
+    DS_TEST_ASSERT(err == DS_SUCCESS, "clear: DS_SUCCESS");
+    DS_TEST_ASSERT(!ds_history_system_can_undo(hist), "can_undo: after clear");
+
+    // --- NULL安全 ---
+    err = ds_history_system_execute_command(NULL, TEST_CMD_PTR(&cmd1));
+    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "execute_command: NULL hist");
+    err = ds_history_system_execute_command(hist, NULL);
+    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "execute_command: NULL cmd");
+    err = ds_history_system_undo(NULL);
+    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "undo: NULL");
+    err = ds_history_system_redo(NULL);
+    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "redo: NULL");
+    err = ds_history_system_clear(NULL);
+    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "clear: NULL");
+
+    // --- 破棄 ---
+    err = ds_history_system_destroy(hist);
+    DS_TEST_ASSERT(err == DS_SUCCESS, "destroy: DS_SUCCESS");
+    DS_TEST_ASSERT(ds_history_system_destroy(NULL) == DS_ERR_NULL_POINTER, "destroy: NULL");
+
+    ds_log(DS_LOG_LEVEL_INFO, "[OK] ds_test_history_system_basic 完了");
+}
+>>>>>>> feature

@@ -1,12 +1,21 @@
+<<<<<<< HEAD
 #ifndef ROUND_ROBIN_H
 #define ROUND_ROBIN_H
 
 #include "../data_structures.h" // ds_process_t, ds_error_t など共通型の利用
+=======
+#ifndef DS_ROUND_ROBIN_H
+#define DS_ROUND_ROBIN_H
+
+#include <stdint.h>
+#include "data_structures.h"
+>>>>>>> feature
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+<<<<<<< HEAD
 typedef struct ds_round_robin_scheduler ds_round_robin_scheduler_t;
 
 /**
@@ -54,8 +63,37 @@ ds_error_t ds_round_robin_scheduler_complete_process(ds_round_robin_scheduler_t*
  */
 size_t ds_round_robin_scheduler_size(const ds_round_robin_scheduler_t* scheduler);
 
+=======
+#define DS_ROUND_ROBIN_API_VERSION "1.0"
+
+
+/**
+ * @file
+ * @brief ラウンドロビンスケジューラAPI
+ */
+
+// スケジューラ生成
+ds_error_t ds_round_robin_scheduler_create(int time_quantum, ds_round_robin_scheduler_t** out_sched);
+
+// スケジューラ破棄
+ds_error_t ds_round_robin_scheduler_destroy(ds_round_robin_scheduler_t* scheduler);
+
+// プロセス追加
+ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t* scheduler, const ds_process_t* process);
+
+// 次のプロセス取得
+ds_error_t ds_round_robin_scheduler_get_next_process(ds_round_robin_scheduler_t* scheduler, ds_process_t** out_process);
+
+// プロセス完了処理
+ds_error_t ds_round_robin_scheduler_complete_process(ds_round_robin_scheduler_t* scheduler, int process_id);
+
+>>>>>>> feature
 #ifdef __cplusplus
 }
 #endif
 
+<<<<<<< HEAD
 #endif // ROUND_ROBIN_H
+=======
+#endif // DS_ROUND_ROBIN_H
+>>>>>>> feature

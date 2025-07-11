@@ -1,0 +1,205 @@
+tests/util/test_util.c:7:5: error: unknown type name 'test_command_t'; did you mean 'ds_command_t'?
+    7 |     test_command_t* cmd = (test_command_t*)base;
+      |     ^~~~~~~~~~~~~~
+      |     ds_command_t
+include/data_structures.h:48:3: note: 'ds_command_t' declared here
+   48 | } ds_command_t;
+      |   ^
+tests/util/test_util.c:7:43: error: expected expression
+    7 |     test_command_t* cmd = (test_command_t*)base;
+      |                                           ^
+tests/util/test_util.c:7:28: error: use of undeclared identifier 'test_command_t'
+    7 |     test_command_t* cmd = (test_command_t*)base;
+      |                            ^
+tests/util/test_util.c:8:68: error: no member named 'op_code' in 'struct ds_command_t'
+    8 |     ds_log(DS_LOG_LEVEL_INFO, "[apply] op_code=%d, value=%d", cmd->op_code, cmd->value);
+      |                                                               ~~~  ^
+tests/util/test_util.c:8:82: error: no member named 'value' in 'struct ds_command_t'
+    8 |     ds_log(DS_LOG_LEVEL_INFO, "[apply] op_code=%d, value=%d", cmd->op_code, cmd->value);
+      |                                                                             ~~~  ^
+tests/util/test_util.c:6:39: error: unused parameter 'base' [-Werror,-Wunused-parameter]
+    6 | void test_command_apply(ds_command_t* base) {
+      |                                       ^
+tests/util/test_util.c:13:5: error: unknown type name 'test_command_t'; did you mean 'ds_command_t'?
+   13 |     test_command_t* cmd = (test_command_t*)base;
+      |     ^~~~~~~~~~~~~~
+      |     ds_command_t
+include/data_structures.h:48:3: note: 'ds_command_t' declared here
+   48 | } ds_command_t;
+      |   ^
+tests/util/test_util.c:13:43: error: expected expression
+   13 |     test_command_t* cmd = (test_command_t*)base;
+      |                                           ^
+tests/util/test_util.c:13:28: error: use of undeclared identifier 'test_command_t'
+   13 |     test_command_t* cmd = (test_command_t*)base;
+      |                            ^
+tests/util/test_util.c:14:67: error: no member named 'op_code' in 'struct ds_command_t'
+   14 |     ds_log(DS_LOG_LEVEL_INFO, "[undo] op_code=%d, value=%d", cmd->op_code, cmd->value);
+      |                                                              ~~~  ^
+tests/util/test_util.c:14:81: error: no member named 'value' in 'struct ds_command_t'
+   14 |     ds_log(DS_LOG_LEVEL_INFO, "[undo] op_code=%d, value=%d", cmd->op_code, cmd->value);
+      |                                                                            ~~~  ^
+tests/util/test_util.c:12:38: error: unused parameter 'base' [-Werror,-Wunused-parameter]
+   12 | void test_command_undo(ds_command_t* base) {
+      |                                      ^
+12 errors generated.
+src/ds/history_system.c:70:43: error: no member named 'execute' in 'struct ds_command_t'
+   70 |     if (!history || !command || !command->execute) return DS_ERR_NULL_POINTER;
+      |                                  ~~~~~~~  ^
+src/ds/history_system.c:84:39: error: no member named 'execute' in 'struct ds_command_t'
+   84 |     ds_error_t exec_result = command->execute(command->data);
+      |                              ~~~~~~~  ^
+src/ds/history_system.c:84:56: error: no member named 'data' in 'struct ds_command_t'
+   84 |     ds_error_t exec_result = command->execute(command->data);
+      |                                               ~~~~~~~  ^
+src/ds/history_system.c:114:84: error: no member named 'data' in 'struct ds_command_t'
+  114 |     ds_error_t result = history->current->command->undo(history->current->command->data);
+      |                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~  ^
+src/ds/history_system.c:123:25: error: no member named 'execute' in 'struct ds_command_t'
+  123 |     if (!next->command->execute) return DS_ERR_SYSTEM;
+      |          ~~~~~~~~~~~~~  ^
+src/ds/history_system.c:124:40: error: no member named 'execute' in 'struct ds_command_t'
+  124 |     ds_error_t result = next->command->execute(next->command->data);
+      |                         ~~~~~~~~~~~~~  ^
+src/ds/history_system.c:124:63: error: no member named 'data' in 'struct ds_command_t'
+  124 |     ds_error_t result = next->command->execute(next->command->data);
+      |                                                ~~~~~~~~~~~~~  ^
+7 errors generated.
+src/ds/next_next_practice.c:73:12: error: format specifies type 'unsigned long' but the argument has type 'uint64_t' (aka 'unsigned long long') [-Werror,-Wformat]
+   72 |     printf("[MEMORY] Created: %lu, Freed: %lu, Leaked: %lu\n",
+      |                               ~~~
+      |                               %llu
+   73 |            g_total_nodes_created, g_total_nodes_freed,
+      |            ^~~~~~~~~~~~~~~~~~~~~
+src/ds/next_next_practice.c:73:35: error: format specifies type 'unsigned long' but the argument has type 'uint64_t' (aka 'unsigned long long') [-Werror,-Wformat]
+   72 |     printf("[MEMORY] Created: %lu, Freed: %lu, Leaked: %lu\n",
+      |                                           ~~~
+      |                                           %llu
+   73 |            g_total_nodes_created, g_total_nodes_freed,
+      |                                   ^~~~~~~~~~~~~~~~~~~
+src/ds/next_next_practice.c:74:12: error: format specifies type 'unsigned long' but the argument has type 'uint64_t' (aka 'unsigned long long') [-Werror,-Wformat]
+   72 |     printf("[MEMORY] Created: %lu, Freed: %lu, Leaked: %lu\n",
+      |                                                        ~~~
+      |                                                        %llu
+   73 |            g_total_nodes_created, g_total_nodes_freed,
+   74 |            g_total_nodes_created - g_total_nodes_freed);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3 errors generated.
+src/ds/rpn_calculator.c:101:32: error: use of undeclared identifier 'DS_LOG_ERROR'
+  101 |                         ds_log(DS_LOG_ERROR, "Division by zero in RPN expression!");
+      |                                ^
+src/ds/rpn_calculator.c:108:28: error: use of undeclared identifier 'DS_LOG_ERROR'
+  108 |                     ds_log(DS_LOG_ERROR, "Unknown operator: %s", token);
+      |                            ^
+src/ds/rpn_calculator.c:115:20: error: use of undeclared identifier 'DS_LOG_ERROR'
+  115 |             ds_log(DS_LOG_ERROR, "Invalid token in RPN expression: %s", token);
+      |                    ^
+3 errors generated.
+tests/algo/test_sort.c:55:27: error: use of undeclared identifier 'DS_ERR_INVALID_PARAM'; did you mean 'DS_ERR_INVALID_ARG'?
+   55 |     DS_TEST_ASSERT(err == DS_ERR_INVALID_PARAM, "bubble: zero-size");
+      |                           ^~~~~~~~~~~~~~~~~~~~
+      |                           DS_ERR_INVALID_ARG
+tests/algo/test_sort.c:14:13: note: expanded from macro 'DS_TEST_ASSERT'
+   14 |         if (cond) { ds_log(DS_LOG_LEVEL_INFO, "[PASS] %s", msg); } \
+      |             ^
+include/data_structures.h:22:5: note: 'DS_ERR_INVALID_ARG' declared here
+   22 |     DS_ERR_INVALID_ARG,
+      |     ^
+tests/algo/test_sort.c:58:27: error: use of undeclared identifier 'DS_ERR_INVALID_PARAM'; did you mean 'DS_ERR_INVALID_ARG'?
+   58 |     DS_TEST_ASSERT(err == DS_ERR_INVALID_PARAM, "insertion: zero-size");
+      |                           ^~~~~~~~~~~~~~~~~~~~
+      |                           DS_ERR_INVALID_ARG
+tests/algo/test_sort.c:14:13: note: expanded from macro 'DS_TEST_ASSERT'
+   14 |         if (cond) { ds_log(DS_LOG_LEVEL_INFO, "[PASS] %s", msg); } \
+      |             ^
+include/data_structures.h:22:5: note: 'DS_ERR_INVALID_ARG' declared here
+   22 |     DS_ERR_INVALID_ARG,
+      |     ^
+2 errors generated.
+tests/ds/test_history_system.c:30:5: error: unknown type name 'test_command_t'; did you mean 'ds_command_t'?
+   30 |     test_command_t cmd1, cmd2, cmd3;
+      |     ^~~~~~~~~~~~~~
+      |     ds_command_t
+include/data_structures.h:48:3: note: 'ds_command_t' declared here
+   48 | } ds_command_t;
+      |   ^
+tests/ds/test_history_system.c:31:5: error: call to undeclared function 'test_command_init'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+   31 |     test_command_init(&cmd1, 1, 10);
+      |     ^
+2 errors generated.
+tests/ds/test_round_robin.c:24:3: error: typedef redefinition with different types ('struct my_process_t' vs 'struct my_process_t')
+   24 | } my_process_t;
+      |   ^
+include/util/test_util.h:16:3: note: previous definition is here
+   16 | } my_process_t;
+      |   ^
+tests/ds/test_round_robin.c:27:20: error: invalid application of 'sizeof' to an incomplete type 'ds_process_t' (aka 'struct ds_process')
+   27 |     memset(out, 0, sizeof(ds_process_t));
+      |                    ^     ~~~~~~~~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/secure/_string.h:77:33: note: expanded from macro 'memset'
+   77 |                 __builtin___memset_chk (dest, __VA_ARGS__, __darwin_obsz0 (dest))
+      |                                               ^~~~~~~~~~~
+include/data_structures.h:67:16: note: forward declaration of 'struct ds_process'
+   67 | typedef struct ds_process               ds_process_t;
+      |                ^
+tests/ds/test_round_robin.c:29:27: error: no member named 'id' in 'my_process_t'
+   29 |     ((my_process_t*)out)->id = id;
+      |     ~~~~~~~~~~~~~~~~~~~~  ^
+tests/ds/test_round_robin.c:30:27: error: no member named 'burst_time' in 'my_process_t'
+   30 |     ((my_process_t*)out)->burst_time = burst_time;
+      |     ~~~~~~~~~~~~~~~~~~~~  ^
+tests/ds/test_round_robin.c:40:18: error: variable has incomplete type 'ds_process_t' (aka 'struct ds_process')
+   40 |     ds_process_t p1, p2, p3;
+      |                  ^
+include/data_structures.h:67:16: note: forward declaration of 'struct ds_process'
+   67 | typedef struct ds_process               ds_process_t;
+      |                ^
+tests/ds/test_round_robin.c:40:22: error: variable has incomplete type 'ds_process_t' (aka 'struct ds_process')
+   40 |     ds_process_t p1, p2, p3;
+      |                      ^
+include/data_structures.h:67:16: note: forward declaration of 'struct ds_process'
+   67 | typedef struct ds_process               ds_process_t;
+      |                ^
+tests/ds/test_round_robin.c:40:26: error: variable has incomplete type 'ds_process_t' (aka 'struct ds_process')
+   40 |     ds_process_t p1, p2, p3;
+      |                          ^
+include/data_structures.h:67:16: note: forward declaration of 'struct ds_process'
+   67 | typedef struct ds_process               ds_process_t;
+      |                ^
+tests/ds/test_round_robin.c:62:88: error: no member named 'id' in 'my_process_t'
+   62 |     DS_TEST_ASSERT(err == DS_SUCCESS && out_proc != NULL && ((my_process_t*)out_proc)->id == 1, "get_next_process: id=1");
+      |                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~  ^
+tests/ds/test_round_robin.c:16:13: note: expanded from macro 'DS_TEST_ASSERT'
+   16 |         if (cond) { ds_log(DS_LOG_LEVEL_INFO, "[PASS] %s", msg); } \
+      |             ^~~~
+tests/ds/test_round_robin.c:69:88: error: no member named 'id' in 'my_process_t'
+   69 |     DS_TEST_ASSERT(err == DS_SUCCESS && out_proc != NULL && ((my_process_t*)out_proc)->id == 2, "get_next_process: id=2");
+      |                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~  ^
+tests/ds/test_round_robin.c:16:13: note: expanded from macro 'DS_TEST_ASSERT'
+   16 |         if (cond) { ds_log(DS_LOG_LEVEL_INFO, "[PASS] %s", msg); } \
+      |             ^~~~
+tests/ds/test_round_robin.c:75:88: error: no member named 'id' in 'my_process_t'
+   75 |     DS_TEST_ASSERT(err == DS_SUCCESS && out_proc != NULL && ((my_process_t*)out_proc)->id == 3, "get_next_process: id=3");
+      |                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~  ^
+tests/ds/test_round_robin.c:16:13: note: expanded from macro 'DS_TEST_ASSERT'
+   16 |         if (cond) { ds_log(DS_LOG_LEVEL_INFO, "[PASS] %s", msg); } \
+      |             ^~~~
+tests/ds/test_round_robin.c:97:18: error: variable has incomplete type 'ds_process_t' (aka 'struct ds_process')
+   97 |     ds_process_t dummy;
+      |                  ^
+include/data_structures.h:67:16: note: forward declaration of 'struct ds_process'
+   67 | typedef struct ds_process               ds_process_t;
+      |                ^
+11 errors generated.
+tests/ds/test_stack.c:75:17: error: unused variable 'stack' [-Werror,-Wunused-variable]
+   75 |     ds_stack_t* stack = NULL;
+      |                 ^~~~~
+tests/ds/test_stack.c:106:11: error: unused variable 'out' [-Werror,-Wunused-variable]
+  106 |     void* out = NULL;
+      |           ^~~
+2 errors generated.
+tests/ds/test_statistics.c:66:9: error: unused variable 'empty' [-Werror,-Wunused-variable]
+   66 |     int empty[] = {};
+      |         ^~~~~
+1 error generated.
+make: *** [build] Error 1

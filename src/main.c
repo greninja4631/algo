@@ -16,7 +16,8 @@ ds_error_t test_circular_and_round_robin(void);
 =======
 #include <stdbool.h>
 #include <stdio.h>
-#include "statistics.h"
+#include "ds/statistics.h"
+#include "data_structures.h" 
 #include <assert.h>
 >>>>>>> feature
 
@@ -44,6 +45,7 @@ int main(void) {
     printf("  \"mode\": %d\n", stats.mode);
     printf("}\n");
 
+<<<<<<< HEAD
     // === データ構造のテストスイート ===
     struct {
         const char *test_name;
@@ -58,6 +60,11 @@ int main(void) {
 
     size_t num_tests = sizeof(test_suite) / sizeof(test_suite[0]);
     size_t passed_tests = 0;
+=======
+
+    return 0;
+}
+>>>>>>> feature
 
     for (size_t i = 0; i < num_tests; i++) {
         printf("\n[TEST %zu/%zu] %s\n----------------------------------------\n", i + 1, num_tests, test_suite[i].test_name);

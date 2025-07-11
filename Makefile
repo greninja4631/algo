@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # ================================
 # Makefile 完全版
 # ================================
@@ -32,20 +33,59 @@ DOCS_DIR := docs
 # ユニットテスト（全テスト自動走査）
 TESTS   := $(wildcard tests/test_*.c)
 TEST_BIN := $(OBJ_DIR)/test_bin
+=======
+# ======================================================================
+#  Makefile ― Data-Structures Project
+#  ─────────────────────────────────────────────────────────────────────
+#  * GCC / C99 / 全警告エラー化
+#  * 本体・テスト分離ビルド
+#  * logger.c は include/util/ に置いたままリンクエラーを回避
+#  * tests/util/ 配下のヘッダを参照できるようインクルードパスを追加
+# ======================================================================
 
-# 統計API用
-STAT_SRC := src/statistics.c src/main.c
-STAT_BIN := $(OBJ_DIR)/stats
+# 0. コンパイラ & フラグ
+CC      := gcc
+CFLAGS  := -Wall -Wextra -Werror -pedantic -std=c99 -O2 -g \
+           -D_POSIX_C_SOURCE=200809L \
+           -Iinclude -Iinclude/ds -Iinclude/util -Iinclude/algo \
+           -Itests/include -Itests/include/ds -Itests/include/util -Itests/include/algo \
+           -Itests/util -Itests/ds -Itests/algo
 
-STAT_TEST_SRC := test/test_main.c
-STAT_TEST_BIN := $(OBJ_DIR)/test_main
+# 出力ディレクトリ
+OBJ_DIR  := build
+DOCS_DIR := docs
 
-.PHONY: all build stats test clean lint docs memcheck
+# ----------------------------------------------------------------------
+# 1. コアソース（ライブラリ本体）
+#    - include/util/*.c を追加して logger.c を取り込む
+# ----------------------------------------------------------------------
+CORE_SRC := $(wildcard src/*.c)            \
+            $(wildcard src/ds/*.c)         \
+            $(wildcard src/util/*.c)       \
+            $(wildcard include/util/*.c)   \
+            $(wildcard src/algo/*.c)
 >>>>>>> feature
 
-# --- デフォルト ---
-all: build
+TEST_UTIL := tests/util/test_util.c
+TEST_SRC  := $(shell find tests -type f -name 'test_*.c' ! -name 'test_util.c')
 
+SRC := $(CORE_SRC) $(TEST_UTIL) $(TEST_SRC)
+
+<<<<<<< HEAD
+.PHONY: all build stats test clean lint docs memcheck
+>>>>>>> feature
+=======
+BIN        := $(OBJ_DIR)/main
+TEST_BIN   := $(OBJ_DIR)/run_all_tests
+TEST_MAIN  := tests/test_main.c
+>>>>>>> feature
+
+# ----------------------------------------------------------------------
+# 5. ルール
+# ----------------------------------------------------------------------
+.PHONY: all build test lint docs memcheck clean format
+
+<<<<<<< HEAD
 # --- 本番用ビルド ---
 build:
 	@mkdir -p $(OBJ_DIR)
@@ -59,12 +99,22 @@ test: build
 		$(CC) $(CFLAGS) $(INC) -o $(TEST_BIN) $$file $(SRC_NOMAIN); \
 =======
 	$(CC) $(CFLAGS) -o $(BIN) $(SRC)
+=======
+all: build test
 
-# --- 統計APIのみビルド ---
-stats: $(STAT_SRC)
+# 5-1. 本体ビルド
+build: $(CORE_SRC)
 	@mkdir -p $(OBJ_DIR)
-	$(CC) $(CFLAGS) -o $(STAT_BIN) $(STAT_SRC)
+	$(CC) $(CFLAGS) -o $(BIN) $^
+>>>>>>> feature
 
+# 5-2. テストビルド & 実行
+test: $(SRC) $(TEST_MAIN)
+	@mkdir -p $(OBJ_DIR)
+	$(CC) $(CFLAGS) -o $(TEST_BIN) $^
+	./$(TEST_BIN)
+
+<<<<<<< HEAD
 # --- ユニットテスト ---
 test: build
 	@for file in $(TESTS); do \
@@ -116,11 +166,18 @@ lint:
 =======
 	clang-tidy src/*.c src/util/*.c -- -Iinclude -Iinclude/ds || true
 >>>>>>> feature
+=======
+# 5-3. 静的解析
+lint:
+	@cppcheck --enable=all --inconclusive --error-exitcode=1 src/ include/ tests/
+	@clang-tidy $(SRC) -- $(CFLAGS) || true
+>>>>>>> feature
 
-# --- ドキュメント生成 ---
+# 5-4. ドキュメント生成
 docs:
-	doxygen Doxyfile
+	@doxygen Doxyfile
 
+<<<<<<< HEAD
 # --- メモリリーク検出 ---
 <<<<<<< HEAD
 memcheck:
@@ -131,5 +188,20 @@ memcheck: test
 >>>>>>> feature
 
 # --- クリーン ---
+=======
+# 5-5. Valgrind メモリチェック
+memcheck: test
+	valgrind --leak-check=full $(TEST_BIN)
+
+# 5-6. コードフォーマット (clang-formatを使用)
+format:
+	@echo "Formatting C/H files with clang-format..."
+	@find src include tests -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format -i {} \;
+	@echo "Formatting complete."
+
+# 5-7. クリーン
+>>>>>>> feature
 clean:
-	rm -rf $(OBJ_DIR) $(DOCS_DIR)/api.html $(DOCS_DIR)/api $(DOCS_DIR)/architecture.html
+	@rm -rf $(OBJ_DIR) \
+	         $(DOCS_DIR)/api.html $(DOCS_DIR)/api \
+	         $(DOCS_DIR)/architecture.html

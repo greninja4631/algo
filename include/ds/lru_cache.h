@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // 不透明型宣言
 typedef struct ds_lru_cache ds_lru_cache_t;
 
@@ -29,6 +30,8 @@ ds_error_t ds_lru_cache_put(ds_lru_cache_t* cache, int key, void* value);
 =======
 typedef struct ds_lru_cache ds_lru_cache_t;
 
+=======
+>>>>>>> feature
 // LRUキャッシュの生成・破棄
 ds_error_t ds_lru_cache_create(size_t capacity, ds_lru_cache_t** out_cache);
 

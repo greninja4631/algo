@@ -10,7 +10,6 @@
 extern "C" {
 #endif
 
-typedef struct ds_history_system ds_history_system_t;
 
 // API宣言だけ
 ds_history_system_t* ds_history_system_create(size_t max_history);
