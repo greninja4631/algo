@@ -1,3 +1,4 @@
+#include <stdio.h>
 /**
  * @file test_logger.c
  * @brief ロガーAPIのテスト（基礎・境界値）

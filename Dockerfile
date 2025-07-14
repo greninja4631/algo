@@ -9,7 +9,7 @@ COPY . .
 
 # --- 4. 必要ツール類（静的解析・テスト全て）一括インストール ---
 RUN apt-get update && \
-    apt-get install -y make git doxygen cppcheck clang-tidy valgrind && \
+    apt-get install -y make git doxygen cppcheck clang-tidy clang-format valgrind && \
     rm -rf /var/lib/apt/lists/*
 
 # --- 5. デフォルトでテスト&静的解析&ドキュメント&メモリチェック自動実行（run_ci.shが推奨）---

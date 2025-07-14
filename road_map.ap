@@ -1,0 +1,97 @@
+
+
+ソフトウェア工学のロードマップ
+🚩 最短・最大効果のまとめ
+	•	malloc/freeを“隠蔽・抽象化”することが“依存性逆転”“インタフェース分離”をCで現実に達成する一歩
+	•	抽象アロケータをDIできる構造体/関数設計に進化させることで、
+	•	保守性・テスト性・移植性・安全性・拡張性がすべて跳ね上がる
+	•	全DS/アルゴリズムに「抽象アロケータDIパターン」を徹底して染み込ませる
+    •	洗い出した“malloc/free直呼び”を “抽象アロケータ呼び” に地道に差し替えること
+
+
+
+
+- 契約プログラミング（pre/post 条件）未記述  
+  → assert() を API 境界に配置、Doxygen @pre/@post 明示
+
+データ構造総論
+- ジェネリック DS 缺如（現状 void* + memcpy 依存）  
+  → C11 _Generic や copy関数ポインタを渡す方式で型安全UP
+
+並行プログラミング
+- スレッド安全設計なし  
+  → ds_queue_t をロック付/ロックフリー両対応・-pthreadビルドで単体テスト
+
+メモリ管理
+- メモリプール/リサイクル未実装  
+  → ds_pool_alloc.h用意しmalloc/freeプール化、速度比較テスト
+
+エラーハンドリング
+- “結果＋詳細メッセージ” 分離がない  
+  → ds_error_tを拡張し静的テーブルでds_strerror()追加
+
+ロギング
+- 構造化ログ(JSON)未対応  
+  → “level/timestamp/module/msg”形式に、ELK解析用ログへ
+
+**★【ここでJenkins CI/CD基盤導入：以降の品質管理は全てJenkins Pipelineで自動化！】**
+
+テスト技法
+- ①カバレッジ測定なし ②プロパティベーステストなし  
+  → gcovr 80%目標、libFuzzer/AFLでfuzzテスト  
+  → Jenkinsでtest→coverage→fuzz全自動（fail時メール通知）
+
+静的解析
+- clang-tidy最低限のみ  
+  → MISRA-C風ルール追記、cppcheck --std=c11 --library=posix  
+  → Jenkinsビルドフェーズに「静的解析ジョブ」追加（failでPR reject）
+
+形式手法
+- 型/不変条件の自動検証なし  
+  → frama-c/CBMCでオーバーフロー・NULL安全検証  
+  → Jenkinsでnightly/weekly検証ジョブとして実行
+
+パフォーマンス
+- ベンチ自動計測なし  
+  → google/benchmark風ラッパ＋Jenkinsで回帰性能チェック
+
+セキュリティ
+- ASLR/RELRO/PIEフラグ未統合  
+  → -fstack-protector-strong等をCFLAGS標準化＆Jenkinsでビルド検証
+
+国際化
+- ログ/エラー日本語固定  
+  → GNU gettext/ICU対応・i18nプレースホルダ実装
+
+ビルド再現性
+- lockfile未生成  
+  → cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON or Bear併用
+
+依存管理
+- 外部ライブラリバージョン未固定  
+  → vcpkg.json/Conanfile＋Jenkinsで「バージョンチェック」自動
+
+ドキュメント
+- アーキ図がMermaidのみ  
+  → PlantUML/D2でモジュール間シーケンスも記述
+
+CI/CD
+- フィーチャーブランチ保護・PRレビュー自動化未設定  
+  → GitHub Actions or Jenkinsでrequired status＋自動レビュー・label付与
+
+リリース管理
+- Semantic Versioning未宣言  
+  → CHANGELOG.md＆タグvMAJOR.MINOR.PATCHをJenkinsで自動生成
+
+ライセンス/SBOM
+- SPDX/SBOM未出力  
+  → SPDX-ID全ソース自動付与＋syftでSBOM生成、Jenkinsで成果物出力
+
+ガバナンス
+- コードオーナー/PRテンプレ不足  
+  → .github/CODEOWNERS・PULL_REQUEST_TEMPLATE.md追加
+
+観測性
+- ランタイム指標未整備  
+  → Prometheus exporterをutil/metrics.cに追加（Jenkinsで正常性監視）
+

@@ -1,86 +1,111 @@
-/**
- * @file tests/test_main.c
- * @brief 全自動テストエントリーポイント
- * @details 各種 test_<module>_<case> 関数を収集・実行
- */
-
-#include "data_structures.h"
-#include "util/logger.h"
-#include "util/test_util.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
 
-/* テスト統計 */
+#include "data_structures.h"
+#include "util/logger.h"
+#include "util/test_util.h"
+
+/* ───────── テスト統計 ───────── */
 typedef struct {
-    size_t total, passed, failed, skipped;
+    size_t  total, passed, failed, skipped;
     clock_t start, end;
 } ds_test_stats_t;
 
-static ds_test_stats_t g_test_stats = {0};
+static ds_test_stats_t g_stats;
 
-/* テスト専用ロガー */
-static void test_logger(ds_log_level_t level, const char* fmt, va_list args) {
-    const char* lvl[] = {"DEBUG","INFO","WARNING","ERROR","FATAL"};
-    printf("[TEST-%s] ", lvl[level]);
-    vprintf(fmt, args);
-    printf("\n");
+/* ───────── テスト用ロガー ───────── */
+static void test_logger(ds_log_level_t lvl, const char *fmt, va_list ap)
+{
+    static const char *L[] = { "DEBUG", "INFO", "WARN", "ERROR", "FATAL" };
+    printf("[TEST-%s] ", L[lvl]);
+    vprintf(fmt, ap);
+    putchar('\n');
 }
 
-#define DS_UNUSED(x) ((void)(x))
+/* ───────── 共通 ASSERT ───────── */
+#define DS_TEST_ASSERT(cond, msg) do {                                  \
+        g_stats.total++;                                                \
+        if (cond) {                                                     \
+            g_stats.passed++;                                           \
+            printf("[PASS] %s\n", msg);                                 \
+        } else {                                                        \
+            g_stats.failed++;                                           \
+            printf("[FAIL] %s (%s:%d)\n", msg, __FILE__, __LINE__);     \
+        }                                                               \
+    } while (0)
 
-/* テストassert */
-#define DS_TEST_ASSERT(cond, msg) do { \
-    g_test_stats.total++; \
-    if (cond) { g_test_stats.passed++; printf("[PASS] %s\n", msg); } \
-    else      { g_test_stats.failed++; printf("[FAIL] %s (%s:%d)\n", msg, __FILE__, __LINE__); } \
-} while(0)
+/* ==== テスト関数プロトタイプ === */
+/* DS モジュール */
+void ds_test_stack_basic(void);
+void ds_test_stack_edge_cases(void);
+void test__next_next_practice_basic(void);
+void test__next_next_practice_edge_cases(void);
 
-/* テスト関数プロトタイプ（別ファイルで実体実装） */
-void test_stack_basic(void);
-void test_stack_edge(void);
-void test_config_basic(void);
-void test_config_edge(void);
-void test_logger_basic(void);
-void test_logger_edge(void);
-/* ...他、すべてtest_<module>_<case> */
+/* Util モジュール */
+void test__config_basic(void);
+void test__config_edge_cases(void);
+void test__memory_basic(void);
+void test__memory_edge_cases(void);
+void test__metrics_basic(void);
+void ds_test_logger_basic(void);
+void ds_test_logger_edge_cases(void);
 
-/* テストスイート実行 */
-static void run_suite(const char* name, void (**funcs)(void), size_t n) {
+/* ────────── スイート実行 ───────── */
+static void run_suite(const char *name, void (**fn)(void), size_t n)
+{
     printf("\n=== %s Suite ===\n", name);
-    for (size_t i = 0; i < n; ++i) if (funcs[i]) funcs[i]();
+    for (size_t i = 0; i < n; ++i) {
+        if (fn[i]) fn[i]();
+    }
 }
 
-/* テスト統計レポート */
-static void report_stats(void) {
-    g_test_stats.end = clock();
-    double sec = (g_test_stats.end - g_test_stats.start) / (double)CLOCKS_PER_SEC;
+/* ────────── レポート ───────── */
+static void report(void)
+{
+    g_stats.end = clock();
+    double sec = (double)(g_stats.end - g_stats.start) / CLOCKS_PER_SEC;
+
     printf("\n=== Test Summary ===\n");
-    printf("Total: %zu  Passed: %zu  Failed: %zu  Skipped: %zu\n", 
-        g_test_stats.total, g_test_stats.passed, g_test_stats.failed, g_test_stats.skipped);
+    printf("Total: %zu  Passed: %zu  Failed: %zu  Skipped: %zu\n",
+           g_stats.total, g_stats.passed, g_stats.failed, g_stats.skipped);
     printf("Success Rate: %.1f%%   Time: %.2fs\n",
-        g_test_stats.total ? (100.0 * g_test_stats.passed / g_test_stats.total) : 0, sec);
-    if (g_test_stats.failed) printf("[WARNING] Some tests failed!\n");
-    else printf("[SUCCESS] All tests passed!\n");
+           g_stats.total ? 100.0 * g_stats.passed / g_stats.total : 0.0,
+           sec);
 }
 
-/* main(): 唯一のテスト実行入口 */
-int main(void) {
-    g_test_stats = (ds_test_stats_t){0};
-    g_test_stats.start = clock();
+/* ────────── main() ───────── */
+int main(void)
+{
+    g_stats = (ds_test_stats_t){0};
+    g_stats.start = clock();
+
     ds_set_log_function(test_logger);
-    printf("==== Data Structures Library Test ====\n");
+    printf("==== Data-Structures Library Test ====\n");
     printf("API Version: %s\n", DS_API_VERSION);
 
-    /* 各テスト配列。関数は外部実体 */
-    void (*ds_tests[])(void) = { test_stack_basic, test_stack_edge };
-    void (*util_tests[])(void) = { test_config_basic, test_config_edge, test_logger_basic, test_logger_edge };
-    /* ...他 suite ... */
+    /* DS モジュールのテスト群 */
+    void (*ds_tests[])(void) = {
+        ds_test_stack_basic,
+        ds_test_stack_edge_cases,
+        test__next_next_practice_basic,
+        test__next_next_practice_edge_cases
+    };
 
-    run_suite("Data Structures", ds_tests, sizeof(ds_tests)/sizeof(ds_tests[0]));
-    run_suite("Utilities", util_tests, sizeof(util_tests)/sizeof(util_tests[0]));
-    /* ... */
+    /* Util モジュールのテスト群 */
+    void (*util_tests[])(void) = {
+        test__config_basic,
+        test__config_edge_cases,
+        test__memory_basic,
+        test__memory_edge_cases,
+        test__metrics_basic,
+        ds_test_logger_basic,
+        ds_test_logger_edge_cases
+    };
 
-    report_stats();
-    return g_test_stats.failed ? 1 : 0;
+    run_suite("Data-Structures", ds_tests,  sizeof ds_tests  / sizeof *ds_tests);
+    run_suite("Utilities",      util_tests, sizeof util_tests / sizeof *util_tests);
+
+    report();
+    return g_stats.failed ? 1 : 0;
 }

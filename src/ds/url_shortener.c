@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "ds/url_shortener.h"      // API宣言
 #include "ds/lru_cache.h"
 #include <stdlib.h>

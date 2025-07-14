@@ -13,8 +13,13 @@
         "${workspaceFolder}/tests/ds",
         "${workspaceFolder}/tests/algo"
       ],
-      "defines": [],
-      "intelliSenseMode": "macos-gcc-arm64"
+      "defines": [
+        // テスト時に自動定義されることを明示
+        // "TESTING"
+      ],
+      "intelliSenseMode": "macos-gcc-arm64",
+      "cStandard": "c99",
+      "cppStandard": "c++17"
     }
   ],
   "version": 4

@@ -1,0 +1,6 @@
+Checks: '*, -cppcoreguidelines-no-malloc'
+CheckOptions:
+  - key: cppcoreguidelines-no-malloc.Allocations
+    value: '::malloc;::calloc;::realloc'
+  - key: cppcoreguidelines-no-malloc.Deallocations
+    value: '::free'

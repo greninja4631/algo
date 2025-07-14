@@ -1,39 +1,23 @@
+#include <stdio.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include "ds/statistics.h"
 #include "data_structures.h" 
+#include "util/logger.h" 
 #include <assert.h>
 
-int main(void) {
-    int data[] = {1, 2, 3, 3, 5, 5, 5, 8, 9};
-    int size = sizeof(data) / sizeof(data[0]);
 
-    Statistics stats = calculate_statistics(data, size);
+#ifndef TESTING        /* ←★ テストビルド時は main() を除去 */
 
-    // JSON形式で出力
-    printf("{\n");
-    printf("  \"sum\": %d,\n", stats.sum);
-    printf("  \"min\": %d,\n", stats.min);
-    printf("  \"max\": %d,\n", stats.max);
-    printf("  \"average\": %.2f,\n", stats.average);
-    printf("  \"median\": %.2f,\n", stats.median);
-    printf("  \"mode\": %d\n", stats.mode);
-    printf("}\n");
+int main(void)
+{
+    /* デフォルトロガーのまま起動メッセージだけ出力 */
+    ds_log(DS_LOG_LEVEL_INFO,
+           "Data-Structures Library %s — production run",
+           DS_API_VERSION);
 
-
+    /* TODO: 本番 CLI / サーバー起動コードをここへ */
     return 0;
 }
 
-
-//コードが正常にテストできることが判明しているため、冗長化を防ぐために、コメントアウトしてる。
-//     // CI自動テスト相当
-//     assert(stats.sum == 41);
-//     assert(stats.min == 1);
-//     assert(stats.max == 9);
-//     assert((int)(stats.average * 100) == 455);
-//     assert((int)(stats.median * 100) == 500);
-//     assert(stats.mode == 5);
-
-//     LOG_INFO("Statistics test passed.\n");
-//     return 0;
-// }
+#endif /* TESTING */

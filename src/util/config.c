@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 struct ds_config {
-   int dummy __attribute__((unused)); 
+  int dummy __attribute__((unused));
 };
 
 ds_error_t ds_config_create(ds_config_t **out_cfg)
