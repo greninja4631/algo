@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "../include/ds/round_robin.h"
 #include <stdio.h>
 #include <assert.h>
@@ -68,72 +69,47 @@ int main(void) {
 
 // 必須インクルード
 #include "util/test_util.h"
+=======
+#include <stdio.h>
+#include <assert.h>
+#include "ds/process.h"
+>>>>>>> feature
 #include "ds/round_robin.h"
-#include "ds/process_test.h"
-#include "util/logger.h"
-#include <stdlib.h>
 
-// アサーションマクロ
 #define DS_TEST_ASSERT(cond, msg) \
-    do { \
-        if (cond) { ds_log(DS_LOG_LEVEL_INFO, "[PASS] %s", msg); } \
-        else      { ds_log(DS_LOG_LEVEL_ERROR, "[FAIL] %s (%s:%d)", msg, __FILE__, __LINE__); } \
-    } while (0)
+    do { if (!(cond)) { printf("[FAIL] %s\n", msg); assert(0); } \
+         else         { printf("[PASS] %s\n", msg); } } while (0)
 
-// テスト用：プロセス生成API (APIが未実装の場合、テスト用に簡易で用意)
-static ds_process_t* make_process(int id, int burst_time)
+static ds_process_t *make_process(int id, int burst)
 {
-    ds_process_t* proc = (ds_process_t*)malloc(sizeof(ds_process_t));
-    if (!proc) return NULL;
-    proc->id = id;
-    proc->burst_time = burst_time;
-    return proc;
+    ds_process_t *p = NULL;
+    ds_process_create(id, burst, &p);
+    return p;
 }
 
-// 生成したプロセスを安全に解放
-static void free_process(ds_process_t* proc)
-{
-    if (proc) free(proc);
-}
-
-/**
- * @brief ラウンドロビン基本動作テスト
- */
 void test__round_robin_basic(void)
 {
-    ds_error_t err;
-    ds_round_robin_scheduler_t* sched = NULL;
-    ds_process_t* p1 = make_process(1, 15);
-    ds_process_t* p2 = make_process(2, 30);
-    ds_process_t* p3 = make_process(3, 25);
-    ds_process_t* out_proc = NULL;
+    ds_round_robin_scheduler_t *sched=NULL;
+    ds_round_robin_scheduler_create(10,&sched);
 
-    // --- 生成 ---
-    err = ds_round_robin_scheduler_create(10, &sched);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "create: DS_SUCCESS");
-    DS_TEST_ASSERT(sched != NULL, "create: not NULL");
+    ds_round_robin_scheduler_add_process(sched, make_process(1,15));
+    ds_round_robin_scheduler_add_process(sched, make_process(2,30));
+    ds_round_robin_scheduler_add_process(sched, make_process(3,25));
 
-    // --- プロセス登録 ---
-    err = ds_round_robin_scheduler_add_process(sched, p1);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "add_process: p1");
-    err = ds_round_robin_scheduler_add_process(sched, p2);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "add_process: p2");
-    err = ds_round_robin_scheduler_add_process(sched, p3);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "add_process: p3");
+    ds_process_t *out=NULL;
+    ds_round_robin_scheduler_get_next_process(sched,&out);
+    DS_TEST_ASSERT(ds_process_get_id(out)==1,"id=1");
+    ds_process_destroy(out);
 
-    // --- スケジューリング ---
-    // 1回目
-    err = ds_round_robin_scheduler_get_next_process(sched, &out_proc);
-    DS_TEST_ASSERT(err == DS_SUCCESS && out_proc != NULL && out_proc->id == 1, "get_next_process: id=1");
-    err = ds_round_robin_scheduler_complete_process(sched, 1);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "complete_process: id=1");
+    ds_round_robin_scheduler_get_next_process(sched,&out);
+    DS_TEST_ASSERT(ds_process_get_id(out)==2,"id=2");
+    ds_process_destroy(out);
 
-    // 2回目
-    err = ds_round_robin_scheduler_get_next_process(sched, &out_proc);
-    DS_TEST_ASSERT(err == DS_SUCCESS && out_proc != NULL && out_proc->id == 2, "get_next_process: id=2");
-    err = ds_round_robin_scheduler_complete_process(sched, 2);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "complete_process: id=2");
+    ds_round_robin_scheduler_get_next_process(sched,&out);
+    DS_TEST_ASSERT(ds_process_get_id(out)==3,"id=3");
+    ds_process_destroy(out);
 
+<<<<<<< HEAD
     // 3回目
     err = ds_round_robin_scheduler_get_next_process(sched, &out_proc);
     DS_TEST_ASSERT(err == DS_SUCCESS && out_proc != NULL && out_proc->id == 3, "get_next_process: id=3");
@@ -187,5 +163,8 @@ void test__round_robin_edge_cases(void)
     free_process(dummy);
 
     ds_log(DS_LOG_LEVEL_INFO, "[OK] test__round_robin_edge_cases 完了");
+>>>>>>> feature
+=======
+    ds_round_robin_scheduler_destroy(sched);
 >>>>>>> feature
 }

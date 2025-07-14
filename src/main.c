@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
@@ -14,13 +15,18 @@ ds_error_t test_queue_operations(void);
 ds_error_t test_undo_redo_system(void);
 ds_error_t test_circular_and_round_robin(void);
 =======
+=======
+#include <stdio.h>
+>>>>>>> feature
 #include <stdbool.h>
 #include <stdio.h>
 #include "ds/statistics.h"
 #include "data_structures.h" 
+#include "util/logger.h" 
 #include <assert.h>
 >>>>>>> feature
 
+<<<<<<< HEAD
 int main(void) {
     printf("=================================================\n");
     printf("Production-Ready Data Structures System\n");
@@ -61,11 +67,24 @@ int main(void) {
     size_t num_tests = sizeof(test_suite) / sizeof(test_suite[0]);
     size_t passed_tests = 0;
 =======
+=======
 
+#ifndef TESTING        /* ←★ テストビルド時は main() を除去 */
+
+int main(void)
+{
+    /* デフォルトロガーのまま起動メッセージだけ出力 */
+    ds_log(DS_LOG_LEVEL_INFO,
+           "Data-Structures Library %s — production run",
+           DS_API_VERSION);
+>>>>>>> feature
+
+    /* TODO: 本番 CLI / サーバー起動コードをここへ */
     return 0;
 }
 >>>>>>> feature
 
+<<<<<<< HEAD
     for (size_t i = 0; i < num_tests; i++) {
         printf("\n[TEST %zu/%zu] %s\n----------------------------------------\n", i + 1, num_tests, test_suite[i].test_name);
         ds_error_t r = test_suite[i].test_func();
@@ -100,3 +119,6 @@ int main(void) {
     printf("\n=== Application Terminated ===\n");
     return overall_result == DS_SUCCESS ? 0 : 1;
 }
+=======
+#endif /* TESTING */
+>>>>>>> feature

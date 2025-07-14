@@ -1,15 +1,18 @@
-#ifndef TEST_UTIL_TEST_MEMORY_H
-#define TEST_UTIL_TEST_MEMORY_H
+#ifndef DS_TEST_UTIL_METRICS_H
+#define DS_TEST_UTIL_METRICS_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void test__memory_basic(void);
-void test__memory_edge_cases(void);
+/* ──────────────────────────────────────────
+ * “宣言専用”テストヘッダ
+ * 実装は .c ファイルにのみ置き、重複シンボルを防止
+ * ────────────────────────────────────────── */
+void test__metrics_basic(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // TEST_UTIL_TEST_MEMORY_H
+#endif /* DS_TEST_UTIL_METRICS_H */

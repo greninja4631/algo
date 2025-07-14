@@ -1,0 +1,152 @@
+ docker build -t algo-ci . && docker run --rm -it algo-ci ./run_ci.sh
+
+
+上記と下記のを既存のコードを含めて、良い部分を残し、悪いい部分を削除して省略せずに再生成して下さい。　　　
+
+以下、docker build/runの成功まで含めた「CプロジェクトAPI設計・実装 ― 完全統一ガイドライン」を最新の状態・本質的な改善策込みで追記し、より現場で再現できる形にアップデートします。
+
+⸻
+
+✅ C プロジェクト API 設計・実装 ─ 完全統一ガイドライン
+(2025-07 改訂 — マイクロアーキテクチャ適合／Opaque型＋ゲッター&クローンAPI＋抽象アロケータDI対応版)
+
+⸻
+
+📘 1. 命名規約 & 型設計ルール
+
+項目	規則
+構造体本体	struct ds_<module> { … }; → 必ず実装ファイル src/<module>.c に隠蔽。DTOのみ例外。
+前方宣言typedef	typedef struct ds_<module> ds_<module>_t; → include/data_structures.h に一元管理
+関数	ds_<module>_<verb>()
+関数ポインタ	ds_<module>_<verb>_func_t
+エラー定数	DS_ERR_<MODULE>_<CAUSE>
+ゲッター/セッター	ds_<module>_get_<field>() / set_<field>() スレッド安全版は末尾に_atomic
+クローン関数	ds_<module>_clone(const ds_<module>_t *src)
+グローバル変数	原則禁止。必要なら ds_<module>_g_<name>＋Mutex/TLS
+
+
+⸻
+
+🔁 2. API 設計ポリシー
+	1.	すべての関数は ds_error_t を返却し、成功は DS_SUCCESS。
+	2.	所有権は Doxygen @ownership (caller frees / library frees) で必ず明示。
+	3.	出力引数は out_ プレフィクス。
+	4.	サイズは size_t／負数を許容する場合は int64_t。
+	5.	Opaque型三原則
+	1.	外部が扱うのはポインタのみ
+	2.	メンバはゲッター/セッター経由でアクセス
+	3.	値コピーは <module>_clone() を経由
+
+⸻
+
+🚩 2.1. 抽象アロケータ（DI）・依存関係逆転の徹底
+	•	全ての malloc/free/calloc/realloc は ds_malloc/ds_free/ds_calloc/ds_realloc 経由に統一
+	•	src/memory.c で「実装差し替え可能な抽象アロケータ関数ポインタ」を用意
+例:
+
+typedef void* (*ds_malloc_func_t)(size_t);
+typedef void  (*ds_free_func_t)(void*);
+// ...
+void ds_set_memory_functions(ds_malloc_func_t malloc_func, ds_free_func_t free_func);
+
+
+	•	本番環境では標準malloc/free、テストや検証時はモック/トラッキング/デバッグ用アロケータにDI可能
+	•	grepやCIを活用し「直接malloc/free」残存箇所を常時検出・0件維持をルール化
+
+⸻
+
+📁 3. ヘッダ・ソース構成
+
+ファイル	役割
+include/data_structures.h	前方宣言typedef／共通enum／汎用エラーコード
+include/ds/<module>.h	①API宣言 ②DTO（本体が不透明型なら定義は書かない）
+src/ds/<module>.c	構造体本体+API実装（唯一の本体定義）
+tests/include/ds/<module>_test.h	テスト用の拡張本体定義（通常は不要）
+
+	•	禁止: 本体定義の多重記載、#pragma onceだけで済ませること
+
+⸻
+
+📢 4. ロガールール (util/logger.h)
+	•	本番コードは ds_log(level, fmt, ...) のみ利用
+	•	ログ差し替えAPIは ds_set_log_function()
+	•	printf系直呼びはテスト限定、本番禁止
+
+⸻
+
+🧪 5. テスト & CI/CD ポリシー
+	•	テスト関数名: void test__<module>_<case>(void);
+	•	Opaque型はAPIで検証、メンバ直アクセス禁止
+	•	本体必要時のみ <module>_test.hに定義
+	•	Test-Runnerは test_main.c で配列登録
+	•	CIオプション: -Wall -Wextra -Werror -pedantic -fanalyzer + Valgrind/ASan
+
+⸻
+
+⚙ 6. CI 用 Makefile / Docker スニペット
+
+CFLAGS   = -Wall -Wextra -Werror -pedantic -std=c11
+INCLUDES = -Iinclude -Itests/include
+
+docker build -t algo-ci .
+docker run --rm -it algo-ci ./run_ci.sh
+
+	•	docker build/runの成功が「すべての設計原則・DI・安全性・移植性の実装が通った証拠」とする
+
+⸻
+
+🔒 7. セキュリティ & パフォーマンス
+	•	@ownership未記載関数はCIで失敗
+	•	memcpy系は _FORTIFY_SOURCE=2 (clang17+) 推奨
+	•	ホットパス関数は __attribute__((hot)) 明示
+
+⸻
+
+📖 8. README / CONTRIBUTING 必須項目
+	•	本ガイドへのリンク
+	•	ブランチ戦略・PRテンプレート
+	•	Loggerの使い方とスレッド安全性
+	•	Mermaidで描いたCI/CDパイプライン図
+
+⸻
+
+🔚 9. 既存コード移行チェックリスト
+	1.	前方宣言を data_structures.h に移動したか？
+	2.	構造体本体は .c 1箇所のみか？
+	3.	直接メンバアクセスをゲッター/セッターに置換したか？
+	4.	必要なモジュールに <module>_clone() を実装したか？
+	5.	グローバル変数を削除orTLS化したか？
+	6.	*全malloc/free/calloc/reallocがds_ラッパー経由か？CIで自動チェック
+
+⸻
+
+✅ Opaque 型＋抽象アロケータ DI パターン実装例
+
+memory.c（共通DI用）
+
+typedef void* (*ds_malloc_func_t)(size_t);
+typedef void  (*ds_free_func_t)(void*);
+static ds_malloc_func_t custom_malloc = malloc;
+static ds_free_func_t   custom_free   = free;
+
+void ds_set_memory_functions(ds_malloc_func_t malloc_func, ds_free_func_t free_func) {
+    custom_malloc = malloc_func;
+    custom_free = free_func;
+}
+void* ds_malloc(size_t size) { return custom_malloc(size); }
+void  ds_free(void* ptr)     { custom_free(ptr); }
+
+呼び出し例（stack.c他）
+
+#include "util/memory.h"
+ds_stack_t *s = ds_malloc(sizeof(ds_stack_t));
+ds_free(s);
+
+
+⸻
+
+❌ アンチパターン
+	•	typedef/前方宣言の多重定義
+	•	struct本体を複数ヘッダで再定義
+	•	テストのために本番ヘッダを条件分岐で書き換え
+	•	本番コードでprintf/fprintf/perrorを直接使用

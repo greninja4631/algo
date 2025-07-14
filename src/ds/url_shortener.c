@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "logger.h"
 <<<<<<< HEAD
 #include "../../include/data_structures.h"
@@ -14,6 +15,9 @@
 >>>>>>> feature
 #include <stdio.h>
 =======
+=======
+#include <stdio.h>
+>>>>>>> feature
 #include "ds/url_shortener.h"      // API宣言
 #include "ds/lru_cache.h"
 >>>>>>> feature
