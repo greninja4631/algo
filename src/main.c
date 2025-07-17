@@ -71,7 +71,7 @@ int main(void) {
 
 #ifndef TESTING        /* ←★ テストビルド時は main() を除去 */
 
-int main(void)
+int main(const ds_allocator_t* alloc)
 {
     /* デフォルトロガーのまま起動メッセージだけ出力 */
     ds_log(DS_LOG_LEVEL_INFO,
@@ -84,6 +84,7 @@ int main(void)
 }
 >>>>>>> feature
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     for (size_t i = 0; i < num_tests; i++) {
         printf("\n[TEST %zu/%zu] %s\n----------------------------------------\n", i + 1, num_tests, test_suite[i].test_name);
@@ -119,6 +120,9 @@ int main(void)
     printf("\n=== Application Terminated ===\n");
     return overall_result == DS_SUCCESS ? 0 : 1;
 }
+=======
+#endif /* TESTING */
+>>>>>>> feature
 =======
 #endif /* TESTING */
 >>>>>>> feature

@@ -73,4 +73,7 @@ void ds_log(ds_log_level_t level, const char* fmt, ...);
 
 
 #endif /* DS_LOGGER_H */
+<<<<<<< HEAD
+>>>>>>> feature
+=======
 >>>>>>> feature

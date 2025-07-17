@@ -1,135 +1,147 @@
+/*======================================================================*
+ *  src/ds/hashmap.c  ―  FNV-1a / シングルチェイン方式の DI 対応ハッシュマップ
+ *======================================================================*/
 #include "ds/hashmap.h"
-#include <stdlib.h>
-#include <string.h>
+#include <string.h>     /* strcmp / strdup */
+#include <stdint.h>
 
-/*───────────────────── 内部ノード ─────────────────────*/
-typedef struct ds_hashmap_node {
-    char*                   key;
-    void*                   value;
-    struct ds_hashmap_node* next;
-} ds_hashmap_node_t;
+/* ───── 内部ノード & 本体 ───── */
+typedef struct node {
+    char        *key;
+    void        *val;
+    struct node *next;
+} node_t;
 
-/*───────────────────── 本体構造体 ─────────────────────*/
 struct ds_hashmap {
-    size_t                  capacity;
-    size_t                  size;
-    ds_hashmap_node_t**     buckets;
-    ds_hashmap_free_func_t  key_free;   // コールバック型を *_func_t で統一
-    ds_hashmap_free_func_t  val_free;
+    size_t                 cap;
+    size_t                 size;
+    node_t              **bucket;      /* cap 要素の配列                            */
+    ds_hashmap_free_func_t key_free;
+    ds_hashmap_free_func_t val_free;
 };
 
-/*─────────────── FNV-1a 文字列ハッシュ ───────────────*/
-static unsigned long _ds_hash_str(const char* s)
+/* ───── FNV-1a 64-bit ───── */
+static uint64_t hash_str(const char *s)
 {
-    unsigned long h = 2166136261u;
-    for (; *s; ++s)
-        h = (h ^ (unsigned char)*s) * 16777619u;
+    uint64_t h = 14695981039346656037ULL;
+    while (*s)
+        h = (h ^ (unsigned char)*s++) * 1099511628211ULL;
     return h;
 }
 
-/*───────────────────── API 実装 ─────────────────────*/
+/* ───── create ───── */
 ds_error_t
-ds_hashmap_create(size_t                  capacity,
-                  ds_hashmap_free_func_t  key_free,
-                  ds_hashmap_free_func_t  val_free,
-                  ds_hashmap_t**          out_map)
+ds_hashmap_create(const ds_allocator_t  *a,
+                  size_t                 cap,
+                  ds_hashmap_free_func_t keyf,
+                  ds_hashmap_free_func_t valf,
+                  ds_hashmap_t         **out)
 {
-    if (!out_map) return DS_ERR_NULL_POINTER;
+    if (!a || !out) return DS_ERR_NULL_POINTER;
+    cap = cap ? cap : 16;
 
-    ds_hashmap_t* map = calloc(1, sizeof(*map));
-    if (!map) return DS_ERR_ALLOC;
+    ds_hashmap_t *m = a->alloc(1, sizeof *m);
+    if (!m) return DS_ERR_ALLOC;
 
-    map->capacity = capacity ? capacity : 16;
-    map->buckets  = calloc(map->capacity, sizeof(ds_hashmap_node_t*));
-    if (!map->buckets) { free(map); return DS_ERR_ALLOC; }
+    m->bucket = a->alloc(cap, sizeof(node_t*));
+    if (!m->bucket) { a->free(m); return DS_ERR_ALLOC; }
 
-    map->key_free = key_free;
-    map->val_free = val_free;
-    *out_map      = map;
+    m->cap = cap;
+    m->size = 0;
+    m->key_free = keyf;
+    m->val_free = valf;
+    *out = m;
     return DS_SUCCESS;
 }
 
+/* ───── destroy ───── */
 ds_error_t
-ds_hashmap_destroy(ds_hashmap_t* map)
+ds_hashmap_destroy(const ds_allocator_t *a, ds_hashmap_t *m)
 {
-    if (!map) return DS_ERR_NULL_POINTER;
+    if (!a || !m) return DS_ERR_NULL_POINTER;
 
-    for (size_t i = 0; i < map->capacity; ++i) {
-        for (ds_hashmap_node_t* n = map->buckets[i]; n; ) {
-            ds_hashmap_node_t* nxt = n->next;
-            if (map->key_free) map->key_free(n->key);
-            if (map->val_free) map->val_free(n->value);
-            free(n);
-            n = nxt;
+    for (size_t i = 0; i < m->cap; ++i) {
+        node_t *n = m->bucket[i];
+        while (n) {
+            node_t *nx = n->next;
+            if (m->key_free) m->key_free(n->key);
+            if (m->val_free) m->val_free(n->val);
+            a->free(n);
+            n = nx;
         }
     }
-    free(map->buckets);
-    free(map);
+    a->free(m->bucket);
+    a->free(m);
     return DS_SUCCESS;
 }
 
+/* ───── put ───── */
 ds_error_t
-ds_hashmap_put(ds_hashmap_t* map, const char* key, void* value)
+ds_hashmap_put(const ds_allocator_t *a,
+               ds_hashmap_t         *m,
+               const char           *key,
+               void                 *val)
 {
-    if (!map || !key) return DS_ERR_NULL_POINTER;
+    if (!a || !m || !key) return DS_ERR_NULL_POINTER;
 
-    size_t idx = _ds_hash_str(key) % map->capacity;
-    for (ds_hashmap_node_t* n = map->buckets[idx]; n; n = n->next)
-        if (strcmp(n->key, key) == 0) return DS_ERR_INVALID_ARG; // Duplicate
+    size_t idx = hash_str(key) % m->cap;
+    for (node_t *n = m->bucket[idx]; n; n = n->next)
+        if (strcmp(n->key, key) == 0) return DS_ERR_INVALID_ARG; /* duplicate */
 
-    ds_hashmap_node_t* n = malloc(sizeof(*n));
+    node_t *n = a->alloc(1, sizeof *n);
     if (!n) return DS_ERR_ALLOC;
 
-    n->key   = strdup(key);
-    n->value = value;
-    n->next  = map->buckets[idx];
-    map->buckets[idx] = n;
-    map->size++;
+    char *dup = strdup(key);
+    if (!dup) { a->free(n); return DS_ERR_ALLOC; }
+
+    n->key = dup;
+    n->val = val;
+    n->next = m->bucket[idx];
+    m->bucket[idx] = n;
+    ++m->size;
     return DS_SUCCESS;
 }
 
+/* ───── get ───── */
 ds_error_t
-ds_hashmap_get(ds_hashmap_t* map, const char* key, void** out_val)
+ds_hashmap_get(ds_hashmap_t *m, const char *key, void **out_val)
 {
-    if (!map || !key || !out_val) return DS_ERR_NULL_POINTER;
-
-    size_t idx = _ds_hash_str(key) % map->capacity;
-    for (ds_hashmap_node_t* n = map->buckets[idx]; n; n = n->next)
-        if (strcmp(n->key, key) == 0) {
-            *out_val = n->value;
-            return DS_SUCCESS;
-        }
-
+    if (!m || !key || !out_val) return DS_ERR_NULL_POINTER;
+    size_t idx = hash_str(key) % m->cap;
+    for (node_t *n = m->bucket[idx]; n; n = n->next)
+        if (strcmp(n->key, key) == 0) { *out_val = n->val; return DS_SUCCESS; }
     return DS_ERR_NOT_FOUND;
 }
 
+/* ───── remove ───── */
 ds_error_t
-ds_hashmap_remove(ds_hashmap_t* map, const char* key)
+ds_hashmap_remove(const ds_allocator_t *a,
+                  ds_hashmap_t         *m,
+                  const char           *key)
 {
-    if (!map || !key) return DS_ERR_NULL_POINTER;
+    if (!a || !m || !key) return DS_ERR_NULL_POINTER;
+    size_t idx = hash_str(key) % m->cap;
+    node_t *cur = m->bucket[idx], *prev = NULL;
 
-    size_t idx = _ds_hash_str(key) % map->capacity;
-    ds_hashmap_node_t *n = map->buckets[idx], *prev = NULL;
+    while (cur) {
+        if (strcmp(cur->key, key) == 0) {
+            if (prev) prev->next = cur->next;
+            else      m->bucket[idx] = cur->next;
 
-    while (n) {
-        if (strcmp(n->key, key) == 0) {
-            if (prev) prev->next = n->next;
-            else      map->buckets[idx] = n->next;
-
-            if (map->key_free) map->key_free(n->key);
-            if (map->val_free) map->val_free(n->value);
-            free(n);
-            map->size--;
+            if (m->key_free) m->key_free(cur->key);
+            if (m->val_free) m->val_free(cur->val);
+            a->free(cur);
+            --m->size;
             return DS_SUCCESS;
         }
-        prev = n;
-        n    = n->next;
+        prev = cur;
+        cur  = cur->next;
     }
     return DS_ERR_NOT_FOUND;
 }
 
-size_t
-ds_hashmap_size(const ds_hashmap_t* map)
+/* ───── size ───── */
+size_t ds_hashmap_size(const ds_hashmap_t *m)
 {
-    return map ? map->size : 0;
+    return m ? m->size : 0;
 }

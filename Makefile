@@ -1,34 +1,23 @@
 # ======================================================================
-#  Makefile — Data-Structures Project  (2025-07 Micro-Architecture Edition)
+#  Makefile — Data-Structures Project (2025-07 Micro-Architecture Edition)
 # ======================================================================
 
-# ────────────────────────────────────
-# 0. コンパイラ & 共通フラグ
-# ────────────────────────────────────
 CC      := gcc
 WARN    := -Wall -Wextra -Werror -pedantic
 STD     := -std=c99 -D_POSIX_C_SOURCE=200809L
 OPT     := -O2 -g
 
-# 生成物フォルダ（compile_commands.json の出力先にも流用）
 OBJ_DIR   := build
 BUILDDIR  := $(OBJ_DIR)
 
-# インクルードパス  1 行だと長いので折り返し
 INC := \
   -Iinclude            -Iinclude/ds            -Iinclude/util            -Iinclude/algo \
   -Itests/include      -Itests/include/ds      -Itests/include/util      -Itests/include/algo
 
-CFLAGS := $(WARN) $(STD) $(OPT) $(INC)
-
-# テスト時だけ -DTESTING を付与
+CFLAGS      := $(WARN) $(STD) $(OPT) $(INC)
 TEST_CFLAGS := $(CFLAGS) -DTESTING
-# 例）カバレッジを採りたければ ↓ を有効化
-# TEST_CFLAGS += --coverage
+# TEST_CFLAGS += --coverage # カバレッジ有効時
 
-# ────────────────────────────────────
-# 1. ソースファイルセット
-# ────────────────────────────────────
 CORE_SRC := $(wildcard src/*.c) \
             $(wildcard src/ds/*.c) \
             $(wildcard src/util/*.c) \
@@ -41,50 +30,59 @@ TEST_MAIN := tests/test_main.c
 BIN      := $(OBJ_DIR)/main
 TEST_BIN := $(OBJ_DIR)/run_all_tests
 DOCS_DIR := docs
-CLEAN_DOCS := $(DOCS_DIR)          # Doxygen 出力を丸ごと削除
+CLEAN_DOCS := $(DOCS_DIR)
 
-# ────────────────────────────────────
-# 2. ルール
-# ────────────────────────────────────
-.PHONY: all build test lint docs memcheck format clean compile_commands
+.PHONY: all build test lint docs memcheck format clean compile_commands check-alloc
 
 all: build test
 
-## 2-1 本番ビルド
+## 本番ビルド
 build: $(CORE_SRC)
 	@mkdir -p $(OBJ_DIR)
 	$(CC) $(CFLAGS) -o $(BIN) $^
 
-## 2-2 テストビルド＋実行
+## テストビルド＋実行
 test: $(CORE_SRC) $(TEST_UTIL) $(TEST_SRC) $(TEST_MAIN)
 	@mkdir -p $(OBJ_DIR)
 	$(CC) $(TEST_CFLAGS) -o $(TEST_BIN) $^
 	@./$(TEST_BIN)
 
-## 2-3 静的解析
+## 静的解析
 lint:
 	@cppcheck --enable=all --inconclusive --error-exitcode=1 src/ include/ tests/
 	@clang-tidy $(CORE_SRC) $(TEST_SRC) -- $(CFLAGS) || true
 
-## 2-4 ドキュメント生成
+## ドキュメント生成
 docs:
 	@doxygen Doxyfile
 
-## 2-5 Valgrind
+## Valgrind
 memcheck: test
 	valgrind --leak-check=full $(TEST_BIN)
 
-## 2-6 clang-format
+## clang-format
 format:
 	@echo "[INFO] clang-format run"
 	@find src include tests -type f \( -name '*.c' -o -name '*.h' \) -exec clang-format -i {} +
 
-## 2-7 コンパイル DB（clangd / VSCode 用）
+## コンパイルDB
 compile_commands:
 	@echo "[INFO] generating compile_commands.json"
 	@bear --output $(BUILDDIR)/compile_commands.json -- \
 	  $(MAKE) -B build
 
-## 2-8 クリーン
+## クリーン
 clean:
 	@rm -rf $(OBJ_DIR) $(CLEAN_DOCS)
+
+## ────────────────────────────────────
+## すべてのAPI宣言・実装が「const ds_allocator_t* alloc」を持っているかをgrepで自動検査
+## ────────────────────────────────────
+check-alloc:
+	@echo "[CHECK] Verifying all API signatures require 'const ds_allocator_t* alloc' ..."
+	@! grep -rE --include="*.h" --include="*.c" \
+	    '^[a-zA-Z_][a-zA-Z0-9_ \*]+\([^\)]*\)' include/ src/ \
+	    | grep -v 'const ds_allocator_t\* alloc' \
+	    | grep -v '^.*\bmain\b' \
+	    && echo "[PASS] All API signatures use 'const ds_allocator_t* alloc'." \
+	    || (echo "[FAIL] Found APIs missing 'const ds_allocator_t* alloc' in their signature!" && exit 1)

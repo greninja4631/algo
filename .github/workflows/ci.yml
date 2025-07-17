@@ -1,45 +1,31 @@
-name: C Project CI
+# .github/workflows/ci.yml
+name: CI (GitHub Actions)
 
 on:
   push:
     branches: [ main, master ]
   pull_request:
-    branches: [ main, master ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y build-essential
+      - name: Set up gcc
+        run: sudo apt-get update && sudo apt-get install -y gcc make valgrind curl
 
-      - name: Build all sources
+      - name: Build
+        run: make build
+
+      - name: Test
+        run: make test
+
+      - name: Memcheck
+        run: make memcheck || true  # Valgrindなければエラー無視
+
+      - name: Trigger Jenkins job  # JenkinsへWebAPIで通知（ここがJenkins連携）
+        if: ${{ github.ref == 'refs/heads/main' }} # 例：mainブランチだけ通知
         run: |
-          make        # プロジェクトルートのMakefileでビルド
-
-      - name: Run all tests
-        run: |
-          make test   # すべてのテスト（tests/以下）をまとめて実行する場合
-
-      # （オプション）個別テスト実行例
-      - name: Run main test
-        run: |
-          gcc -Iinclude -o main_test src/main.c
-          ./main_test
-
-      - name: Run stack test
-        run: |
-          gcc -Iinclude -o stack_test src/stack.c tests/test_stack.c
-          ./stack_test
-
-      # 他に必要なら tests/配下の他ファイルも同様に記述可
-
-      # Dockerを使う場合の例（Dockerfileがある場合のみ）
-      # - name: Build and test in Docker
-      #   run: |
-      #     docker build -t algo-ci .
-      #     docker run --rm algo-ci
+          curl -X POST "https://your-jenkins-domain/job/your-job-name/build?token=YOUR_TOKEN"

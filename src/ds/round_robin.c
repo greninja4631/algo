@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #include <stdio.h>
 #ifndef DATA_STRUCTURES_H
 #define DATA_STRUCTURES_H
@@ -5,96 +6,136 @@
 #include "ds/round_robin.h"
 #include "ds/process.h"
 #include "ds/queue.h"
+=======
+/**
+ * @file    src/ds/rpn_calculator.c
+ * @brief   逆ポーランド記法（RPN）電卓 実装（ガイドライン完全準拠）
+ */
+#include "ds/rpn_calculator.h"
+#include "util/memory.h"
+>>>>>>> feature
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
 
-/* --- 本体構造体（不透明型のまま） --- */
-struct ds_round_robin_scheduler {
-    int          time_quantum;
-    ds_queue_t  *process_queue;   /* FIFO キュー */
+/*───── Opaque本体構造体（.c隠蔽）─────*/
+struct ds_rpn_calculator {
+    double *stack;
+    size_t  size, capacity;
 };
 
-/* --- スケジューラ生成 --- */
-ds_error_t ds_round_robin_scheduler_create(int time_quantum,
-                                           ds_round_robin_scheduler_t **out_sched)
-{
-    if (!out_sched)      return DS_ERR_NULL_POINTER;
-    if (time_quantum<=0) return DS_ERR_INVALID_ARG;
+/*───── スタック確保初期サイズ─────*/
+#define RPN_INIT_CAP 16
 
-    ds_round_robin_scheduler_t *sched = calloc(1, sizeof *sched);
-    if (!sched) return DS_ERR_ALLOC;
-
-    sched->time_quantum = time_quantum;
-    ds_error_t err = ds_queue_create(&sched->process_queue);
-    if (err != DS_SUCCESS) { free(sched); return err; }
-
-    *out_sched = sched;
+/*───── 内部ユーティリティ─────*/
+static ds_error_t rpn_ensure_capacity(const ds_allocator_t *alloc, ds_rpn_calculator_t *calc, size_t min_cap) {
+    if (calc->capacity >= min_cap) return DS_SUCCESS;
+    size_t new_cap = calc->capacity ? calc->capacity * 2 : RPN_INIT_CAP;
+    while (new_cap < min_cap) new_cap *= 2;
+    double *new_stack = ds_realloc(alloc, calc->stack, new_cap * sizeof(double));
+    if (!new_stack) return DS_ERR_ALLOC;
+    calc->stack = new_stack;
+    calc->capacity = new_cap;
     return DS_SUCCESS;
 }
 
-/* --- スケジューラ破棄 --- */
-ds_error_t ds_round_robin_scheduler_destroy(ds_round_robin_scheduler_t *sched)
+/*───── API実装 ─────*/
+
+ds_error_t ds_rpn_calculator_create(
+    const ds_allocator_t *alloc,
+    ds_rpn_calculator_t **out_calc)
 {
-    if (!sched) return DS_ERR_NULL_POINTER;
-
-    void *proc = NULL;
-    while (ds_queue_dequeue(sched->process_queue, &proc) == DS_SUCCESS)
-        ds_process_destroy((ds_process_t *)proc);
-
-    ds_queue_destroy(sched->process_queue);
-    free(sched);
+    if (!alloc || !out_calc) return DS_ERR_NULL_POINTER;
+    ds_rpn_calculator_t *calc = ds_malloc(alloc, 1, sizeof(*calc));
+    if (!calc) return DS_ERR_ALLOC;
+    calc->stack = NULL;
+    calc->size = 0;
+    calc->capacity = 0;
+    *out_calc = calc;
     return DS_SUCCESS;
 }
 
-/* --- プロセス追加 --- */
-ds_error_t ds_round_robin_scheduler_add_process(ds_round_robin_scheduler_t *sched,
-                                                const ds_process_t *process)
+ds_error_t ds_rpn_calculator_destroy(
+    const ds_allocator_t *alloc,
+    ds_rpn_calculator_t *calc)
 {
-    if (!sched || !process) return DS_ERR_NULL_POINTER;
-
-    ds_process_t *copy = ds_process_clone(process);
-    if (!copy) return DS_ERR_ALLOC;
-
-    ds_error_t err = ds_queue_enqueue(sched->process_queue, copy);
-    if (err != DS_SUCCESS) ds_process_destroy(copy);
-    return err;
-}
-
-/* --- 次のプロセス取得 --- */
-ds_error_t ds_round_robin_scheduler_get_next_process(ds_round_robin_scheduler_t *sched,
-                                                     ds_process_t **out_proc)
-{
-    if (!sched || !out_proc) return DS_ERR_NULL_POINTER;
-    if (ds_queue_size(sched->process_queue) == 0) return DS_ERR_EMPTY;
-
-    void *proc = NULL;
-    ds_error_t err = ds_queue_dequeue(sched->process_queue, &proc);
-    if (err != DS_SUCCESS) return err;
-
-    *out_proc = (ds_process_t *)proc;
-    /* 同じ内容をコピーして末尾へ戻す */
-    ds_queue_enqueue(sched->process_queue, ds_process_clone(*out_proc));
+    if (!alloc || !calc) return DS_ERR_NULL_POINTER;
+    if (calc->stack) ds_free(alloc, calc->stack);
+    ds_free(alloc, calc);
     return DS_SUCCESS;
 }
 
-/* --- 完了プロセス削除（ID 指定） --- */
-ds_error_t ds_round_robin_scheduler_complete_process(ds_round_robin_scheduler_t *sched,
-                                                     int process_id)
+ds_error_t ds_rpn_calculator_reset(
+    const ds_allocator_t *alloc,
+    ds_rpn_calculator_t *calc)
 {
-    if (!sched) return DS_ERR_NULL_POINTER;
+    (void)alloc;
+    if (!calc) return DS_ERR_NULL_POINTER;
+    calc->size = 0;
+    return DS_SUCCESS;
+}
 
-    ds_queue_t *tmp;
-    ds_queue_create(&tmp);
-    int found = 0;
+ds_error_t ds_rpn_calculator_push(
+    const ds_allocator_t *alloc,
+    ds_rpn_calculator_t *calc,
+    double v)
+{
+    if (!alloc || !calc) return DS_ERR_NULL_POINTER;
+    ds_error_t rc = rpn_ensure_capacity(alloc, calc, calc->size + 1);
+    if (rc != DS_SUCCESS) return rc;
+    calc->stack[calc->size++] = v;
+    return DS_SUCCESS;
+}
 
-    void *proc = NULL;
-    while (ds_queue_dequeue(sched->process_queue, &proc) == DS_SUCCESS) {
-        if (ds_process_get_id((ds_process_t *)proc) == process_id) {
-            ds_process_destroy((ds_process_t *)proc);
-            found = 1;
+ds_error_t ds_rpn_calculator_pop(
+    const ds_allocator_t *alloc,
+    ds_rpn_calculator_t *calc,
+    double *out_v)
+{
+    if (!calc || !out_v) return DS_ERR_NULL_POINTER;
+    if (calc->size == 0) return DS_ERR_EMPTY;
+    *out_v = calc->stack[--calc->size];
+    return DS_SUCCESS;
+}
+
+ds_error_t ds_rpn_calculator_evaluate(
+    const ds_allocator_t *alloc,
+    ds_rpn_calculator_t *calc,
+    const char *expr,
+    double *out_res)
+{
+    if (!alloc || !calc || !expr || !out_res) return DS_ERR_NULL_POINTER;
+    ds_rpn_calculator_reset(alloc, calc);
+
+    char buf[128];
+    strncpy(buf, expr, sizeof(buf) - 1);
+    buf[sizeof(buf)-1] = '\0';
+    char *token = strtok(buf, " ");
+    ds_error_t rc = DS_SUCCESS;
+
+    while (token) {
+        char *end;
+        double val = strtod(token, &end);
+        if (end != token) {
+            rc = ds_rpn_calculator_push(alloc, calc, val);
+        } else if (strcmp(token, "+") == 0 || strcmp(token, "-") == 0 ||
+                   strcmp(token, "*") == 0 || strcmp(token, "/") == 0) {
+            double rhs, lhs;
+            if ((rc = ds_rpn_calculator_pop(alloc, calc, &rhs)) != DS_SUCCESS) break;
+            if ((rc = ds_rpn_calculator_pop(alloc, calc, &lhs)) != DS_SUCCESS) break;
+            double res = 0.0;
+            if (strcmp(token, "+") == 0) res = lhs + rhs;
+            else if (strcmp(token, "-") == 0) res = lhs - rhs;
+            else if (strcmp(token, "*") == 0) res = lhs * rhs;
+            else if (strcmp(token, "/") == 0) res = lhs / rhs;
+            rc = ds_rpn_calculator_push(alloc, calc, res);
         } else {
-            ds_queue_enqueue(tmp, proc);
+            rc = DS_ERR_INVALID_ARG;
+            break;
         }
+        token = strtok(NULL, " ");
     }
+<<<<<<< HEAD
     /* 戻し */
     while (ds_queue_dequeue(tmp, &proc) == DS_SUCCESS)
         ds_queue_enqueue(sched->process_queue, proc);
@@ -111,5 +152,14 @@ ds_error_t ds_round_robin_scheduler_complete_process(ds_round_robin_scheduler_t 
     ds_queue_destroy(tmp);
 >>>>>>> feature
     return found ? DS_SUCCESS : DS_ERR_NOT_FOUND;
+}
+>>>>>>> feature
+=======
+    if (rc == DS_SUCCESS && calc->size == 1) {
+        rc = ds_rpn_calculator_pop(alloc, calc, out_res);
+    } else if (rc == DS_SUCCESS) {
+        rc = DS_ERR_INVALID_ARG;
+    }
+    return rc;
 }
 >>>>>>> feature

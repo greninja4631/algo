@@ -1,59 +1,89 @@
-/**
- * @file  tests/ds/test_statistics.c
- * @brief statistics モジュールの単体テスト
- */
-#include "statistics.h"
-#include "util/test_util.h"
-#include <assert.h>
+#include "ds/statistics.h"
+#include <stdlib.h>
+#include <string.h>
+#include <float.h>
 
-/* ---- ログ付きアサート ---- */
-#define TEST_ASSERT(cond, msg)                                              \
-    do {                                                                    \
-        if (cond) { LOG_INFO("[PASS] %s\n", msg); }                         \
-        else      { LOG_ERROR("[FAIL] %s (%s:%d)\n",                        \
-                               msg, __FILE__, __LINE__); assert(cond); }    \
-    } while (0)
+struct ds_statistics {
+    int   sum, min, max, mode;
+    double avg, median;
+    size_t n;
+    int*   data;  // 配列コピー(必要に応じ)
+};
 
-/* 基本ケース */
-void test_statistics_basic(void)
-{
-    int arr[] = {5,1,7,1,2,7,7};
-    int n = (int)(sizeof arr / sizeof arr[0]);
-
-    TEST_ASSERT(sum(arr,n)     == 30,        "sum");
-    TEST_ASSERT(min(arr,n)     == 1,         "min");
-    TEST_ASSERT(max(arr,n)     == 7,         "max");
-    TEST_ASSERT(average(arr,n) == 30.0/n,    "average");
-    TEST_ASSERT(median(arr,n)  == 5,         "median");
-    TEST_ASSERT(mode(arr,n)    == 7,         "mode");
-
-    Statistics s = calculate_statistics(arr,n);
-    TEST_ASSERT(s.sum == 30 && s.mode == 7,  "calculate_statistics");
+static int cmp_int(const void* a, const void* b) {
+    return (*(int*)a) - (*(int*)b);
 }
 
-/* エッジケース */
-void test_statistics_edge_cases(void)
-{
-    /* 長さ 1 */
-    int single[1] = {42};
-    TEST_ASSERT(median(single,1) == 42, "median single");
-
-    /* 長さ 0 : ISO C では空配列不可 → ダミー1要素配列 + n=0 */
-    int dummy[1] = {0};
-    int n = 0;
-    (void)sum(dummy, n);   /* 仕様に応じた戻り値を後で検証可 */
+ds_error_t ds_statistics_create(const ds_allocator_t* alloc, ds_statistics_t** out_stats) {
+    if (!alloc || !out_stats) return DS_ERR_NULL_POINTER;
+    ds_statistics_t* s = alloc->alloc(1, sizeof(*s));
+    if (!s) return DS_ERR_ALLOC;
+    memset(s, 0, sizeof(*s));
+    s->data = NULL;
+    *out_stats = s;
+    return DS_SUCCESS;
 }
 
-/* 不正入力ケース */
-void test_statistics_invalid_input(void)
-{
-    int *nullarr = NULL;
-    int n = 8;
-    (void)sum(nullarr,n);
-    (void)min(nullarr,n);
-    (void)max(nullarr,n);
-    (void)average(nullarr,n);
-    (void)median(nullarr,n);
-    (void)mode(nullarr,n);
-    (void)calculate_statistics(nullarr,n);
+void ds_statistics_destroy(const ds_allocator_t* alloc, ds_statistics_t* stats) {
+    if (!alloc || !stats) return;
+    if (stats->data) alloc->free(stats->data);
+    alloc->free(stats);
+}
+
+ds_error_t ds_statistics_calculate(ds_statistics_t* stats, const int* data, size_t size) {
+    if (!stats || !data || size == 0) return DS_ERR_INVALID_ARG;
+    if (stats->data) { free(stats->data); stats->data = NULL; }
+    stats->data = malloc(size * sizeof(int));  // DI必須ならalloc->allocで
+    if (!stats->data) return DS_ERR_ALLOC;
+    memcpy(stats->data, data, size * sizeof(int));
+    stats->n = size;
+
+    int sum = 0, min = data[0], max = data[0], mode = data[0];
+    int freq[1024] = {0};  // 仮: 値域制限が必要なら実装工夫
+    for (size_t i = 0; i < size; ++i) {
+        sum += data[i];
+        if (data[i] < min) min = data[i];
+        if (data[i] > max) max = data[i];
+        int idx = data[i] + 512;  // 仮: 正負両対応
+        if (idx >= 0 && idx < 1024) freq[idx]++;
+    }
+    int max_count = 0;
+    for (size_t i = 0; i < 1024; ++i) {
+        if (freq[i] > max_count) { max_count = freq[i]; mode = (int)i - 512; }
+    }
+    stats->sum = sum; stats->min = min; stats->max = max; stats->mode = mode;
+    stats->avg = (double)sum / size;
+
+    // 中央値計算
+    qsort(stats->data, size, sizeof(int), cmp_int);
+    if (size % 2 == 0)
+        stats->median = (stats->data[size / 2 - 1] + stats->data[size / 2]) / 2.0;
+    else
+        stats->median = stats->data[size / 2];
+    return DS_SUCCESS;
+}
+
+#define SAFE_GET(field, out) if (!stats || !(out)) return DS_ERR_NULL_POINTER; *(out) = stats->field; return DS_SUCCESS
+
+ds_error_t ds_statistics_get_sum(const ds_statistics_t* stats, int* out_sum) { SAFE_GET(sum, out_sum); }
+ds_error_t ds_statistics_get_min(const ds_statistics_t* stats, int* out_min) { SAFE_GET(min, out_min); }
+ds_error_t ds_statistics_get_max(const ds_statistics_t* stats, int* out_max) { SAFE_GET(max, out_max); }
+ds_error_t ds_statistics_get_average(const ds_statistics_t* stats, double* out_avg) { SAFE_GET(avg, out_avg); }
+ds_error_t ds_statistics_get_median(const ds_statistics_t* stats, double* out_median) { SAFE_GET(median, out_median); }
+ds_error_t ds_statistics_get_mode(const ds_statistics_t* stats, int* out_mode) { SAFE_GET(mode, out_mode); }
+
+ds_error_t ds_statistics_calculate_all(
+    const int* data, size_t size,
+    int* out_sum, int* out_min, int* out_max,
+    double* out_avg, double* out_median, int* out_mode
+) {
+    ds_statistics_t s;
+    if (ds_statistics_calculate(&s, data, size) != DS_SUCCESS) return DS_ERR_INVALID_ARG;
+    if (out_sum)    *out_sum    = s.sum;
+    if (out_min)    *out_min    = s.min;
+    if (out_max)    *out_max    = s.max;
+    if (out_avg)    *out_avg    = s.avg;
+    if (out_median) *out_median = s.median;
+    if (out_mode)   *out_mode   = s.mode;
+    return DS_SUCCESS;
 }

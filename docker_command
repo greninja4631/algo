@@ -1,0 +1,1 @@
+ docker build -t algo-ci . && docker run --rm -it algo-ci ./run_ci.sh

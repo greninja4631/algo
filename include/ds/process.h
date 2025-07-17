@@ -1,26 +1,29 @@
 #ifndef DS_PROCESS_H
 #define DS_PROCESS_H
+#include "data_structures.h"     /* ds_allocator_t / ds_error_t */
 
-#include "data_structures.h"      /* ds_error_t など共通型 */
+#ifdef __cplusplus
+extern "C" { 
+#endif
 
 
 
-/* ── API ── */
-/**
- * @brief プロセス生成
- * @ownership 呼び出し側が ds_process_destroy() で解放
- */
-ds_error_t ds_process_create(int id, int burst_time,
-                             ds_process_t **out_process);
+/* @ownership caller (destroy) */
+ds_error_t ds_process_create(
+    const ds_allocator_t *alloc,
+    int32_t               pid,
+    int32_t               burst_time,
+    ds_process_t        **out_process);
 
-/** @brief プロセス複製（ディープコピー） */
-ds_process_t *ds_process_clone(const ds_process_t *src);
+/* NULL-safe / 冪等 */
+ds_error_t ds_process_destroy(
+    const ds_allocator_t *alloc,
+    ds_process_t         *proc);
 
-/** @brief 破棄 */
-void ds_process_destroy(ds_process_t *process);
+int32_t ds_process_get_id        (const ds_process_t *proc);
+int32_t ds_process_get_burst_time(const ds_process_t *proc);
 
-/** @brief ゲッター */
-int ds_process_get_id(const ds_process_t *p);
-int ds_process_get_burst_time(const ds_process_t *p);
-
+#ifdef __cplusplus
+}
+#endif
 #endif /* DS_PROCESS_H */

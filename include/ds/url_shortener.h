@@ -42,7 +42,7 @@ ds_error_t ds_url_shortener_shorten(ds_url_shortener_t* us, const char* url, cha
  * @param[out] out_us     生成されたインスタンスへのポインタ
  * @return                エラーコード
  */
-ds_error_t ds_url_shortener_create(size_t capacity, ds_url_shortener_t** out_us);
+ds_error_t ds_url_shortener_create(const ds_allocator_t* alloc, size_t capacity, ds_url_shortener_t** out_us);
 
 /**
  * @brief URL短縮器破棄
@@ -77,7 +77,11 @@ ds_error_t ds_url_shortener_expand(ds_url_shortener_t* us, const char* short_url
 #endif
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #endif // URL_SHORTENER_H
+=======
+#endif // DS_URL_SHORTENER_H
+>>>>>>> feature
 =======
 #endif // DS_URL_SHORTENER_H
 >>>>>>> feature

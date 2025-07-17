@@ -1,41 +1,34 @@
 #include "ds/process.h"
-#include <stdlib.h>
-#include <string.h>
+#include "util/memory.h"   /* ds_malloc / ds_free */
 
-/* ─────────── 本体定義（ここだけ！） ─────────── */
 struct ds_process {
-    int id;
-    int burst_time;
+    int32_t pid;
+    int32_t burst;
 };
 
-/* ─────────── 実装 ─────────── */
-ds_error_t ds_process_create(int id, int burst_time,
-                             ds_process_t **out_process)
+ds_error_t ds_process_create(const ds_allocator_t *alloc,
+                             int32_t               pid,
+                             int32_t               burst,
+                             ds_process_t        **out_proc)
 {
-    if (!out_process) return DS_ERR_NULL_POINTER;
-    ds_process_t *p = malloc(sizeof *p);
+    if (!alloc || !out_proc) return DS_ERR_NULL_POINTER;
+
+    ds_process_t *p = ds_malloc(alloc, 1, sizeof *p);
     if (!p) return DS_ERR_ALLOC;
 
-    p->id         = id;
-    p->burst_time = burst_time;
-    *out_process  = p;
+    p->pid   = pid;
+    p->burst = burst;
+    *out_proc = p;
     return DS_SUCCESS;
 }
 
-ds_process_t *ds_process_clone(const ds_process_t *src)
+ds_error_t ds_process_destroy(const ds_allocator_t *alloc, ds_process_t *p)
 {
-    if (!src) return NULL;
-    ds_process_t *copy = malloc(sizeof *copy);
-    if (!copy) return NULL;
-    memcpy(copy, src, sizeof *copy);
-    return copy;
+    if (!alloc) return DS_ERR_NULL_POINTER;
+    if (!p)     return DS_SUCCESS;
+    ds_free(alloc, p);
+    return DS_SUCCESS;
 }
 
-void ds_process_destroy(ds_process_t *p)
-{
-    free(p);
-}
-
-/* ─────────── ゲッター ─────────── */
-int ds_process_get_id(const ds_process_t *p)          { return p ? p->id         : 0; }
-int ds_process_get_burst_time(const ds_process_t *p)  { return p ? p->burst_time : 0; }
+int32_t ds_process_get_id(const ds_process_t *p)         { return p ? p->pid   : -1; }
+int32_t ds_process_get_burst_time(const ds_process_t *p) { return p ? p->burst : -1; }
