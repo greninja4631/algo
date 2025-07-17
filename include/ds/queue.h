@@ -1,73 +1,58 @@
 #ifndef DS_QUEUE_H
 #define DS_QUEUE_H
-
-#include "data_structures.h"  // ds_queue_t, ds_error_t, 共通型
+/**
+ * @file    include/ds/queue.h
+ * @brief   汎用 FIFO キュー（Opaque 型 + 抽象アロケータ DI）
+ * @version 1.0
+ */
+#include <stddef.h>
+#include <stdbool.h>
+#include "data_structures.h"   /* ds_error_t / ds_allocator_t / ds_stats_t */
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" {      /* C++ 互換 */
 #endif
 
-#define DS_QUEUE_API_VERSION "1.0"
 
-/**
- * @file
- * @brief 汎用キュー（FIFO）データ構造API
- */
-
+/*──────────── CRUD ────────────*/
 /**
  * @brief キュー生成
- * @param[out] out_queue  生成されたキューインスタンスへのポインタ
- * @return                エラーコード
+ * @ownership caller-frees
  */
-ds_error_t ds_queue_create(ds_queue_t** out_queue);
+ds_error_t ds_queue_create(const ds_allocator_t *alloc, ds_queue_t **out_queue);
 
 /**
- * @brief キュー破棄
- * @param queue  インスタンス
- * @return       エラーコード
+ * @brief キュー破棄（NULL安全）
+ * @ownership caller-frees
  */
-ds_error_t ds_queue_destroy(ds_queue_t* queue);
+ds_error_t ds_queue_destroy(const ds_allocator_t *alloc, ds_queue_t *queue);
+
+/*──────────── 操作 ────────────*/
 
 /**
- * @brief キュー末尾に追加（enqueue）
- * @param queue  インスタンス
- * @param data   登録データ
- * @return       エラーコード
+ * @brief 末尾にデータを追加
  */
-ds_error_t ds_queue_enqueue(ds_queue_t* queue, void* data);
+ds_error_t ds_queue_enqueue(const ds_allocator_t *alloc, ds_queue_t *queue, void *data);
 
 /**
- * @brief キュー先頭から取り出し（dequeue）
- * @param queue      インスタンス
- * @param[out] data  取り出したデータ（outポインタ）
- * @return           エラーコード
+ * @brief 先頭からデータを取り出す
  */
-ds_error_t ds_queue_dequeue(ds_queue_t* queue, void** data);
+ds_error_t ds_queue_dequeue(const ds_allocator_t *alloc, ds_queue_t *queue, void **out_data);
+
+/*──────────── 参照・情報 ────────────*/
 
 /**
- * @brief キュー先頭を覗く（popせず参照）
- * @param queue      インスタンス
- * @param[out] data  先頭データ（outポインタ）
- * @return           エラーコード
+ * @brief 先頭要素の参照（popしない）
+ * @note 読み取り専用なのでalloc不要
  */
-ds_error_t ds_queue_front(const ds_queue_t* queue, void** data);
+ds_error_t ds_queue_front(const ds_queue_t *queue, void **out_data);
 
-/**
- * @brief 空判定
- * @param queue  インスタンス
- * @return       true=空, false=要素あり
- */
-bool ds_queue_is_empty(const ds_queue_t* queue);
+bool   ds_queue_is_empty(const ds_queue_t *queue);
+size_t ds_queue_size    (const ds_queue_t *queue);
 
-/**
- * @brief 要素数取得
- * @param queue  インスタンス
- * @return       現在のサイズ
- */
-size_t ds_queue_size(const ds_queue_t* queue);
+ds_error_t ds_queue_get_stats(const ds_queue_t *queue, ds_stats_t *stats);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif // DS_QUEUE_H
+#endif /* DS_QUEUE_H */

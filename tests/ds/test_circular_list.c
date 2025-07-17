@@ -1,75 +1,77 @@
 /**
- * @file test_circular_list.c
- * @brief ds_circular_list_t モジュールの単体テスト
- * @details 本ファイルは test_main.c から呼び出される。main関数は持たない。
+ * @file    tests/ds/test_circular_list.c
+ * @brief   ds_circular_list モジュールの単体テスト
+ * @details main() は tests/test_main.c で一括管理。
  */
 
-#include "ds/circular_list.h"
-#include "util/test_util.h"
-#include "util/logger.h"
+#include <stdlib.h>             /* calloc / free */
+#include "ds/circular_list.h"   /* 被テスト API */
+#include "util/logger.h"        /* ds_log */
 
-// テスト用アサーション（プロジェクト共通マクロ利用推奨）
-#define DS_TEST_ASSERT(cond, msg) \
-    do { \
-        if (cond) { ds_log(DS_LOG_LEVEL_INFO, "[PASS] %s", msg); } \
-        else      { ds_log(DS_LOG_LEVEL_ERROR, "[FAIL] %s (%s:%d)", msg, __FILE__, __LINE__); } \
+/*─────────────────────────────────────*
+ * 1. 標準 malloc/free を ds_allocator_t
+ *─────────────────────────────────────*/
+static void* _std_alloc(size_t cnt, size_t size) { return calloc(cnt, size); }
+static void  _std_free (void*  p)                { free(p);                }
+
+static const ds_allocator_t g_alloc_impl = {
+    .alloc = _std_alloc,
+    .free  = _std_free
+};
+#define G_ALLOC (&g_alloc_impl)
+
+/*───────────────────────────────*
+ * 2. 共通アサーションマクロ
+ *───────────────────────────────*/
+#define TASSERT(cond, msg)                                                     \
+    do {                                                                       \
+        if (cond) { ds_log(DS_LOG_LEVEL_INFO,  "[PASS] %s", (msg)); }          \
+        else      { ds_log(DS_LOG_LEVEL_ERROR, "[FAIL] %s (%s:%d)",            \
+                           (msg), __FILE__, __LINE__); }                       \
     } while (0)
 
-// 基本動作テスト
-void ds_test_circular_list_basic(void)
+/*───────────────────────────────*
+ * 3. 基本動作テスト
+ *───────────────────────────────*/
+void test__circular_list_basic(void)
 {
-    ds_error_t err;
-    ds_circular_list_t* list = NULL;
-    void* data = NULL;
+    ds_circular_list_t *list = NULL;
+    void *tmp = NULL;
     int a = 10, b = 20, c = 30;
 
-    // --- 生成 ---
-    err = ds_circular_list_create(&list);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "create: DS_SUCCESS");
-    DS_TEST_ASSERT(list != NULL, "create: not NULL");
-    DS_TEST_ASSERT(ds_circular_list_is_empty(list), "is_empty: after create");
-    DS_TEST_ASSERT(ds_circular_list_size(list) == 0, "size: after create");
+    /* Create */
+    TASSERT(ds_circular_list_create(G_ALLOC, &list) == DS_SUCCESS, "create");
+    TASSERT(list != NULL,                                "list != NULL");
+    TASSERT(ds_circular_list_is_empty(list),             "empty after create");
+    TASSERT(ds_circular_list_size(list) == 0,            "size 0");
 
-    // --- 追加 ---
-    err = ds_circular_list_insert(list, &a);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "insert a");
-    DS_TEST_ASSERT(!ds_circular_list_is_empty(list), "not empty after insert");
-    DS_TEST_ASSERT(ds_circular_list_size(list) == 1, "size 1");
+    /* Insert */
+    TASSERT(ds_circular_list_insert(G_ALLOC, list, &a) == DS_SUCCESS, "insert a");
+    TASSERT(ds_circular_list_insert(G_ALLOC, list, &b) == DS_SUCCESS, "insert b");
+    TASSERT(ds_circular_list_insert(G_ALLOC, list, &c) == DS_SUCCESS, "insert c");
+    TASSERT(ds_circular_list_size(list) == 3,                         "size 3");
 
-    err = ds_circular_list_insert(list, &b);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "insert b");
-    DS_TEST_ASSERT(ds_circular_list_size(list) == 2, "size 2");
+    /* Remove (FIFO with rotation) */
+    TASSERT(ds_circular_list_remove(G_ALLOC, list, &tmp) == DS_SUCCESS && *(int*)tmp == a,
+            "remove a");
+    TASSERT(ds_circular_list_remove(G_ALLOC, list, &tmp) == DS_SUCCESS && *(int*)tmp == b,
+            "remove b");
+    TASSERT(ds_circular_list_remove(G_ALLOC, list, &tmp) == DS_SUCCESS && *(int*)tmp == c,
+            "remove c");
+    TASSERT(ds_circular_list_is_empty(list), "empty after all remove");
 
-    err = ds_circular_list_insert(list, &c);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "insert c");
-    DS_TEST_ASSERT(ds_circular_list_size(list) == 3, "size 3");
+    /* Remove on empty */
+    TASSERT(ds_circular_list_remove(G_ALLOC, list, &tmp) == DS_ERR_EMPTY,
+            "remove empty");
 
-    // --- 削除 ---
-    err = ds_circular_list_remove(list, &data);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)data == a, "remove: a");
-    DS_TEST_ASSERT(ds_circular_list_size(list) == 2, "size 2 after remove a");
+    /* Destroy */
+    TASSERT(ds_circular_list_destroy(G_ALLOC, list) == DS_SUCCESS, "destroy OK");
 
-    err = ds_circular_list_remove(list, &data);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)data == b, "remove: b");
-    DS_TEST_ASSERT(ds_circular_list_size(list) == 1, "size 1 after remove b");
+    /* NULL-safety checks */
+    TASSERT(ds_circular_list_is_empty(NULL),               "is_empty(NULL)");
+    TASSERT(ds_circular_list_size(NULL) == 0,              "size(NULL)");
+    TASSERT(ds_circular_list_destroy(G_ALLOC, NULL) == DS_ERR_NULL_POINTER,
+            "destroy(NULL)");
 
-    err = ds_circular_list_remove(list, &data);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)data == c, "remove: c");
-    DS_TEST_ASSERT(ds_circular_list_size(list) == 0, "size 0 after remove all");
-    DS_TEST_ASSERT(ds_circular_list_is_empty(list), "is_empty after all removed");
-
-    // --- 空でremove ---
-    err = ds_circular_list_remove(list, &data);
-    DS_TEST_ASSERT(err == DS_ERR_EMPTY, "remove: empty list");
-
-    // --- 破棄 ---
-    err = ds_circular_list_destroy(list);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "destroy: DS_SUCCESS");
-
-    // --- NULL安全 ---
-    DS_TEST_ASSERT(ds_circular_list_is_empty(NULL), "is_empty: NULL");
-    DS_TEST_ASSERT(ds_circular_list_size(NULL) == 0, "size: NULL");
-    DS_TEST_ASSERT(ds_circular_list_destroy(NULL) == DS_ERR_NULL_POINTER, "destroy: NULL");
-
-    ds_log(DS_LOG_LEVEL_INFO, "[OK] ds_test_circular_list_basic 完了");
+    ds_log(DS_LOG_LEVEL_INFO, "[OK] test__circular_list_basic finished");
 }

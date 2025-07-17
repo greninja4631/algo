@@ -1,77 +1,181 @@
-/**
- * @file test_lru_cache.c
- * @brief ds_lru_cache_t モジュールの単体テスト
- * @details 本ファイルは test_main.c から呼び出される。main関数は持たない。
- */
-
+/*======================================================================*
+ *  src/ds/lru_cache.c
+ *  抽象アロケータ DI 対応・スレッド非安全版 LRU キャッシュ実装
+ *======================================================================*/
 #include "ds/lru_cache.h"
-#include "util/test_util.h"
-#include "util/logger.h"
+#include "ds/hashmap.h"      /* key→node の O(1) 参照用 */
+#include "util/memory.h"     /* ds_malloc / ds_free      */
+#include <string.h>          /* strlen / memcpy          >
+#include <stddef.h>          /* NULL                     */
 
-// テスト用アサーションマクロ（共通化されている場合はそちらを利用）
-#define DS_TEST_ASSERT(cond, msg) \
-    do { \
-        if (cond) { ds_log(DS_LOG_LEVEL_INFO, "[PASS] %s", msg); } \
-        else      { ds_log(DS_LOG_LEVEL_ERROR, "[FAIL] %s (%s:%d)", msg, __FILE__, __LINE__); } \
-    } while (0)
+/*────────────────────── 内部型 ──────────────────────*/
+typedef struct ds_lru_node {
+    char                *key;      /* dup したキー文字列 (alloc 経由) */
+    void                *value;
+    struct ds_lru_node  *prev;     /* Doubly-linked list for O(1) ops */
+    struct ds_lru_node  *next;
+} ds_lru_node_t;
 
-// LRUキャッシュ基本動作テスト
-void ds_test_lru_cache_basic(void)
+struct ds_lru_cache {              /* ← Opaque 実体：外部公開しない */
+    const ds_allocator_t *alloc;   /* DI-アロケータ (必ず非 NULL)    */
+    size_t                capacity;
+    size_t                size;
+    ds_lru_node_t        *head;    /* 先頭＝Most-Recently-Used       */
+    ds_lru_node_t        *tail;    /* 末尾＝Least-Recently-Used      */
+    ds_hashmap_t         *map;     /* key → ds_lru_node_t*           */
+};
+
+/*────────────────────── 内部 forward ──────────────────────*/
+static ds_lru_node_t *_move_to_head(ds_lru_cache_t *c, ds_lru_node_t *n);
+static void           _evict_tail  (ds_lru_cache_t *c);
+static char          *_strdup_alloc(const ds_allocator_t *a, const char *s);
+
+/*======================================================================*
+ *  Public  API
+ *======================================================================*/
+ds_error_t
+ds_lru_cache_create(const ds_allocator_t *alloc,
+                    size_t                capacity,
+                    ds_lru_cache_t      **out_cache)
 {
-    ds_error_t err;
-    ds_lru_cache_t* cache = NULL;
-    void* value = NULL;
-    size_t size = 0;
-    int v1 = 100, v2 = 200, v3 = 300;
+    if (!alloc || !out_cache || capacity == 0) return DS_ERR_INVALID_ARG;
 
-    // --- 生成 ---
-    err = ds_lru_cache_create(2, &cache);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "create: DS_SUCCESS");
-    DS_TEST_ASSERT(cache != NULL, "create: not NULL");
+    ds_lru_cache_t *c = ds_malloc(alloc, 1, sizeof *c);
+    if (!c) return DS_ERR_ALLOC;
 
-    // --- 追加 ---
-    err = ds_lru_cache_put(cache, "a", &v1);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "put: a");
-    err = ds_lru_cache_put(cache, "b", &v2);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "put: b");
+    c->alloc    = alloc;
+    c->capacity = capacity;
+    c->size     = 0;
+    c->head = c->tail = NULL;
 
-    // --- 検索 ---
-    err = ds_lru_cache_get(cache, "a", &value);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)value == v1, "get: a (hit)");
-    err = ds_lru_cache_get(cache, "b", &value);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)value == v2, "get: b (hit)");
+    /* key/val の解放は LRU 側で行うので、ハッシュマップには NULL を渡す */
+    ds_error_t rc = ds_hashmap_create(
+        alloc, capacity, NULL, NULL, &c->map);
+    if (rc != DS_SUCCESS) { ds_free(alloc, c); return rc; }
 
-    // --- キャッシュサイズ確認 ---
-    err = ds_lru_cache_size(cache, &size);
-    DS_TEST_ASSERT(err == DS_SUCCESS && size == 2, "size: after put 2");
+    *out_cache = c;
+    return DS_SUCCESS;
+}
 
-    // --- 上限超過: "c"追加で"b"か"a"どちらかがLRUで消える ---
-    err = ds_lru_cache_put(cache, "c", &v3);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "put: c");
+ds_error_t
+ds_lru_cache_destroy(const ds_allocator_t *alloc, ds_lru_cache_t *c)
+{
+    if (!alloc || !c) return DS_ERR_NULL_POINTER;
 
-    err = ds_lru_cache_size(cache, &size);
-    DS_TEST_ASSERT(err == DS_SUCCESS && size == 2, "size: after evict 1");
+    for (ds_lru_node_t *n = c->head; n; ) {
+        ds_lru_node_t *next = n->next;
+        ds_free(alloc, n->key);
+        ds_free(alloc, n);
+        n = next;
+    }
+    ds_hashmap_destroy(alloc, c->map);
+    ds_free(alloc, c);
+    return DS_SUCCESS;
+}
 
-    // --- LRUチェック（"a"が消える仕様の場合） ---
-    err = ds_lru_cache_get(cache, "a", &value);
-    DS_TEST_ASSERT(err != DS_SUCCESS, "get: a (evicted)");
-    err = ds_lru_cache_get(cache, "b", &value);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)value == v2, "get: b (still present)");
-    err = ds_lru_cache_get(cache, "c", &value);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)value == v3, "get: c (just inserted)");
+ds_error_t
+ds_lru_cache_put(const ds_allocator_t *alloc,
+                 ds_lru_cache_t       *c,
+                 const char           *key,
+                 void                 *value)
+{
+    if (!alloc || !c || !key) return DS_ERR_NULL_POINTER;
 
-    // --- NULL安全 ---
-    err = ds_lru_cache_put(NULL, "x", &v1);
-    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "put: NULL");
-    err = ds_lru_cache_get(NULL, "x", &value);
-    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "get: NULL");
-    err = ds_lru_cache_size(NULL, &size);
-    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "size: NULL");
+    /* 既存ノードなら値更新＋MRU 移動 */
+    void *hv = NULL;
+    if (ds_hashmap_get(c->map, key, &hv) == DS_SUCCESS) {
+        ds_lru_node_t *n = hv;
+        n->value = value;
+        _move_to_head(c, n);
+        return DS_SUCCESS;
+    }
 
-    // --- 破棄 ---
-    err = ds_lru_cache_destroy(cache);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "destroy: DS_SUCCESS");
-    DS_TEST_ASSERT(ds_lru_cache_destroy(NULL) == DS_ERR_NULL_POINTER, "destroy: NULL");
+    /* 新規ノードを確保 */
+    ds_lru_node_t *n = ds_malloc(alloc, 1, sizeof *n);
+    if (!n) return DS_ERR_ALLOC;
 
-    ds_log(DS_LOG_LEVEL_INFO, "[OK] ds_test_lru_cache_basic 完了");
+    n->key = _strdup_alloc(alloc, key);
+    if (!n->key) { ds_free(alloc, n); return DS_ERR_ALLOC; }
+    n->value = value;
+
+    /* MRU 位置へ挿入 */
+    n->prev = NULL;
+    n->next = c->head;
+    if (c->head) c->head->prev = n;
+    c->head = n;
+    if (!c->tail) c->tail = n;
+
+    ds_hashmap_put(alloc, c->map, n->key, n); /* 失敗しない前提 */
+
+    if (++c->size > c->capacity) _evict_tail(c);
+    return DS_SUCCESS;
+}
+
+ds_error_t
+ds_lru_cache_get(ds_lru_cache_t *c, const char *key, void **out_value)
+{
+    if (!c || !key || !out_value) return DS_ERR_NULL_POINTER;
+
+    void *hv = NULL;
+    if (ds_hashmap_get(c->map, key, &hv) != DS_SUCCESS) return DS_ERR_NOT_FOUND;
+
+    ds_lru_node_t *n = hv;
+    _move_to_head(c, n);
+    *out_value = n->value;
+    return DS_SUCCESS;
+}
+
+ds_error_t
+ds_lru_cache_size(const ds_lru_cache_t *c, size_t *out_size)
+{
+    if (!c || !out_size) return DS_ERR_NULL_POINTER;
+    *out_size = c->size;
+    return DS_SUCCESS;
+}
+
+/*======================================================================*
+ *  Internal helpers
+ *======================================================================*/
+static ds_lru_node_t *
+_move_to_head(ds_lru_cache_t *c, ds_lru_node_t *n)
+{
+    if (c->head == n) return n;          /* 既に MRU */
+
+    /* detach */
+    if (n->prev) n->prev->next = n->next;
+    if (n->next) n->next->prev = n->prev;
+    if (c->tail == n) c->tail  = n->prev;
+
+    /* insert at head */
+    n->prev = NULL;
+    n->next = c->head;
+    if (c->head) c->head->prev = n;
+    c->head = n;
+    if (!c->tail) c->tail = n;
+    return n;
+}
+
+/* capacity 超過時の LRU 削除 */
+static void
+_evict_tail(ds_lru_cache_t *c)
+{
+    ds_lru_node_t *t = c->tail;
+    if (!t) return;
+
+    if (t->prev) t->prev->next = NULL;
+    c->tail = t->prev;
+    ds_hashmap_remove(c->alloc, c->map, t->key);
+    ds_free(c->alloc, t->key);
+    ds_free(c->alloc, t);
+    --c->size;
+}
+
+/* alloc 版 strdup （NUL 終端込み）*/
+static char *
+_strdup_alloc(const ds_allocator_t *alloc, const char *s)
+{
+    size_t len = strlen(s) + 1;
+    char *dup  = ds_malloc(alloc, len, sizeof(char));
+    if (dup) memcpy(dup, s, len);
+    return dup;
 }

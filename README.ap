@@ -1,0 +1,155 @@
+📚 Cプロジェクト API設計・実装 完全統一ガイドライン
+(2025-07 改訂版 — ソフトウェア工学の最前線バージョン)を採用して、
+上記と下記のを既存のコードを含めて、良い部分を残し、悪い部分を削除して省略せずに再生成して下さい。　　　
+
+
+
+📘 1. 命名規約 & 型設計ルール（＋工学的補足）
+
+項目	規則/理由
+構造体本体	struct ds_<module> { … }; ⇒ 必ず src/<module>.c に隠蔽。DTOだけ例外。カプセル化による「不変条件」の強制＆ABI安定化。
+前方宣言typedef	typedef struct ds_<module> ds_<module>_t; ⇒ include/data_structures.h 集約。型依存ループ/肥大化防止。
+関数	ds_<module>_<verb>()（APIグルーピング明確化、grepしやすい）
+関数ポインタ	ds_<module>_<verb>_func_t（型安全＆DI, コールバック容易）
+エラー定数	DS_ERR_<MODULE>_<CAUSE>（モジュール粒度で原因特定）
+ゲッター/セッター	ds_<module>_get_<field>()/set_<field>()、スレッド安全は _atomic
+クローン関数	ds_<module>_clone(const ds_<module>_t *src)（深いコピー/値型表現）
+グローバル変数	原則禁止。どうしても必要なら ds_<module>_g_<name>＋Mutex/TLS。「隠れた副作用」禁止。
+
+
+⸻
+
+🔁 2. API設計ポリシー（＋工学的加筆）
+	1.	全関数は ds_error_t を返し、成功は DS_SUCCESS
+	•	エラー処理を型で統一し、「呼び出し側での明示的な例外ハンドリング」を促す。
+	2.	所有権は Doxygen @ownership で必ず明示
+	•	メモリリーク、二重解放等のバグをCIで検出できるようにする。
+	3.	出力引数は out_ プレフィクス
+	•	可読性・IDE自動補完との親和性。
+	4.	サイズは size_t／負数は int64_t
+	•	標準化＋将来の移植性配慮。
+	5.	Opaque型三原則
+	1.	外部はポインタのみ（値型誤用防止）
+	2.	メンバはゲッター/セッターのみ（カプセル化で将来的な内部構造変更に強く）
+	3.	コピーは <module>_clone()経由のみ（浅い/深いコピー混同防止）
+
+⸻
+
+🚩 2.1. 抽象アロケータDI & 依存性逆転の徹底
+	•	すべての malloc/free/calloc/realloc を ds_malloc/ds_free などの抽象ラッパー経由に統一。
+	•	src/util/memory.c で「差し替え可能な抽象アロケータ関数ポインタ」を用意。
+	•	DIパターンにより：
+	•	本番は malloc/free、
+	•	テスト・検証は「トラッキング／デバッグ用カスタムアロケータ」へ完全DI可能。
+	•	CI/grep活用で“直書き禁止”を守る
+	•	grepによる機械的検査を推奨（ゼロ件でコミットが通るルール）。
+
+💡 工学的理由：
+	•	動的メモリ管理はCの最大の脆弱点。
+	•	DIによりユニットテスト性と堅牢性を最大化できる。
+
+⸻
+
+📁 3. ヘッダ・ソース構成（＋拡張設計ルール）
+
+ファイル	役割/設計理由
+include/data_structures.h	typedef/enum/汎用エラーコードを1カ所集中管理
+include/ds/.h	API宣言、DTO型のみ定義。Opaque型なら本体は記載不可
+src/ds/.c	構造体本体/実装のみ。複数定義は絶対禁止
+tests/include/ds/_test.h	テスト時だけ本体にアクセスする必要がある場合のみ
+
+
+⸻
+
+📢 4. ロガールール
+	•	本番コードは必ずds_log(level, fmt, ...)のみ使用。
+	•	テストでのみ printf/fprintf 直呼び許可。
+	•	差し替えAPI（ds_set_log_function）でモック/サイレント/ファイル書き出し等に切替可。
+
+⸻
+
+🧪 5. テスト & CI/CD ポリシー
+	•	テスト関数名は void test__<module>_<case>(void);。CIによる自動検出に最適化。
+	•	Opaque型はAPI経由でしか検証しない（実装変更耐性Up）
+	•	テスト本体が必要な時だけ <module>_test.h。
+	•	CIは -Wall -Wextra -Werror -pedantic -fanalyzer 全警告エラー化＋Valgrind/ASan強制。
+	•	Dockerfile化で移植性・再現性を担保。
+
+⸻
+
+⚙ 6. CI/Makefile/Docker例
+
+CFLAGS   = -Wall -Wextra -Werror -pedantic -std=c11
+INCLUDES = -Iinclude -Itests/include
+
+docker build -t algo-ci .
+docker run --rm -it algo-ci ./run_ci.sh
+
+	•	Dockerテストが全設計原則・抽象化・セキュリティを守れている証明とする。
+
+⸻
+
+🔒 7. セキュリティ & パフォーマンス徹底
+	•	@ownership未記載関数はCIで落とす（Doxygenまたはスクリプトチェック）。
+	•	memcpy等は _FORTIFY_SOURCE=2 で脆弱性対策。
+	•	ホットパス（高頻度/高コスト）は __attribute__((hot)) で明示。
+
+⸻
+
+📖 8. README/CONTRIBUTING必須項目
+	•	本ガイドの最新URL・バージョン必ず明記
+	•	ブランチ戦略・PRテンプレート必須
+	•	Logger設計・スレッド安全性のドキュメント
+	•	Mermaid/PlantUML等で「CI/CDパイプライン図」明記
+
+⸻
+
+🔚 9. 既存コード移行チェックリスト
+
+項目	確認内容
+前方宣言の一元管理	data_structures.h に集中し、多重定義は絶対排除
+構造体本体の.c集中	複数箇所定義/漏れを目視で必ずゼロへ
+ゲッター/セッター統一	メンバアクセス一切禁止。API経由のみにする
+clone実装	必要なモジュール全てに_clone()を追加
+グローバル削除orTLS	「副作用なし」保証
+ds_ラッパー経由のみ	malloc/free直書きはgrep/CIでゼロ保証
+
+
+⸻
+
+✅ Opaque型＋抽象アロケータDI実装例（再掲）
+
+// memory.c
+typedef void* (*ds_malloc_func_t)(size_t);
+typedef void  (*ds_free_func_t)(void*);
+static ds_malloc_func_t custom_malloc = malloc;
+static ds_free_func_t   custom_free   = free;
+
+void ds_set_memory_functions(ds_malloc_func_t malloc_func, ds_free_func_t free_func) {
+    custom_malloc = malloc_func;
+    custom_free = free_func;
+}
+void* ds_malloc(size_t size) { return custom_malloc(size); }
+void  ds_free(void* ptr)     { custom_free(ptr); }
+
+呼び出し例
+
+#include "util/memory.h"
+ds_stack_t *s = ds_malloc(sizeof(ds_stack_t));
+ds_free(s);
+
+
+| ✅ **DI対象の拡張性**              | 「アロケータ以外にも logger/config/api\_client など全て“DI対象”になることを許容設計とする」と明記                      |
+| ✅ **テスト層の位置づけ**             | `tests/include/` や `_test.h` によるテストアクセスは Interface Adapter であり、**本番レイヤーには一切関与しない**と強調 |
+| ✅ **Infrastructure の後置き原則** | `memory.c` や `logger.c` などのドライバ層は、**後から差し替える前提で設計すること（本体への直接依存禁止）**                   |
+
+
+
+⸻
+
+❌ アンチパターン（工学的リスク込み）
+	•	typedef/前方宣言の多重定義（ABI破壊・型安全性低下）
+	•	struct本体を複数ヘッダで再定義（カプセル化崩壊・リンクエラー）
+	•	テストのために本番ヘッダを条件分岐で切替（設計の混乱・保守性崩壊）
+	•	本番コードで printf/fprintf/perror を直接使用（本番時の情報漏洩・可観測性劣化）
+

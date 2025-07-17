@@ -16,7 +16,9 @@
         "string.h": "c",
         "history_system.h": "c",
         "stdarg.h": "c",
-        "{}": "c"
+        "{}": "c",
+        "stddef.h": "c",
+        "hashmap.h": "c"
     },
 
     /* ---------- 2. 自動保存設定 ---------- */

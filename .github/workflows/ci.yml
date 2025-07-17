@@ -1,15 +1,20 @@
 # .github/workflows/ci.yml
-name: CI (GitHub Actions)
+name: CI (Build, Test, Clang-Tidy)
 
 on:
   push:
     branches: [ main, pre, feature ]
   pull_request:
+    paths:
+      - '**/*.c'
+      - '**/*.h'
+      - '.clang-tidy'
+      - 'Makefile'
+      - '.github/workflows/ci.yml'
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +30,20 @@ jobs:
       - name: Memcheck
         run: make memcheck || true  # Valgrindなければエラー無視
 
-      - name: Trigger Jenkins job  # JenkinsへWebAPIで通知（ここがJenkins連携）
-        if: ${{ github.ref == 'refs/heads/main' }} # 例：mainブランチだけ通知
+      - name: Trigger Jenkins job
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           curl -X POST "https://your-jenkins-domain/job/your-job-name/build?token=YOUR_TOKEN"
+
+  clang-tidy-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-tidy
+        run: sudo apt-get update && sudo apt-get install -y clang-tidy
+
+      - name: Run clang-tidy (fail on warnings)
+        run: |
+          find src/ include/ -type f \( -name "*.c" -o -name "*.h" \) > files.txt
+          clang-tidy -p . --quiet --warnings-as-errors='*' $(cat files.txt)

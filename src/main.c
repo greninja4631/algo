@@ -9,7 +9,7 @@
 
 #ifndef TESTING        /* ←★ テストビルド時は main() を除去 */
 
-int main(void)
+int main(const ds_allocator_t* alloc)
 {
     /* デフォルトロガーのまま起動メッセージだけ出力 */
     ds_log(DS_LOG_LEVEL_INFO,

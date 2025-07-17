@@ -4,3 +4,4 @@ CheckOptions:
     value: '::malloc;::calloc;::realloc'
   - key: cppcoreguidelines-no-malloc.Deallocations
     value: '::free'
+WarningsAsErrors: '*'

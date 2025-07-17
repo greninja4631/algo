@@ -1,79 +1,118 @@
+#ifndef DS_STACK_H
+#define DS_STACK_H
+
 /**
- * @file  tests/ds/test_stack.c
- * @brief ds_stack_t モジュールの単体テスト
- * @note  main() は tests/test_main.c に集約される
+ * @file   ds/stack.h
+ * @brief  汎用スタックAPI ― Opaque型＋抽象アロケータDI準拠
+ *
+ * 本体は src/ds/stack.c のみ。全メモリ操作はalloc経由。エラーはds_error_tで統一。
+ * すべて「所有権 @ownership」明記でバグ・リークを防ぐ。
  */
-#include "ds/stack.h"
-#include "util/test_util.h"
-#include "util/logger.h"
-#include <string.h>   /* memset */
 
-/* ───────────── 共通アサート ───────────── */
-#define DS_TEST_ASSERT(cond, msg)                                          \
-    do {                                                                   \
-        if (cond) { ds_log(DS_LOG_LEVEL_INFO,  "[PASS] %s", msg); }        \
-        else      { ds_log(DS_LOG_LEVEL_ERROR, "[FAIL] %s (%s:%d)",        \
-                           msg, __FILE__, __LINE__);                       \
-        }                                                                  \
-    } while (0)
+#include <stddef.h>
+#include <stdbool.h>
+#include "data_structures.h"   // ds_* 前方宣言 / 汎用型
 
-/* ────────────────────────────────────── */
-/* 基本操作テスト                                                              */
-void ds_test_stack_basic(void)
-{
-    ds_stack_t *stack = NULL;
-    int a = 10, b = 20, c = 30;
-    void *out = NULL;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    DS_TEST_ASSERT(ds_stack_create(&stack) == DS_SUCCESS && stack,
-                   "create");
+/*──────────────────────────────
+ * Opaque型前方宣言（本体は.c）
+ *──────────────────────────────*/
+// typedef struct ds_stack ds_stack_t;  ← data_structures.h に一元化済み
 
-    ds_stack_push(stack, &a);
-    ds_stack_push(stack, &b);
-    ds_stack_push(stack, &c);
-    DS_TEST_ASSERT(ds_stack_size(stack) == 3, "size == 3");
+/*──────────────────────────────
+ * Public API
+ *──────────────────────────────*/
 
-    ds_stack_peek(stack, &out);
-    DS_TEST_ASSERT(*(int *)out == c, "peek == c");
+/**
+ * @brief  スタック生成
+ * @param  alloc      抽象アロケータ (NULL禁止)
+ * @param  out_stack  [out]生成ハンドル
+ * @retval DS_SUCCESS           正常
+ * @retval DS_ERR_NULL_POINTER  引数NULL
+ * @retval DS_ERR_ALLOC         メモリ不足
+ * @ownership caller-frees (destroy)
+ */
+ds_error_t ds_stack_create(
+    const ds_allocator_t *alloc,
+    ds_stack_t          **out_stack);
 
-    ds_stack_pop(stack, &out); DS_TEST_ASSERT(*(int *)out == c, "pop c");
-    ds_stack_pop(stack, &out); DS_TEST_ASSERT(*(int *)out == b, "pop b");
-    ds_stack_pop(stack, &out); DS_TEST_ASSERT(*(int *)out == a, "pop a");
+/**
+ * @brief  スタック破棄（NULLセーフ）
+ * @param  alloc  抽象アロケータ (NULL許容)
+ * @param  stack  スタックハンドル
+ * @retval DS_SUCCESS          正常
+ * @retval DS_ERR_NULL_POINTER stack==NULL
+ * @ownership library-frees (内部全解放、呼び出し側は以降利用不可)
+ */
+ds_error_t ds_stack_destroy(
+    const ds_allocator_t *alloc,
+    ds_stack_t           *stack);
 
-    DS_TEST_ASSERT(ds_stack_is_empty(stack), "empty after pop");
-    ds_stack_destroy(stack);
+/**
+ * @brief  プッシュ
+ * @ownership library-takes-ownership (dataはスタックの管理下)
+ */
+ds_error_t ds_stack_push(
+    const ds_allocator_t *alloc,
+    ds_stack_t           *stack,
+    void                 *data);
+
+/**
+ * @brief  ポップ
+ * @ownership caller-takes-ownership (返却値は呼び出し側で管理)
+ */
+ds_error_t ds_stack_pop(
+    const ds_allocator_t *alloc,
+    ds_stack_t           *stack,
+    void                **out_data);
+
+/**
+ * @brief  先頭要素を参照（popしない）
+ * @ownership borrowed
+ */
+ds_error_t ds_stack_peek(
+    const ds_allocator_t *alloc,
+    const ds_stack_t     *stack,
+    void                **out_data);
+
+/**
+ * @brief 空判定
+ */
+bool ds_stack_is_empty(const ds_allocator_t *alloc, const ds_stack_t *stack);
+
+/**
+ * @brief 要素数
+ */
+size_t ds_stack_size(const ds_allocator_t *alloc, const ds_stack_t *stack);
+
+/**
+ * @brief 全要素クリア
+ */
+ds_error_t ds_stack_reset(
+    const ds_allocator_t *alloc,
+    ds_stack_t           *stack);
+
+/**
+ * @brief 統計取得
+ */
+ds_error_t ds_stack_get_stats(
+    const ds_allocator_t *alloc,
+    const ds_stack_t     *stack,
+    ds_stats_t           *out_stats);
+
+/**
+ * @brief クローン生成（deep copy, optional 実装例）
+ */
+ds_error_t ds_stack_clone(
+    const ds_allocator_t *alloc,
+    const ds_stack_t     *src,
+    ds_stack_t          **out_clone);
+
+#ifdef __cplusplus
 }
+#endif
 
-/* 異常系テスト */
-void ds_test_stack_edge_cases(void)
-{
-    void *dummy = NULL;
-
-    DS_TEST_ASSERT(ds_stack_push(NULL, &dummy) == DS_ERR_NULL_POINTER,
-                   "push NULL");
-    DS_TEST_ASSERT(ds_stack_pop(NULL, &dummy)  == DS_ERR_NULL_POINTER,
-                   "pop NULL");
-    DS_TEST_ASSERT(ds_stack_peek(NULL, &dummy) == DS_ERR_NULL_POINTER,
-                   "peek NULL");
-
-    /* 戻り値は使わないが、呼び出しがクラッシュしないことを確認 */
-    (void)ds_stack_is_empty(NULL);
-    (void)ds_stack_size(NULL);
-}
-
-/* メモリ / 統計テスト */
-void ds_test_stack_memory_management(void)
-{
-    ds_stack_t *stack = NULL;
-    ds_stats_t  stats;
-    int val = 100;
-
-    ds_stack_create(&stack);
-    ds_stack_push(stack, &val);
-    ds_stack_reset(stack);
-
-    memset(&stats, 0, sizeof stats);
-    ds_stack_get_stats(stack, &stats);   /* 値はプロジェクト実装に依存 */
-
-    ds_stack_destroy(stack);
-}
+#endif /* DS_STACK_H */

@@ -1,16 +1,18 @@
 // src/ds/history_system.c
+#include "util/memory.h"
 #include "ds/history_system.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-/*──────────────────────────────────────────*/
-/* 内部クリア関数プロトタイプ（static）    */
-/*──────────────────────────────────────────*/
-static void static_clear_history(ds_history_system_t *hist);
+/*──────────────────────────────*/
+/* 内部クリア関数プロトタイプ    */
+/*──────────────────────────────*/
+static void static_clear_history(const ds_allocator_t* alloc, ds_history_system_t *hist);
 
-/*──────────────────────────────────────────*/
-/* 内部構造                                */
-/*──────────────────────────────────────────*/
+/*──────────────────────────────*/
+/* 内部構造                      */
+/*──────────────────────────────*/
 typedef struct history_node {
     ds_command_t        *command;
     struct history_node *next;
@@ -22,48 +24,52 @@ struct ds_history_system {
     history_node_t *tail;
     history_node_t *current;
     size_t          max_history;
+    const ds_allocator_t *alloc;
 };
 
-/*──────────────────────────────────────────*/
-/* ノード生成ユーティリティ（static）      */
-/*──────────────────────────────────────────*/
-static history_node_t *make_node(const ds_command_t *cmd) {
+/*──────────────────────────────*/
+/* ノード生成ユーティリティ      */
+/*──────────────────────────────*/
+static history_node_t *make_node(const ds_allocator_t *alloc, const ds_command_t *cmd) {
     if (!cmd) return NULL;
-    history_node_t *n = malloc(sizeof *n);
+    history_node_t *n = ds_malloc(alloc, 1, sizeof *n);
     if (!n) return NULL;
     n->command = (ds_command_t *)cmd;  /* shallow copy */
     n->next = n->prev = NULL;
     return n;
 }
 
-/*──────────────────────────────────────────*/
-/* API 実装                                */
-/*──────────────────────────────────────────*/
+/*──────────────────────────────*/
+/* API 実装                      */
+/*──────────────────────────────*/
 ds_history_system_t *
-ds_history_system_create(size_t max_history)
+ds_history_system_create(const ds_allocator_t* alloc, size_t max_history)
 {
-    ds_history_system_t *h = calloc(1, sizeof *h);
+    ds_history_system_t *h = ds_malloc(alloc, 1, sizeof *h);
     if (!h) return NULL;
     h->max_history = max_history ? max_history : SIZE_MAX;
+    h->alloc = alloc;
+    h->head = h->tail = h->current = NULL;
     return h;
 }
 
 ds_error_t
-ds_history_system_destroy(ds_history_system_t *hist)
+ds_history_system_destroy(const ds_allocator_t* alloc, ds_history_system_t *hist)
 {
     if (!hist) return DS_ERR_NULL_POINTER;
     /* 内部ノードをすべて解放 */
-    static_clear_history(hist);
-    free(hist);
+    static_clear_history(alloc, hist);
+    ds_free(alloc, hist);
     return DS_SUCCESS;
 }
 
 ds_error_t
-ds_history_system_execute_command(ds_history_system_t *hist,
-                                  const ds_command_t  *command)
+ds_history_system_execute_command(ds_history_system_t *hist, const ds_command_t  *command)
 {
     if (!hist || !command || !command->execute)
         return DS_ERR_NULL_POINTER;
+
+    const ds_allocator_t* alloc = hist->alloc;
 
     /* コマンド実行 */
     ds_error_t exec_result = command->execute(command->ctx);
@@ -71,7 +77,7 @@ ds_history_system_execute_command(ds_history_system_t *hist,
         return exec_result;
 
     /* 成功したら履歴にノード追加 */
-    history_node_t *node = make_node(command);
+    history_node_t *node = make_node(alloc, command);
     if (!node)
         return DS_ERR_ALLOC;
 
@@ -86,8 +92,8 @@ ds_history_system_execute_command(ds_history_system_t *hist,
     for (history_node_t *p = hist->tail; p; p = p->prev) {
         if (++count > hist->max_history && p->prev) {
             history_node_t *dead = p->prev;
-            dead->prev->next = NULL;
-            free(dead);
+            if (dead->prev) dead->prev->next = NULL;
+            ds_free(alloc, dead);
             hist->head = p;
             break;
         }
@@ -138,16 +144,16 @@ ds_history_system_redo(ds_history_system_t *hist)
     return res;
 }
 
-/*──────────────────────────────────────────*/
-/* 内部クリア関数（static／戻り値 void）  */
-/*──────────────────────────────────────────*/
+/*──────────────────────────────*/
+/* 内部クリア関数               */
+/*──────────────────────────────*/
 static void
-static_clear_history(ds_history_system_t *hist)
+static_clear_history(const ds_allocator_t* alloc, ds_history_system_t *hist)
 {
     history_node_t *p = hist->head;
     while (p) {
         history_node_t *nx = p->next;
-        free(p);
+        ds_free(alloc, p);
         p = nx;
     }
     hist->head    = NULL;

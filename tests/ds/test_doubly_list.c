@@ -1,171 +1,134 @@
 /**
- * @file test_doubly_list.c
- * @brief ds_doubly_list_t モジュールの単体テスト
- * @details 本ファイルは test_main.c から呼び出すため main関数は持たない。
+ * @file    tests/ds/test_doubly_list.c
+ * @brief   ds_doubly_list モジュール単体テスト
+ * @details main() は tests/test_main.c 側で集約。
  */
 
-#include "ds/doubly_list.h"
-#include "util/test_util.h"
-#include "util/logger.h"
-#include <stdlib.h>
+#include <stdlib.h>               /* calloc / free */
+#include "ds/doubly_list.h"       /* 被テスト API */
+#include "util/logger.h"          /* ds_log */
 
-/* プロジェクト共通アサーションマクロ例 */
-#define DS_TEST_ASSERT(cond, msg) \
-    do { \
-        if (cond) { ds_log(DS_LOG_LEVEL_INFO, "[PASS] %s", msg); } \
-        else      { ds_log(DS_LOG_LEVEL_ERROR, "[FAIL] %s (%s:%d)", msg, __FILE__, __LINE__); } \
+/*─────────────────────────────────────*
+ * 1. 標準 malloc/free を ds_allocator_t
+ *─────────────────────────────────────*/
+static void* _std_alloc(size_t cnt, size_t sz) { return calloc(cnt, sz); }
+static void  _std_free (void* p)               { free(p);               }
+
+static const ds_allocator_t g_alloc_impl = {
+    .alloc = _std_alloc,
+    .free  = _std_free
+};
+#define G_ALLOC (&g_alloc_impl)
+
+/*───────────────────────────────*
+ * 2. 汎用アサーションマクロ
+ *───────────────────────────────*/
+#define TASSERT(c, m)                                                         \
+    do {                                                                      \
+        if (c) ds_log(DS_LOG_LEVEL_INFO , "[PASS] %s", (m));                  \
+        else   ds_log(DS_LOG_LEVEL_ERROR, "[FAIL] %s (%s:%d)",                \
+                      (m), __FILE__, __LINE__);                               \
     } while (0)
 
-/**
- * @brief ds_doubly_list_t の基本機能テスト
- */
-void ds_test_doubly_list_basic(void)
+/*───────────────────────────────*
+ * 3-A. 基本機能テスト
+ *───────────────────────────────*/
+void test__doubly_list_basic(void)
 {
-    ds_error_t err;
-    ds_doubly_list_t* list = ds_doubly_list_create();
-    void* out_data = NULL;
+    ds_doubly_list_t *list = NULL;
     int a = 10, b = 20, c = 30, d = 40;
+    void *tmp = NULL;
 
-    // --- 生成 ---
-    DS_TEST_ASSERT(list != NULL, "create: not NULL");
-    DS_TEST_ASSERT(ds_doubly_list_is_empty(list), "is_empty after create");
-    DS_TEST_ASSERT(ds_doubly_list_size(list) == 0, "size after create");
+    /* Create */
+    TASSERT(ds_doubly_list_create(G_ALLOC, &list) == DS_SUCCESS, "create");
+    TASSERT(list != NULL,                               "list != NULL");
+    TASSERT(ds_doubly_list_is_empty(list),              "empty after create");
+    TASSERT(ds_doubly_list_size(list) == 0,             "size 0");
 
-    // --- 末尾追加 ---
-    err = ds_doubly_list_insert_back(list, &a);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "insert_back a");
-    err = ds_doubly_list_insert_back(list, &b);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "insert_back b");
-    DS_TEST_ASSERT(ds_doubly_list_size(list) == 2, "size==2 after two insert_back");
+    /* Push back (a,b) */
+    TASSERT(ds_doubly_list_insert_back (G_ALLOC, list, &a) == DS_SUCCESS, "push_back a");
+    TASSERT(ds_doubly_list_insert_back (G_ALLOC, list, &b) == DS_SUCCESS, "push_back b");
+    TASSERT(ds_doubly_list_size(list) == 2,                               "size 2");
 
-    // --- 先頭追加 ---
-    err = ds_doubly_list_insert_front(list, &c);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "insert_front c");
-    DS_TEST_ASSERT(ds_doubly_list_size(list) == 3, "size==3 after insert_front");
+    /* Push front (c) */
+    TASSERT(ds_doubly_list_insert_front(G_ALLOC, list, &c) == DS_SUCCESS, "push_front c");
+    TASSERT(ds_doubly_list_size(list) == 3,                               "size 3");
 
-    // --- 任意位置追加（1番目, 0-indexed）---
-    err = ds_doubly_list_insert_at(list, 1, &d);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "insert_at index=1 d");
-    DS_TEST_ASSERT(ds_doubly_list_size(list) == 4, "size==4 after insert_at");
+    /* Insert at idx=1 (d)  c d a b */
+    TASSERT(ds_doubly_list_insert_at   (G_ALLOC, list, 1, &d) == DS_SUCCESS,"insert_at d");
+    TASSERT(ds_doubly_list_size(list) == 4,                                 "size 4");
 
-    // --- get_atで要素取得 ---
-    err = ds_doubly_list_get_at(list, 0, &out_data);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)out_data == c, "get_at 0: c");
-    err = ds_doubly_list_get_at(list, 1, &out_data);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)out_data == d, "get_at 1: d");
-    err = ds_doubly_list_get_at(list, 2, &out_data);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)out_data == a, "get_at 2: a");
-    err = ds_doubly_list_get_at(list, 3, &out_data);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)out_data == b, "get_at 3: b");
+    /* Validate order */
+    TASSERT(ds_doubly_list_get_at(list, 0, &tmp) == DS_SUCCESS && *(int*)tmp == c, "get 0=c");
+    TASSERT(ds_doubly_list_get_at(list, 1, &tmp) == DS_SUCCESS && *(int*)tmp == d, "get 1=d");
+    TASSERT(ds_doubly_list_get_at(list, 2, &tmp) == DS_SUCCESS && *(int*)tmp == a, "get 2=a");
+    TASSERT(ds_doubly_list_get_at(list, 3, &tmp) == DS_SUCCESS && *(int*)tmp == b, "get 3=b");
 
-    // --- remove_front ---
-    err = ds_doubly_list_remove_front(list, &out_data);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)out_data == c, "remove_front: c");
-    DS_TEST_ASSERT(ds_doubly_list_size(list) == 3, "size after remove_front");
+    /* pop front (c) */
+    TASSERT(ds_doubly_list_remove_front(G_ALLOC, list, &tmp) == DS_SUCCESS && *(int*)tmp == c,
+            "remove_front c");
+    /* pop back (b)   d a */
+    TASSERT(ds_doubly_list_remove_back (G_ALLOC, list, &tmp) == DS_SUCCESS && *(int*)tmp == b,
+            "remove_back b");
+    /* remove_at idx=1 (a)  d */
+    TASSERT(ds_doubly_list_remove_at   (G_ALLOC, list, 1, &tmp) == DS_SUCCESS && *(int*)tmp == a,
+            "remove_at 1 a");
+    /* remove_at idx=0 (d)  EMPTY */
+    TASSERT(ds_doubly_list_remove_at   (G_ALLOC, list, 0, &tmp) == DS_SUCCESS && *(int*)tmp == d,
+            "remove_at 0 d");
+    TASSERT(ds_doubly_list_is_empty(list), "empty after clears");
 
-    // --- remove_back ---
-    err = ds_doubly_list_remove_back(list, &out_data);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)out_data == b, "remove_back: b");
-    DS_TEST_ASSERT(ds_doubly_list_size(list) == 2, "size after remove_back");
+    /* remove on empty */
+    TASSERT(ds_doubly_list_remove_front(G_ALLOC, list, &tmp) == DS_ERR_EMPTY,
+            "remove_front empty");
 
-    // --- remove_at（0-indexed: index=1, aを削除）---
-    err = ds_doubly_list_remove_at(list, 1, &out_data);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)out_data == a, "remove_at 1: a");
-    DS_TEST_ASSERT(ds_doubly_list_size(list) == 1, "size after remove_at");
-
-    // --- remove_at（index=0, dを削除）---
-    err = ds_doubly_list_remove_at(list, 0, &out_data);
-    DS_TEST_ASSERT(err == DS_SUCCESS && *(int*)out_data == d, "remove_at 0: d");
-    DS_TEST_ASSERT(ds_doubly_list_is_empty(list), "is_empty after all remove");
-
-    // --- 空でremove ---
-    err = ds_doubly_list_remove_front(list, &out_data);
-    DS_TEST_ASSERT(err == DS_ERR_EMPTY, "remove_front: empty");
-
-    // --- 破棄 ---
-    err = ds_doubly_list_destroy(list);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "destroy: DS_SUCCESS");
-
-    // --- NULL安全 ---
-    DS_TEST_ASSERT(ds_doubly_list_is_empty(NULL), "is_empty: NULL");
-    DS_TEST_ASSERT(ds_doubly_list_size(NULL) == 0, "size: NULL");
-    DS_TEST_ASSERT(ds_doubly_list_destroy(NULL) == DS_ERR_NULL_POINTER, "destroy: NULL");
-
-    ds_log(DS_LOG_LEVEL_INFO, "[OK] ds_test_doubly_list_basic 完了");
+    /* Destroy */
+    TASSERT(ds_doubly_list_destroy(G_ALLOC, list) == DS_SUCCESS, "destroy OK");
 }
 
-/**
- * @brief ds_doubly_list_t のエッジケース・異常系・NULL安全テスト
- */
-void ds_test_doubly_list_edge_cases(void)
+/*───────────────────────────────*
+ * 3-B. 境界・異常系テスト
+ *───────────────────────────────*/
+void test__doubly_list_edge_cases(void)
 {
-    ds_error_t err;
-    void* out_data = NULL;
+    void *tmp = NULL;
 
-    // --- NULL渡し ---
-    err = ds_doubly_list_insert_front(NULL, &out_data);
-    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "insert_front: NULL list");
-    err = ds_doubly_list_insert_back(NULL, &out_data);
-    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "insert_back: NULL list");
-    err = ds_doubly_list_insert_at(NULL, 0, &out_data);
-    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "insert_at: NULL list");
+    /* NULL list param */
+    TASSERT(ds_doubly_list_insert_back (G_ALLOC, NULL, &tmp) == DS_ERR_NULL_POINTER,"ins_back NULL");
+    TASSERT(ds_doubly_list_remove_back (G_ALLOC, NULL, &tmp) == DS_ERR_NULL_POINTER,"rm_back NULL");
+    TASSERT(ds_doubly_list_get_at(NULL, 0, &tmp)              == DS_ERR_NULL_POINTER,"get_at NULL");
 
-    err = ds_doubly_list_remove_front(NULL, &out_data);
-    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "remove_front: NULL list");
-    err = ds_doubly_list_remove_back(NULL, &out_data);
-    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "remove_back: NULL list");
-    err = ds_doubly_list_remove_at(NULL, 0, &out_data);
-    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "remove_at: NULL list");
-
-    err = ds_doubly_list_get_at(NULL, 0, &out_data);
-    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "get_at: NULL list");
-
-    err = ds_doubly_list_destroy(NULL);
-    DS_TEST_ASSERT(err == DS_ERR_NULL_POINTER, "destroy: NULL list");
-
-    // --- index out of range ---
-    ds_doubly_list_t* list = ds_doubly_list_create();
-    DS_TEST_ASSERT(list != NULL, "create: for out-of-range test");
-
-    err = ds_doubly_list_insert_back(list, &out_data);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "insert_back for out-of-range test");
-
-    err = ds_doubly_list_get_at(list, 100, &out_data);
-    DS_TEST_ASSERT(err == DS_ERR_OUT_OF_RANGE, "get_at: out of range");
-
-    err = ds_doubly_list_remove_at(list, 100, &out_data);
-    DS_TEST_ASSERT(err == DS_ERR_OUT_OF_RANGE, "remove_at: out of range");
-
-    ds_doubly_list_destroy(list);
-
-    ds_log(DS_LOG_LEVEL_INFO, "[OK] ds_test_doubly_list_edge_cases 完了");
+    /* Index out-of-range */
+    ds_doubly_list_t *list = NULL;
+    TASSERT(ds_doubly_list_create(G_ALLOC, &list) == DS_SUCCESS, "create for OOR");
+    TASSERT(ds_doubly_list_insert_back(G_ALLOC, list, &tmp) == DS_SUCCESS, "insert OOR");
+    TASSERT(ds_doubly_list_get_at(list, 99, &tmp)  == DS_ERR_OUT_OF_RANGE, "get_at OOR");
+    TASSERT(ds_doubly_list_remove_at(G_ALLOC, list, 99, &tmp) == DS_ERR_OUT_OF_RANGE,
+            "remove_at OOR");
+    ds_doubly_list_destroy(G_ALLOC, list);
 }
 
-/**
- * @brief ds_doubly_list_t のメモリ・大量データテスト
- */
-void ds_test_doubly_list_memory_management(void)
+/*───────────────────────────────*
+ * 3-C. メモリ負荷テスト (256 要素)
+ *───────────────────────────────*/
+void test__doubly_list_bulk(void)
 {
-    ds_error_t err;
-    ds_doubly_list_t* list = ds_doubly_list_create();
-    int arr[256];
-    void* out_data = NULL;
+    ds_doubly_list_t *list = NULL;
+    int buf[256];
+    void *tmp = NULL;
+
+    TASSERT(ds_doubly_list_create(G_ALLOC, &list) == DS_SUCCESS, "create bulk");
 
     for (size_t i = 0; i < 256; ++i) {
-        arr[i] = (int)i;
-        err = ds_doubly_list_insert_back(list, &arr[i]);
-        DS_TEST_ASSERT(err == DS_SUCCESS, "memory: insert_back");
+        buf[i] = (int)i;
+        TASSERT(ds_doubly_list_insert_back(G_ALLOC, list, &buf[i]) == DS_SUCCESS, "bulk push");
     }
-    DS_TEST_ASSERT(ds_doubly_list_size(list) == 256, "memory: size==256");
+    TASSERT(ds_doubly_list_size(list) == 256, "bulk size == 256");
 
-    for (size_t i = 0; i < 256; ++i) {
-        err = ds_doubly_list_remove_front(list, &out_data);
-        DS_TEST_ASSERT(err == DS_SUCCESS, "memory: remove_front");
-    }
-    DS_TEST_ASSERT(ds_doubly_list_is_empty(list), "memory: is_empty after all remove");
+    for (size_t i = 0; i < 256; ++i)
+        TASSERT(ds_doubly_list_remove_front(G_ALLOC, list, &tmp) == DS_SUCCESS, "bulk pop");
 
-    err = ds_doubly_list_destroy(list);
-    DS_TEST_ASSERT(err == DS_SUCCESS, "memory: destroy");
+    TASSERT(ds_doubly_list_is_empty(list), "bulk empty");
 
-    ds_log(DS_LOG_LEVEL_INFO, "[OK] ds_test_doubly_list_memory_management 完了");
+    ds_doubly_list_destroy(G_ALLOC, list);
 }

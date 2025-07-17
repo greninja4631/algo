@@ -1,95 +1,126 @@
-// src/ds/stack.c
+#include "ds/stack.h"
+#include "util/memory.h"        /* ds_malloc / ds_free ラッパー */
+#include <string.h>             /* memcpy */
 
-#include "ds/stack.h"           // 必ずAPIヘッダだけ（forward宣言/型/関数は全てdata_structures.hで管理）
-#include <stddef.h>
-#include <stdbool.h>
-#include <stdlib.h>
-// ---- 内部本体型定義（.c内のみ/外部非公開） ----
+/* ───── 内部構造体（外部非公開） ───── */
 struct ds_stack {
-    void **data;
-    size_t capacity;
-    size_t size;
+    void  **data;               /* 動的配列 */
+    size_t  capacity;           /* 配列サイズ  */
+    size_t  size;               /* 使用要素数 */
+    ds_stats_t stats;           /* O(1) で返すために保持 */
 };
 
+#define DS_STACK_INIT_CAP 8
 
-#define DS_STACK_INIT_CAPACITY 8
+/* ───── ヘルパ ───── */
+static ds_error_t grow_if_needed(const ds_allocator_t *alloc,
+                                 ds_stack_t           *s);
 
-// ---- API実装 ----
+/* ───── API 実装 ───── */
 
-ds_error_t ds_stack_create(ds_stack_t **out_stack) {
-    if (!out_stack) return DS_ERR_NULL_POINTER;
+ds_error_t
+ds_stack_create(const ds_allocator_t *alloc, ds_stack_t **out_s)
+{
+    if (!alloc || !out_s) return DS_ERR_NULL_POINTER;
 
-    ds_stack_t *s = (ds_stack_t*)malloc(sizeof(ds_stack_t));
+    ds_stack_t *s = (ds_stack_t *)ds_malloc(alloc, 1, sizeof *s);
     if (!s) return DS_ERR_ALLOC;
 
-    s->data = (void**)malloc(DS_STACK_INIT_CAPACITY * sizeof(void*));
-    if (!s->data) {
-        free(s);
-        return DS_ERR_ALLOC;
-    }
-    s->capacity = DS_STACK_INIT_CAPACITY;
+    s->data = (void **)ds_malloc(alloc, DS_STACK_INIT_CAP, sizeof(void *));
+    if (!s->data) { ds_free(alloc, s); return DS_ERR_ALLOC; }
+
+    s->capacity = DS_STACK_INIT_CAP;
+    s->size     = 0;
+    memset(&s->stats, 0, sizeof s->stats);
+
+    *out_s = s;
+    return DS_SUCCESS;
+}
+
+ds_error_t
+ds_stack_destroy(const ds_allocator_t *alloc, ds_stack_t *s)
+{
+    if (!alloc || !s) return DS_ERR_NULL_POINTER;
+
+    ds_free(alloc, s->data);
+    ds_free(alloc, s);
+    return DS_SUCCESS;
+}
+
+ds_error_t
+ds_stack_push(const ds_allocator_t *alloc, ds_stack_t *s, void *data)
+{
+    if (!alloc || !s)          return DS_ERR_NULL_POINTER;
+    if (grow_if_needed(alloc, s) != DS_SUCCESS) return DS_ERR_ALLOC;
+
+    s->data[s->size++] = data;
+    s->stats.total_elements = s->size;
+    s->stats.operations_count++;
+    return DS_SUCCESS;
+}
+
+ds_error_t
+ds_stack_pop(const ds_allocator_t *alloc, ds_stack_t *s, void **out)
+{
+    (void)alloc;                       /* 現実装では解放なし */
+    if (!s || !out)      return DS_ERR_NULL_POINTER;
+    if (s->size == 0)    return DS_ERR_EMPTY;
+
+    *out = s->data[--s->size];
+    s->stats.total_elements = s->size;
+    s->stats.operations_count++;
+    return DS_SUCCESS;
+}
+
+ds_error_t
+ds_stack_peek(const ds_stack_t *s, void **out)
+{
+    if (!s || !out)      return DS_ERR_NULL_POINTER;
+    if (s->size == 0)    return DS_ERR_EMPTY;
+
+    *out = s->data[s->size - 1];
+    return DS_SUCCESS;
+}
+
+bool
+ds_stack_is_empty(const ds_stack_t *s) { return !s || s->size == 0; }
+
+size_t
+ds_stack_size(const ds_stack_t *s)     { return s ? s->size : 0; }
+
+ds_error_t
+ds_stack_reset(const ds_allocator_t *alloc, ds_stack_t *s)
+{
+    if (!alloc || !s) return DS_ERR_NULL_POINTER;
     s->size = 0;
-    *out_stack = s;
+    s->stats.total_elements = 0;
+    s->stats.operations_count++;
     return DS_SUCCESS;
 }
 
-ds_error_t ds_stack_destroy(ds_stack_t *stack) {
-    if (!stack) return DS_ERR_NULL_POINTER;
-    free(stack->data);
-    free(stack);
+ds_error_t
+ds_stack_get_stats(const ds_stack_t *s, ds_stats_t *stats)
+{
+    if (!s || !stats) return DS_ERR_NULL_POINTER;
+    *stats = s->stats;
     return DS_SUCCESS;
 }
 
-ds_error_t ds_stack_push(ds_stack_t *stack, void *data) {
-    if (!stack) return DS_ERR_NULL_POINTER;
-    if (stack->size >= stack->capacity) {
-        size_t newcap = stack->capacity * 2;
-        void **newdata = (void**)malloc(newcap * sizeof(void*));
-        if (!newdata) return DS_ERR_ALLOC;
-        for (size_t i = 0; i < stack->size; ++i)
-            newdata[i] = stack->data[i];
-        free(stack->data);
-        stack->data = newdata;
-        stack->capacity = newcap;
-    }
-    stack->data[stack->size++] = data;
-    return DS_SUCCESS;
-}
+/* ─────────── 内部関数 ─────────── */
 
-ds_error_t ds_stack_pop(ds_stack_t *stack, void **out_data) {
-    if (!stack || !out_data) return DS_ERR_NULL_POINTER;
-    if (stack->size == 0) return DS_ERR_EMPTY;
-    *out_data = stack->data[--stack->size];
-    return DS_SUCCESS;
-}
+static ds_error_t
+grow_if_needed(const ds_allocator_t *alloc, ds_stack_t *s)
+{
+    if (s->size < s->capacity) return DS_SUCCESS;
 
-ds_error_t ds_stack_peek(const ds_stack_t *stack, void **out_data) {
-    if (!stack || !out_data) return DS_ERR_NULL_POINTER;
-    if (stack->size == 0) return DS_ERR_EMPTY;
-    *out_data = stack->data[stack->size - 1];
-    return DS_SUCCESS;
-}
+    size_t new_cap = s->capacity * 2;
+    void **newdata = (void **)ds_malloc(alloc, new_cap, sizeof(void *));
+    if (!newdata) return DS_ERR_ALLOC;
 
-bool ds_stack_is_empty(const ds_stack_t *stack) {
-    return (!stack || stack->size == 0);
-}
+    memcpy(newdata, s->data, s->size * sizeof(void *));
+    ds_free(alloc, s->data);
 
-size_t ds_stack_size(const ds_stack_t *stack) {
-    return stack ? stack->size : 0;
-}
-
-ds_error_t ds_stack_reset(ds_stack_t *stack) {
-    if (!stack) return DS_ERR_NULL_POINTER;
-    stack->size = 0;
-    return DS_SUCCESS;
-}
-
-// ---- Stats API（本体参照はこの.c内だけ。外部からはAPI経由で一元化） ----
-ds_error_t ds_stack_get_stats(const ds_stack_t *stack, ds_stats_t *stats) {
-    if (!stack || !stats) return DS_ERR_NULL_POINTER;
-    stats->total_elements      = stack->size;
-    stats->memory_allocated    = stack->capacity * sizeof(void*) + sizeof(ds_stack_t);
-    stats->operations_count    = 0;    // 必要なら実装拡張
-    stats->creation_timestamp  = 0;    // 拡張用
+    s->data     = newdata;
+    s->capacity = new_cap;
     return DS_SUCCESS;
 }

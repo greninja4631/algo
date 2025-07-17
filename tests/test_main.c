@@ -75,7 +75,7 @@ static void report(void)
 }
 
 /* ────────── main() ───────── */
-int main(void)
+int main(int argc, char *argv[])
 {
     g_stats = (ds_test_stats_t){0};
     g_stats.start = clock();

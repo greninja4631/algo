@@ -20,7 +20,7 @@ extern "C" {
  * @param[out] out_us     生成されたインスタンスへのポインタ
  * @return                エラーコード
  */
-ds_error_t ds_url_shortener_create(size_t capacity, ds_url_shortener_t** out_us);
+ds_error_t ds_url_shortener_create(const ds_allocator_t* alloc, size_t capacity, ds_url_shortener_t** out_us);
 
 /**
  * @brief URL短縮器破棄

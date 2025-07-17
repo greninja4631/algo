@@ -1,68 +1,77 @@
 /**
- * @file   tests/ds/test_next_next_practice.c
- * @brief  ds_next_next_practice モジュール単体テスト
+ * @file    tests/ds/test_next_next_practice.c
+ * @brief   ds_next_next_practice モジュール単体テスト
+ * @note    main() は tests/test_main.c 側で集約
  *
- * 2025-07 ガイドライン〈Opaque 型 + マイクロアーキテクチャ〉準拠
+ * 2025-07 ガイドライン（Opaque 型 + 抽象アロケータ DI）準拠
  */
+#include <stdlib.h>                     /* calloc / free                       */
+#include "ds/next_next_practice.h"      /* 被テスト API                        */
+#include "ds/test_next_next_practice.h" /* テスト用 helper (マクロなど)         */
+#include "util/logger.h"                /* ds_log                              */
 
-#include "ds/next_next_practice.h"       /* 本番 API 宣言 */
-#include "ds/test_next_next_practice.h"  /* テスト宣言ヘッダ */
-#include "util/logger.h"                 /* ds_log() */
-#include "util/test_util.h"              /* 共通マクロがあれば */
+/*─────────────────────────────────────*
+ * 1. 標準 malloc/free → 抽象アロケータ
+ *─────────────────────────────────────*/
+static void* _std_alloc(size_t n, size_t sz) { return calloc(n, sz); }
+static void  _std_free (void* p)             { free(p);             }
 
-/* ──────────── 共通アサーション ──────────── */
-#define DS_TEST_ASSERT(cond, msg)                                           \
-    do {                                                                    \
-        if (cond) {                                                         \
-            ds_log(DS_LOG_LEVEL_INFO,  "[PASS] %s", (msg));                 \
-        } else {                                                            \
-            ds_log(DS_LOG_LEVEL_ERROR, "[FAIL] %s (%s:%d)",                 \
-                   (msg), __FILE__, __LINE__);                              \
-        }                                                                   \
+static const ds_allocator_t g_alloc_impl = {
+    .alloc = _std_alloc,
+    .free  = _std_free
+};
+#define G_ALLOC (&g_alloc_impl)
+
+/*─────────────────────────────────────*
+ * 2. 共通アサート
+ *─────────────────────────────────────*/
+#define TASSERT(cond, msg)                                                      \
+    do {                                                                        \
+        if (cond)                                                               \
+            ds_log(DS_LOG_LEVEL_INFO , "[PASS] %s", (msg));                     \
+        else                                                                    \
+            ds_log(DS_LOG_LEVEL_ERROR, "[FAIL] %s (%s:%d)",                     \
+                   (msg), __FILE__, __LINE__);                                  \
     } while (0)
 
-/* ─────────────────────────────────────────────
- * 1. 基本動作テスト
- * ────────────────────────────────────────────*/
+/*======================================================================*
+ *  3-A. 基本機能テスト
+ *======================================================================*/
 void test__next_next_practice_basic(void)
 {
     ds_next_next_practice_t *obj = NULL;
 
-    /* 生成：成功コード＋out_ptr 形式 */
-    DS_TEST_ASSERT(
-        ds_next_next_practice_create(&obj) == DS_SUCCESS && obj,
-        "create");
+    /* create */
+    TASSERT(ds_next_next_practice_create(G_ALLOC, &obj) == DS_SUCCESS && obj,
+            "create");
 
-    /* 公開デモ API が正常終了すること */
-    DS_TEST_ASSERT(
-        ds_next_next_practice_run_all_demos(obj) == DS_SUCCESS,
-        "run_all_demos");
+    /* 公開 API 動作確認 */
+    TASSERT(ds_next_next_practice_run_all_demos(obj) == DS_SUCCESS,
+            "run_all_demos");
 
-    /* 破棄：クラッシュしないことを確認 */
-    ds_next_next_practice_destroy(obj);
-    DS_TEST_ASSERT(1, "destroy: no crash");
+    /* destroy */
+    TASSERT(ds_next_next_practice_destroy(G_ALLOC, obj) == DS_SUCCESS,
+            "destroy");
 
-    ds_log(DS_LOG_LEVEL_INFO, "[OK] test__next_next_practice_basic 完了");
+    ds_log(DS_LOG_LEVEL_INFO, "[OK] test__next_next_practice_basic finished");
 }
 
-/* ─────────────────────────────────────────────
- * 2. 異常系／NULL 安全性テスト
- * ────────────────────────────────────────────*/
+/*======================================================================*
+ *  3-B. 異常系・NULL 安全テスト
+ *======================================================================*/
 void test__next_next_practice_edge_cases(void)
 {
-    /* NULL 破棄は no-op で安全 */
-    ds_next_next_practice_destroy(NULL);
-    DS_TEST_ASSERT(1, "destroy: NULL safety");
+    /* NULL 破棄は no-op */
+    TASSERT(ds_next_next_practice_destroy(G_ALLOC, NULL) == DS_SUCCESS,
+            "destroy NULL");
 
-    /* NULL out_ptr での生成は DS_ERR_NULL_POINTER を返す */
-    DS_TEST_ASSERT(
-        ds_next_next_practice_create(NULL) == DS_ERR_NULL_POINTER,
-        "create: NULL out_ptr");
+    /* NULL out-ptr */
+    TASSERT(ds_next_next_practice_create(G_ALLOC, NULL) == DS_ERR_NULL_POINTER,
+            "create NULL out_ptr");
 
-    /* NULL ハンドルでのデモ実行は DS_ERR_NULL_POINTER を返す */
-    DS_TEST_ASSERT(
-        ds_next_next_practice_run_all_demos(NULL) == DS_ERR_NULL_POINTER,
-        "run_all_demos: NULL");
+    /* NULL ハンドル */
+    TASSERT(ds_next_next_practice_run_all_demos(NULL) == DS_ERR_NULL_POINTER,
+            "run_all_demos NULL");
 
-    ds_log(DS_LOG_LEVEL_INFO, "[OK] test__next_next_practice_edge_cases 完了");
+    ds_log(DS_LOG_LEVEL_INFO, "[OK] test__next_next_practice_edge_cases finished");
 }

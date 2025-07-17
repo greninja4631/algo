@@ -1,50 +1,32 @@
-//statistics.hの役割は、statistics.hで関数の挙動を呼び起こした時に、statistics.h経由で、statistics.cを呼び起こす方法に一貫性を持たせることが目的である。
+#ifndef DS_STATISTICS_H
+#define DS_STATISTICS_H
 
-// ---------- ヘッダガード：statistics.hが二重に読まれるのを防ぐ ----------
-#ifndef STATISTICS_H     // もしSTATISTICS_Hが定義されていなければ（最初だけ実行される）
-#define STATISTICS_H     // STATISTICS_Hを定義して「一度読み込んだよ！」と記録
-#include <stdio.h>
+#include <stddef.h>
+#include "data_structures.h"
 
-// ログ標準化マクロ（Cloud/CIログにも流用可）
-#define LOG_INFO(...)   fprintf(stdout,  "[INFO]  " __VA_ARGS__)
-#define LOG_ERROR(...)  fprintf(stderr, "[ERROR] " __VA_ARGS__)
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/** 
- * @file statistics.h
- * @brief 統計計算API (抽象データ型/インターフェース分離) 
- * 
- * [設計理由]
- * - main関数非依存のAPI定義。再利用・テスト容易性・ドキュメント自動生成(Doxygen)対応。
- * - 構造体/関数/エラーコードは全て明示宣言、内部実装隠蔽。
- * - main以外は全てテスト可能な純粋関数として設計。
- */
+ds_error_t ds_statistics_create(const ds_allocator_t* alloc, ds_statistics_t** out_stats);
+void       ds_statistics_destroy(const ds_allocator_t* alloc, ds_statistics_t* stats);
+ds_error_t ds_statistics_calculate(ds_statistics_t* stats, const int* data, size_t size);
 
-/** 統計量の集計構造体 (抽象データ型) */
-typedef struct {
-    int sum;        ///< 合計値
-    int min;        ///< 最小値
-    int max;        ///< 最大値
-    double average; ///< 平均値
-    double median;  ///< 中央値
-    int mode;       ///< 最頻値
-} Statistics;
+ds_error_t ds_statistics_get_sum    (const ds_statistics_t* stats, int* out_sum);
+ds_error_t ds_statistics_get_min    (const ds_statistics_t* stats, int* out_min);
+ds_error_t ds_statistics_get_max    (const ds_statistics_t* stats, int* out_max);
+ds_error_t ds_statistics_get_average(const ds_statistics_t* stats, double* out_avg);
+ds_error_t ds_statistics_get_median (const ds_statistics_t* stats, double* out_median);
+ds_error_t ds_statistics_get_mode   (const ds_statistics_t* stats, int* out_mode);
 
-/** エラーコード分類 (型安全/enum) */
-typedef enum {
-    STAT_SUCCESS = 0,           ///< 正常終了
-    STAT_MEM_ALLOC_FAIL = 1,    ///< メモリ確保失敗
-    STAT_INVALID_INPUT = 2      ///< 不正な入力
-} ErrorCode;
+ds_error_t ds_statistics_calculate_all(
+    const int* data, size_t size,
+    int* out_sum, int* out_min, int* out_max,
+    double* out_avg, double* out_median, int* out_mode
+);
 
-/** 公開API (全てユニットテスト可能) */
-int sum(const int *data, int size);
-int min(const int *data, int size);
-int max(const int *data, int size);
-double average(const int *data, int size);
-double median(const int *data, int size);
-int mode(const int *data, int size);
-Statistics calculate_statistics(const int *data, int size);
+#ifdef __cplusplus
+}
+#endif
 
-#endif // STATISTICS_H
-
-//成功しました
+#endif

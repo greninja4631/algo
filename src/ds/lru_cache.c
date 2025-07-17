@@ -1,150 +1,181 @@
-#include <stdlib.h>
-#include <string.h>
+/*======================================================================*
+ *  src/ds/lru_cache.c
+ *  抽象アロケータ DI 対応・スレッド非安全版 LRU キャッシュ実装
+ *======================================================================*/
 #include "ds/lru_cache.h"
-#include "ds/hashmap.h"
+#include "ds/hashmap.h"      /* key→node の O(1) 参照用 */
+#include "util/memory.h"     /* ds_malloc / ds_free      */
+#include <string.h>          /* strlen / memcpy          >
+#include <stddef.h>          /* NULL                     */
 
-// ノード型（内部専用）
+/*────────────────────── 内部型 ──────────────────────*/
 typedef struct ds_lru_node {
-    char               *key;
-    void               *value;
-    struct ds_lru_node *prev;
-    struct ds_lru_node *next;
+    char                *key;      /* dup したキー文字列 (alloc 経由) */
+    void                *value;
+    struct ds_lru_node  *prev;     /* Doubly-linked list for O(1) ops */
+    struct ds_lru_node  *next;
 } ds_lru_node_t;
 
-// LRUキャッシュ本体（Opaque型の実体）
-struct ds_lru_cache {
-    size_t          capacity;
-    size_t          size;
-    ds_lru_node_t  *head; // 新しい順
-    ds_lru_node_t  *tail; // 古い順
-    ds_hashmap_t   *map;  // string → ds_lru_node_t*
+struct ds_lru_cache {              /* ← Opaque 実体：外部公開しない */
+    const ds_allocator_t *alloc;   /* DI-アロケータ (必ず非 NULL)    */
+    size_t                capacity;
+    size_t                size;
+    ds_lru_node_t        *head;    /* 先頭＝Most-Recently-Used       */
+    ds_lru_node_t        *tail;    /* 末尾＝Least-Recently-Used      */
+    ds_hashmap_t         *map;     /* key → ds_lru_node_t*           */
 };
 
-// 内部関数プロトタイプ
-static void move_to_head(ds_lru_cache_t *cache, ds_lru_node_t *node);
-static void remove_tail(ds_lru_cache_t *cache);
+/*────────────────────── 内部 forward ──────────────────────*/
+static ds_lru_node_t *_move_to_head(ds_lru_cache_t *c, ds_lru_node_t *n);
+static void           _evict_tail  (ds_lru_cache_t *c);
+static char          *_strdup_alloc(const ds_allocator_t *a, const char *s);
 
-ds_error_t ds_lru_cache_create(size_t capacity, ds_lru_cache_t **out_cache) {
-    if (!out_cache || capacity == 0) return DS_ERR_INVALID_ARG;
-    ds_lru_cache_t *cache = calloc(1, sizeof(*cache));
-    if (!cache) return DS_ERR_ALLOC;
-    cache->capacity = capacity;
-    ds_error_t err = ds_hashmap_create(capacity, free, NULL, &cache->map);
-    if (err != DS_SUCCESS) {
-        free(cache);
-        return err;
-    }
-    *out_cache = cache;
+/*======================================================================*
+ *  Public  API
+ *======================================================================*/
+ds_error_t
+ds_lru_cache_create(const ds_allocator_t *alloc,
+                    size_t                capacity,
+                    ds_lru_cache_t      **out_cache)
+{
+    if (!alloc || !out_cache || capacity == 0) return DS_ERR_INVALID_ARG;
+
+    ds_lru_cache_t *c = ds_malloc(alloc, 1, sizeof *c);
+    if (!c) return DS_ERR_ALLOC;
+
+    c->alloc    = alloc;
+    c->capacity = capacity;
+    c->size     = 0;
+    c->head = c->tail = NULL;
+
+    /* key/val の解放は LRU 側で行うので、ハッシュマップには NULL を渡す */
+    ds_error_t rc = ds_hashmap_create(
+        alloc, capacity, NULL, NULL, &c->map);
+    if (rc != DS_SUCCESS) { ds_free(alloc, c); return rc; }
+
+    *out_cache = c;
     return DS_SUCCESS;
 }
 
-ds_error_t ds_lru_cache_destroy(ds_lru_cache_t *cache) {
-    if (!cache) return DS_ERR_NULL_POINTER;
-    ds_lru_node_t *node = cache->head;
-    while (node) {
-        ds_lru_node_t *next = node->next;
-        free(node->key);
-        free(node);
-        node = next;
+ds_error_t
+ds_lru_cache_destroy(const ds_allocator_t *alloc, ds_lru_cache_t *c)
+{
+    if (!alloc || !c) return DS_ERR_NULL_POINTER;
+
+    for (ds_lru_node_t *n = c->head; n; ) {
+        ds_lru_node_t *next = n->next;
+        ds_free(alloc, n->key);
+        ds_free(alloc, n);
+        n = next;
     }
-    ds_hashmap_destroy(cache->map);
-    free(cache);
+    ds_hashmap_destroy(alloc, c->map);
+    ds_free(alloc, c);
     return DS_SUCCESS;
 }
 
-ds_error_t ds_lru_cache_put(ds_lru_cache_t *cache, const char *key, void *value) {
-    if (!cache || !key) return DS_ERR_NULL_POINTER;
+ds_error_t
+ds_lru_cache_put(const ds_allocator_t *alloc,
+                 ds_lru_cache_t       *c,
+                 const char           *key,
+                 void                 *value)
+{
+    if (!alloc || !c || !key) return DS_ERR_NULL_POINTER;
 
-    // すでに存在すれば値更新＆先頭移動
-    void *node_void = NULL;
-    if (ds_hashmap_get(cache->map, key, &node_void) == DS_SUCCESS) {
-        ds_lru_node_t *node = (ds_lru_node_t *)node_void;
-        node->value = value;
-        move_to_head(cache, node);
+    /* 既存ノードなら値更新＋MRU 移動 */
+    void *hv = NULL;
+    if (ds_hashmap_get(c->map, key, &hv) == DS_SUCCESS) {
+        ds_lru_node_t *n = hv;
+        n->value = value;
+        _move_to_head(c, n);
         return DS_SUCCESS;
     }
 
-    // 新ノードを確保
-    ds_lru_node_t *node = calloc(1, sizeof(*node));
-    if (!node) return DS_ERR_ALLOC;
+    /* 新規ノードを確保 */
+    ds_lru_node_t *n = ds_malloc(alloc, 1, sizeof *n);
+    if (!n) return DS_ERR_ALLOC;
 
-    // key文字列を複製
-    node->key = strdup(key);
-    if (!node->key) {
-        free(node);
-        return DS_ERR_ALLOC;
-    }
+    n->key = _strdup_alloc(alloc, key);
+    if (!n->key) { ds_free(alloc, n); return DS_ERR_ALLOC; }
+    n->value = value;
 
-    node->value = value;
-    // リスト先頭に挿入
-    node->next = cache->head;
-    if (cache->head) {
-        cache->head->prev = node;
-    }
-    cache->head = node;
-    if (!cache->tail) {
-        cache->tail = node;
-    }
+    /* MRU 位置へ挿入 */
+    n->prev = NULL;
+    n->next = c->head;
+    if (c->head) c->head->prev = n;
+    c->head = n;
+    if (!c->tail) c->tail = n;
 
-    // ハッシュマップにも登録
-    ds_error_t err = ds_hashmap_put(cache->map, node->key, node);
-    if (err != DS_SUCCESS) {
-        free(node->key);
-        free(node);
-        return err;
-    }
+    ds_hashmap_put(alloc, c->map, n->key, n); /* 失敗しない前提 */
 
-    cache->size++;
-    if (cache->size > cache->capacity) {
-        remove_tail(cache);
-    }
+    if (++c->size > c->capacity) _evict_tail(c);
     return DS_SUCCESS;
 }
 
-ds_error_t ds_lru_cache_get(ds_lru_cache_t *cache, const char *key, void **out_value) {
-    if (!cache || !key || !out_value) return DS_ERR_NULL_POINTER;
-    void *node_void = NULL;
-    if (ds_hashmap_get(cache->map, key, &node_void) != DS_SUCCESS) {
-        return DS_ERR_NOT_FOUND;
-    }
-    ds_lru_node_t *node = (ds_lru_node_t *)node_void;
-    move_to_head(cache, node); // アクセスされたノードを先頭へ
-    *out_value = node->value;
+ds_error_t
+ds_lru_cache_get(ds_lru_cache_t *c, const char *key, void **out_value)
+{
+    if (!c || !key || !out_value) return DS_ERR_NULL_POINTER;
+
+    void *hv = NULL;
+    if (ds_hashmap_get(c->map, key, &hv) != DS_SUCCESS) return DS_ERR_NOT_FOUND;
+
+    ds_lru_node_t *n = hv;
+    _move_to_head(c, n);
+    *out_value = n->value;
     return DS_SUCCESS;
 }
 
-ds_error_t ds_lru_cache_size(const ds_lru_cache_t *cache, size_t *out_size) {
-    if (!cache || !out_size) return DS_ERR_NULL_POINTER;
-    *out_size = cache->size;
+ds_error_t
+ds_lru_cache_size(const ds_lru_cache_t *c, size_t *out_size)
+{
+    if (!c || !out_size) return DS_ERR_NULL_POINTER;
+    *out_size = c->size;
     return DS_SUCCESS;
 }
 
-// ──────────────────────────────────────
-// 内部関数：リスト先頭へ移動
-// ──────────────────────────────────────
-static void move_to_head(ds_lru_cache_t *cache, ds_lru_node_t *node) {
-    if (node == cache->head) return;
-    // リンク解除
-    if (node->prev) node->prev->next = node->next;
-    if (node->next) node->next->prev = node->prev;
-    if (cache->tail == node) cache->tail = node->prev;
-    // 先頭へ
-    node->next = cache->head;
-    node->prev = NULL;
-    if (cache->head) cache->head->prev = node;
-    cache->head = node;
+/*======================================================================*
+ *  Internal helpers
+ *======================================================================*/
+static ds_lru_node_t *
+_move_to_head(ds_lru_cache_t *c, ds_lru_node_t *n)
+{
+    if (c->head == n) return n;          /* 既に MRU */
+
+    /* detach */
+    if (n->prev) n->prev->next = n->next;
+    if (n->next) n->next->prev = n->prev;
+    if (c->tail == n) c->tail  = n->prev;
+
+    /* insert at head */
+    n->prev = NULL;
+    n->next = c->head;
+    if (c->head) c->head->prev = n;
+    c->head = n;
+    if (!c->tail) c->tail = n;
+    return n;
 }
 
-// ──────────────────────────────────────
-// 内部関数：容量超過時の末尾削除
-// ──────────────────────────────────────
-static void remove_tail(ds_lru_cache_t *cache) {
-    ds_lru_node_t *tail = cache->tail;
-    if (!tail) return;
-    if (tail->prev) tail->prev->next = NULL;
-    cache->tail = tail->prev;
-    ds_hashmap_remove(cache->map, tail->key);
-    free(tail->key);
-    free(tail);
-    cache->size--;
+/* capacity 超過時の LRU 削除 */
+static void
+_evict_tail(ds_lru_cache_t *c)
+{
+    ds_lru_node_t *t = c->tail;
+    if (!t) return;
+
+    if (t->prev) t->prev->next = NULL;
+    c->tail = t->prev;
+    ds_hashmap_remove(c->alloc, c->map, t->key);
+    ds_free(c->alloc, t->key);
+    ds_free(c->alloc, t);
+    --c->size;
+}
+
+/* alloc 版 strdup （NUL 終端込み）*/
+static char *
+_strdup_alloc(const ds_allocator_t *alloc, const char *s)
+{
+    size_t len = strlen(s) + 1;
+    char *dup  = ds_malloc(alloc, len, sizeof(char));
+    if (dup) memcpy(dup, s, len);
+    return dup;
 }
