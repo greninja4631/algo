@@ -1,155 +1,169 @@
-📚 Cプロジェクト API設計・実装 完全統一ガイドライン
-(2025-07 改訂版 — ソフトウェア工学の最前線バージョン)を採用して、
-上記と下記のを既存のコードを含めて、良い部分を残し、悪い部分を削除して省略せずに再生成して下さい。　　　
+　上記をパッチ形式ではなく、📚 Cプロジェクト API設計・実装 完全統一ガイドライン
+上記と下記のを既存のコードを含めて、良い部分を残し、悪い部分を削除して省略せずにガイドラインを厳格に守ってコードを再生成して下さい。　　　
 
+(2025-07 改訂版 — ソフトウェア工学の最前線 + 現場実装チェックリスト完全統合版)
 
+目的 – “設計ドキュメント”と“実装現場チェックリスト”を 1 枚に統合し、
+ABI 安定性・静的解析合格・Valgrind 漏れゼロ・将来拡張容易性を同時に満たす。
 
-📘 1. 命名規約 & 型設計ルール（＋工学的補足）
+⸻
 
-項目	規則/理由
-構造体本体	struct ds_<module> { … }; ⇒ 必ず src/<module>.c に隠蔽。DTOだけ例外。カプセル化による「不変条件」の強制＆ABI安定化。
-前方宣言typedef	typedef struct ds_<module> ds_<module>_t; ⇒ include/data_structures.h 集約。型依存ループ/肥大化防止。
-関数	ds_<module>_<verb>()（APIグルーピング明確化、grepしやすい）
-関数ポインタ	ds_<module>_<verb>_func_t（型安全＆DI, コールバック容易）
-エラー定数	DS_ERR_<MODULE>_<CAUSE>（モジュール粒度で原因特定）
-ゲッター/セッター	ds_<module>_get_<field>()/set_<field>()、スレッド安全は _atomic
-クローン関数	ds_<module>_clone(const ds_<module>_t *src)（深いコピー/値型表現）
-グローバル変数	原則禁止。どうしても必要なら ds_<module>_g_<name>＋Mutex/TLS。「隠れた副作用」禁止。
+0. コア原則（全モジュール共通・必須）
+
+#	原則	要旨
+0-1	アロケータ DI 統一	すべての公開 API の第 1 引数はconst ds_allocator_t *alloc固定。alloc==NULL時は ds_malloc/ds_freeへ自動フォールバック。
+0-2	calloc/free 安全設計	_std_allocは「cnt==0→NULL」、_std_freeは「p==NULL→no-op」。本番/テストいずれも free(NULL) が必ず安全。
+0-3	NULL セーフ API	あらゆる API は NULL を⾮致命的エラーとして扱い DS_ERR_NULL_POINTER を返す – CI で NULL deref が無いことを保証。
+0-4	命名・out_・@ownership 統一	命名ルールは §1、出力引数は 必ず out_ プレフィクス、メモリ所有権は Doxygen @ownership を 100 % 明示。
+0-5	破棄は 1 回だけ	どのリソースも 二重 free 禁止。destroy/reset/clear など破棄系列 API は free 済ポインタを NULL へセットし再利用不可にする。
+0-6	構造体本体は .c	DTO 例外を除き 構造体本体は .c ファイル 1 か所のみ。ヘッダでメンバ公開禁止。
+0-7	ログ 6 段 + アサーション	ログは TRACE/DEBUG/INFO/WARN/ERROR/FATAL の 6 段、アサートは DS_TEST_ASSERT / TASSERT 統一。
+0-8	テスト main() 分離	各テストはスタンドアロン実行可能だが、実際の CI ランは tests/test_main.c が一括呼び出し。
+0-9	Valgrind & 拡張容易性	すべてのモジュールは Valgrind “definitely lost” = 0 を CI で保証し、後方互換を壊さず拡張できる設計にする。
 
 
 ⸻
 
-🔁 2. API設計ポリシー（＋工学的加筆）
-	1.	全関数は ds_error_t を返し、成功は DS_SUCCESS
-	•	エラー処理を型で統一し、「呼び出し側での明示的な例外ハンドリング」を促す。
-	2.	所有権は Doxygen @ownership で必ず明示
-	•	メモリリーク、二重解放等のバグをCIで検出できるようにする。
-	3.	出力引数は out_ プレフィクス
-	•	可読性・IDE自動補完との親和性。
-	4.	サイズは size_t／負数は int64_t
-	•	標準化＋将来の移植性配慮。
-	5.	Opaque型三原則
-	1.	外部はポインタのみ（値型誤用防止）
-	2.	メンバはゲッター/セッターのみ（カプセル化で将来的な内部構造変更に強く）
-	3.	コピーは <module>_clone()経由のみ（浅い/深いコピー混同防止）
+1. 命名規約 & 型設計ルール（超詳細版）
 
-⸻
-
-🚩 2.1. 抽象アロケータDI & 依存性逆転の徹底
-	•	すべての malloc/free/calloc/realloc を ds_malloc/ds_free などの抽象ラッパー経由に統一。
-	•	src/util/memory.c で「差し替え可能な抽象アロケータ関数ポインタ」を用意。
-	•	DIパターンにより：
-	•	本番は malloc/free、
-	•	テスト・検証は「トラッキング／デバッグ用カスタムアロケータ」へ完全DI可能。
-	•	CI/grep活用で“直書き禁止”を守る
-	•	grepによる機械的検査を推奨（ゼロ件でコミットが通るルール）。
-
-💡 工学的理由：
-	•	動的メモリ管理はCの最大の脆弱点。
-	•	DIによりユニットテスト性と堅牢性を最大化できる。
-
-⸻
-
-📁 3. ヘッダ・ソース構成（＋拡張設計ルール）
-
-ファイル	役割/設計理由
-include/data_structures.h	typedef/enum/汎用エラーコードを1カ所集中管理
-include/ds/.h	API宣言、DTO型のみ定義。Opaque型なら本体は記載不可
-src/ds/.c	構造体本体/実装のみ。複数定義は絶対禁止
-tests/include/ds/_test.h	テスト時だけ本体にアクセスする必要がある場合のみ
+項目	強制ルール	工学的理由
+構造体本体	struct ds_<module> { … }; を src/ds/.c 内 1 か所だけ	本体隠蔽で不変条件を実装側に閉じ込め、ABI を安定させる
+前方宣言 typedef	すべて include/data_structures.h に typedef struct ds_<module> ds_<module>_t; を集中管理	型依存ループ・多重定義・ヘッダ爆発を防止
+関数	ds_<module>_<verb>() – verb は必ず動詞（create/destroy/push …）	grep / IDE ジャンプ効率化、API グルーピング
+関数ポインタ型	ds_<module>_<verb>_func_t	型安全 DI・コールバック実装容易
+列挙型/エラー	DS_ERR_<MODULE>_<CAUSE>、成功は DS_SUCCESS=0	errno と混同無し、一発で原因特定
+ゲッター/セッター	ds_<module>_get_<field>() / set_<field>()（MT版は _atomicサフィックス）	カプセル化維持＆スレッド安全保証
+clone	ds_<module>_clone(const ds_<module>_t *src) は 必ず深いコピー	値型セマンティクスを安全に実現
+グローバル変数	原則禁止。必要時は ds_<module>_g_<name> + Mutex/TLS、ユニットテストで競合検証必須	隠れた副作用排除・初期化順序バグ回避
 
 
 ⸻
 
-📢 4. ロガールール
-	•	本番コードは必ずds_log(level, fmt, ...)のみ使用。
-	•	テストでのみ printf/fprintf 直呼び許可。
-	•	差し替えAPI（ds_set_log_function）でモック/サイレント/ファイル書き出し等に切替可。
+2. API 設計ポリシー（全関数共通 Big-Five）
+	1.	戻り値は ds_error_t 一択 – 成功は DS_SUCCESS
+	2.	Doxygen @ownership – caller frees / callee frees / transfer の三択のみ
+	3.	出力引数は out_ – IDE 補完＆静的解析で誤検知ゼロ
+	4.	サイズは size_t, 負数は int64_t – 32/64bit 差異を排除
+	5.	Opaque 三原則 – 外部はポインタのみ・メンバ不可視・コピーは clone()
 
 ⸻
 
-🧪 5. テスト & CI/CD ポリシー
-	•	テスト関数名は void test__<module>_<case>(void);。CIによる自動検出に最適化。
-	•	Opaque型はAPI経由でしか検証しない（実装変更耐性Up）
-	•	テスト本体が必要な時だけ <module>_test.h。
-	•	CIは -Wall -Wextra -Werror -pedantic -fanalyzer 全警告エラー化＋Valgrind/ASan強制。
-	•	Dockerfile化で移植性・再現性を担保。
+3. 抽象アロケータ DI（依存性逆転・安全メモリ管理）
+	•	すべての公開 API：const ds_allocator_t *alloc が第 1 引数
+	•	alloc == NULL → ds_malloc/ds_free/ds_realloc にフォールバック
+	•	唯一のメモリ出口 – malloc/calloc/realloc/free 直呼び禁止
+
+grep -R --include='*.c' --include='*.h' -n \
+  '\b\(malloc\|calloc\|realloc\|free\)\b' src/ include/ \
+  | grep -v 'ds_malloc\|ds_free\|ds_realloc'
+
+上記が 1 行でもヒットしたら CI 失敗
+
+	•	_std_alloc/_std_free 実装例
+
+static void* _std_alloc(size_t cnt, size_t sz){ return cnt? calloc(cnt,sz):NULL; }
+static void  _std_free (void* p){ if(p) free(p); }
+
+	•	free(NULL) は no-op で 必ず安全
+
+	•	free 回数 = alloc 回数 – ノード→マップ→本体の順に必ず一度だけ free
+	•	Valgrind “definitely lost” = 0 を CI で強制
 
 ⸻
 
-⚙ 6. CI/Makefile/Docker例
+4. ヘッダ & ソースレイアウト
 
-CFLAGS   = -Wall -Wextra -Werror -pedantic -std=c11
-INCLUDES = -Iinclude -Itests/include
+include/
+ ├─ data_structures.h   # typedef / enum / forward-decl
+ └─ ds/
+     └─ <module>.h      # API ヘッダ（本体なし）
+src/ds/
+ └─ <module>.c          # 本実装（構造体本体定義はここだけ）
+tests/
+ ├─ include/ds/         # テスト専用ヘッダ
+ └─ ds/                 # テストコード
 
-docker build -t algo-ci .
-docker run --rm -it algo-ci ./run_ci.sh
-
-	•	Dockerテストが全設計原則・抽象化・セキュリティを守れている証明とする。
-
-⸻
-
-🔒 7. セキュリティ & パフォーマンス徹底
-	•	@ownership未記載関数はCIで落とす（Doxygenまたはスクリプトチェック）。
-	•	memcpy等は _FORTIFY_SOURCE=2 で脆弱性対策。
-	•	ホットパス（高頻度/高コスト）は __attribute__((hot)) で明示。
+	•	DTO を公開する場合は include/ds/<module>_dto.h を追加
 
 ⸻
 
-📖 8. README/CONTRIBUTING必須項目
-	•	本ガイドの最新URL・バージョン必ず明記
-	•	ブランチ戦略・PRテンプレート必須
-	•	Logger設計・スレッド安全性のドキュメント
-	•	Mermaid/PlantUML等で「CI/CDパイプライン図」明記
+5. ログ & 監視
+
+レイヤ	使用関数	備考
+本番	ds_log(level, fmt, …)	出力先は ds_set_log_function() で差替可
+テスト	printf / fprintf(stderr, …)	CI では --quiet で抑止可能
+
+	•	ログレベルは 6 段固定 – TRACE/DEBUG/INFO/WARN/ERROR/FATAL
+	•	本番コードで printf 系を検出したら CI Fail
 
 ⸻
 
-🔚 9. 既存コード移行チェックリスト
+6. テスト & CI/CD ストラテジ
 
-項目	確認内容
-前方宣言の一元管理	data_structures.h に集中し、多重定義は絶対排除
-構造体本体の.c集中	複数箇所定義/漏れを目視で必ずゼロへ
-ゲッター/セッター統一	メンバアクセス一切禁止。API経由のみにする
-clone実装	必要なモジュール全てに_clone()を追加
-グローバル削除orTLS	「副作用なし」保証
-ds_ラッパー経由のみ	malloc/free直書きはgrep/CIでゼロ保証
+6.1 ビルドフラグ
 
+CFLAGS = -Wall -Wextra -Werror -pedantic -std=c11 \
+         -D_FORTIFY_SOURCE=2 -fstack-protector-strong -O2 -g
+
+6.2 CI 手順（run_ci.sh 抜粋）
+	1.	make clean && make build
+	2.	cppcheck --enable=all --error-exitcode=1
+	3.	clang-tidy -warnings-as-errors=* $(find src -name '*.c') -- $(CFLAGS)
+	4.	make test → 失敗で exit 1
+	5.	valgrind --leak-check=full $(TEST_BIN)
+	6.	禁止 API grep チェック（§3）
+
+	•	Docker コンテナ実行必須 – 環境差異排除
+	•	テスト関数名は test__<module>_<case>()
+	•	tests/test_main.c が全テストを集約（個別 main() は #ifdef DS_STANDALONE_TEST で有効化可）
 
 ⸻
 
-✅ Opaque型＋抽象アロケータDI実装例（再掲）
+7. セキュリティ & パフォーマンス
 
-// memory.c
-typedef void* (*ds_malloc_func_t)(size_t);
-typedef void  (*ds_free_func_t)(void*);
-static ds_malloc_func_t custom_malloc = malloc;
-static ds_free_func_t   custom_free   = free;
-
-void ds_set_memory_functions(ds_malloc_func_t malloc_func, ds_free_func_t free_func) {
-    custom_malloc = malloc_func;
-    custom_free = free_func;
-}
-void* ds_malloc(size_t size) { return custom_malloc(size); }
-void  ds_free(void* ptr)     { custom_free(ptr); }
-
-呼び出し例
-
-#include "util/memory.h"
-ds_stack_t *s = ds_malloc(sizeof(ds_stack_t));
-ds_free(s);
-
-
-| ✅ **DI対象の拡張性**              | 「アロケータ以外にも logger/config/api\_client など全て“DI対象”になることを許容設計とする」と明記                      |
-| ✅ **テスト層の位置づけ**             | `tests/include/` や `_test.h` によるテストアクセスは Interface Adapter であり、**本番レイヤーには一切関与しない**と強調 |
-| ✅ **Infrastructure の後置き原則** | `memory.c` や `logger.c` などのドライバ層は、**後から差し替える前提で設計すること（本体への直接依存禁止）**                   |
-
+カテゴリ	必須設定 / ルール	目的
+バッファ安全	_FORTIFY_SOURCE=2, -fstack-protector-strong	境界外書込を実行時検知
+Hot Path	__attribute__((hot)) を明示	gprof 等で性能分析容易
+Doxygen	@ownership 未記載 → CI Fail	リークを静的解析で潰す
+memcpy/strcpy	長さチェック or memmove_s 必須	典型的なCVEを根絶
 
 
 ⸻
 
-❌ アンチパターン（工学的リスク込み）
-	•	typedef/前方宣言の多重定義（ABI破壊・型安全性低下）
-	•	struct本体を複数ヘッダで再定義（カプセル化崩壊・リンクエラー）
-	•	テストのために本番ヘッダを条件分岐で切替（設計の混乱・保守性崩壊）
-	•	本番コードで printf/fprintf/perror を直接使用（本番時の情報漏洩・可観測性劣化）
+8. ドキュメント (README / CONTRIBUTING)
+	•	README – 目的、設計ルール、ビルド方法（Docker & ホスト）、最小サンプル
+	•	CONTRIBUTING.md – ブランチ戦略、コミット規約、PR テンプレ、CI/CD パイプライン図
+	•	図は Mermaid もしくは PlantUML 形式必須
 
+⸻
+
+9. 既存コード移行チェックリスト（Pull Request Before-Merge）
+
+チェック項目	Yes / No
+typedef が data_structures.h に集約済みか	
+すべての公開 API が const ds_allocator_t *alloc を第 1 引数に持つか	
+malloc/calloc/realloc/free 直呼びがゼロか (grep済)	
+構造体本体が .c のみで再定義されていないか	
+グローバル変数が残っていないか	
+必要なモジュールに clone() があるか	
+すべてのヘッダで @ownership 記載済みか	
+テスト名が test__<module>_<case>() 形式か	
+Valgrind “definitely lost” がゼロか	
+
+全て “Yes” なら Merge OK
+
+⸻
+
+10. DI 拡張性・テスト層独立性・Infrastructure 後置き原則
+
+ビジネスロジック (Domain) → インターフェース (Ports) → ドライバ層 (Adapters)
+の依存方向を厳格に守り、本番ロジックが OS/Driver 依存コードを直接参照しない。
+memory.c・logger.c はいつでも差し替え可能なドライバ層と定義。
+
+⸻
+
+11. 絶対 NG アンチパターン
+	•	型多重定義 / 構造体本体のヘッダ重複
+	•	テストのためにプリプロセッサで本番ヘッダを切替
+	•	本番コードで printf / perror / fprintf(stderr, …)
+	•	スパゲティな goto fail; 多用

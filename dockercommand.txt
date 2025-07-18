@@ -1,0 +1,14 @@
+Jenkinsサーバ起動（Docker）
+
+docker start jenkins
+
+
+URLのポート:8080 である。
+
+
+
+
+
+Homebrewで検査するDockerコマンド
+
+  docker build --no-cache -t my-ds-ci .

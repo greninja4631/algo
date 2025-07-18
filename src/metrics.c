@@ -1,10 +1,26 @@
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
+/**
+ * @file    src/metrics.c
+ * @brief   軽量メトリクス収集・管理モジュール
+ * @details
+ *   - Opaque本体は.cに隠蔽
+ *   - すべての関数がガイドライン形式（DI/シグネチャ/エラー処理統一）
+ *   - allocator DI／alloc==NULL時は標準calloc/free
+ *   - printf禁止→ds_log()のみ
+ *   - -Werror下で未使用警告ゼロ
+ */
+
+#include "data_structures.h"
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #include "util/metrics.h"
+#include "util/logger.h"
 
+//---------------------------------------------------
+// Opaque 本体
+//---------------------------------------------------
 struct ds_metrics {
     size_t   total_elements;
     size_t   memory_allocated;
@@ -12,109 +28,145 @@ struct ds_metrics {
     uint64_t creation_timestamp;
 };
 
-/* --- Opaque管理 --- */
-ds_error_t ds_metrics_init(const ds_allocator_t* alloc, ds_metrics_t* metrics) {
+//---------------------------------------------------
+// DIアロケータラッパ
+//---------------------------------------------------
+#define ALLOC(a, n, sz) ((a) ? (a)->alloc((n), (sz)) : calloc((n), (sz)))
+#define FREE(a, p)      do { if ((p)) { (a) ? (a)->free(p) : free(p); } } while (0)
+
+//---------------------------------------------------
+// 基本API
+//---------------------------------------------------
+ds_error_t
+ds_metrics_init(const ds_allocator_t *alloc, ds_metrics_t *metrics)
+{
+    (void)alloc;
     if (!metrics) return DS_ERR_NULL_POINTER;
-    memset(metrics, 0, sizeof(ds_metrics_t));
+    memset(metrics, 0, sizeof *metrics);
     metrics->creation_timestamp = (uint64_t)time(NULL);
     return DS_SUCCESS;
 }
 
-ds_error_t ds_metrics_increment_ops(const ds_allocator_t* alloc, ds_metrics_t* metrics) {
+ds_error_t
+ds_metrics_increment_ops(const ds_allocator_t *alloc, ds_metrics_t *metrics)
+{
+    (void)alloc;
     if (!metrics) return DS_ERR_NULL_POINTER;
     metrics->operations_count++;
     return DS_SUCCESS;
 }
 
-ds_error_t ds_metrics_increment_elements(const ds_allocator_t* alloc, ds_metrics_t* metrics) {
+ds_error_t
+ds_metrics_increment_elements(const ds_allocator_t *alloc, ds_metrics_t *metrics)
+{
+    (void)alloc;
     if (!metrics) return DS_ERR_NULL_POINTER;
     metrics->total_elements++;
     return DS_SUCCESS;
 }
 
-ds_error_t ds_metrics_decrement_elements(const ds_allocator_t* alloc, ds_metrics_t* metrics) {
+ds_error_t
+ds_metrics_decrement_elements(const ds_allocator_t *alloc, ds_metrics_t *metrics)
+{
+    (void)alloc;
     if (!metrics) return DS_ERR_NULL_POINTER;
-    if (metrics->total_elements > 0) metrics->total_elements--;
+    if (metrics->total_elements) metrics->total_elements--;
     return DS_SUCCESS;
 }
 
-ds_error_t ds_metrics_add_memory(const ds_allocator_t* alloc, ds_metrics_t* metrics, size_t bytes) {
+ds_error_t
+ds_metrics_add_memory(const ds_allocator_t *alloc, ds_metrics_t *metrics, size_t bytes)
+{
+    (void)alloc;
     if (!metrics) return DS_ERR_NULL_POINTER;
     metrics->memory_allocated += bytes;
     return DS_SUCCESS;
 }
 
-ds_error_t ds_metrics_sub_memory(const ds_allocator_t* alloc, ds_metrics_t* metrics, size_t bytes) {
+ds_error_t
+ds_metrics_sub_memory(const ds_allocator_t *alloc, ds_metrics_t *metrics, size_t bytes)
+{
+    (void)alloc;
     if (!metrics) return DS_ERR_NULL_POINTER;
-    if (metrics->memory_allocated >= bytes) metrics->memory_allocated -= bytes;
-    else metrics->memory_allocated = 0;
+    if (metrics->memory_allocated >= bytes)
+        metrics->memory_allocated -= bytes;
+    else
+        metrics->memory_allocated = 0;
     return DS_SUCCESS;
 }
 
-/* --- メトリクスの可視化 --- */
-void ds_metrics_print(const ds_allocator_t* alloc, const ds_metrics_t* metrics) {
-    if (!metrics) {
-        printf("metrics: (null)\n");
+//---------------------------------------------------
+// ログ出力API
+//---------------------------------------------------
+void
+ds_metrics_print(const ds_allocator_t *alloc, const ds_metrics_t *m)
+{
+    (void)alloc;
+    if (!m) {
+        ds_log(DS_LOG_LEVEL_INFO, "[metrics] (null)");
         return;
     }
-    printf("Elements: %zu | Memory: %zu bytes | Operations: %zu | Created: %llu\n",
-           metrics->total_elements,
-           metrics->memory_allocated,
-           metrics->operations_count,
-           (unsigned long long)metrics->creation_timestamp);
+    ds_log(DS_LOG_LEVEL_INFO,
+        "[metrics] elements=%zu  mem=%zuB  ops=%zu  created=%llu",
+        m->total_elements,
+        m->memory_allocated,
+        m->operations_count,
+        (unsigned long long)m->creation_timestamp);
 }
 
-/* --- 全メトリクスリセット（テスト用） --- */
-static void static_clear_named_metrics(const ds_allocator_t* alloc);
-void ds_metrics_reset_all(const ds_allocator_t* alloc) {
-    static_clear_named_metrics(alloc);
-}
-
-/* --- 名前付きカウンタ --- */
+//---------------------------------------------------
+// 名前付きカウンタ（シンプル実装）
+//---------------------------------------------------
 typedef struct named_counter {
-    char name[64];
-    int64_t value;
-    struct named_counter* next;
+    char                    name[64];
+    int64_t                 value;
+    struct named_counter   *next;
 } named_counter_t;
 
-static named_counter_t* g_named_counters = NULL;
+static named_counter_t *g_named = NULL;
 
-static named_counter_t* find_named_counter(const char* name) {
-    for (named_counter_t* p = g_named_counters; p; p = p->next) {
-        if (strncmp(p->name, name, sizeof(p->name) - 1) == 0)
+static named_counter_t *
+find_counter(const char *name)
+{
+    for (named_counter_t *p = g_named; p; p = p->next)
+        if (strncmp(p->name, name, sizeof p->name) == 0)
             return p;
-    }
     return NULL;
 }
 
-void ds_metrics_increment(const ds_allocator_t* alloc, const char* name) {
-    if (!name || !alloc) return;
-    named_counter_t* c = find_named_counter(name);
+void
+ds_metrics_increment(const ds_allocator_t *alloc, const char *name)
+{
+    if (!name) return;
+    named_counter_t *c = find_counter(name);
     if (!c) {
-        named_counter_t* new_c = alloc->alloc(1, sizeof(*new_c));
-        if (!new_c) return;
-        strncpy(new_c->name, name, sizeof(new_c->name) - 1);
-        new_c->name[sizeof(new_c->name) - 1] = '\0';
-        new_c->value = 0;
-        new_c->next = g_named_counters;
-        g_named_counters = new_c;
-        c = new_c;
+        c = ALLOC(alloc, 1, sizeof *c);
+        if (!c) return;
+        strncpy(c->name, name, sizeof c->name - 1);
+        c->name[sizeof c->name - 1] = '\0';
+        c->value = 0;
+        c->next  = g_named;
+        g_named  = c;
     }
-    c->value += 1;
+    c->value++;
 }
 
-int64_t ds_metrics_get(const ds_allocator_t* alloc, const char* name) {
-    if (!name) return 0;
-    named_counter_t* c = find_named_counter(name);
+int64_t
+ds_metrics_get(const ds_allocator_t *alloc, const char *name)
+{
+    (void)alloc;
+    named_counter_t *c = name ? find_counter(name) : NULL;
     return c ? c->value : 0;
 }
 
-static void static_clear_named_metrics(const ds_allocator_t* alloc) {
-    named_counter_t* p = g_named_counters;
+void
+ds_metrics_reset_all(const ds_allocator_t *alloc)
+{
+    named_counter_t *p = g_named;
     while (p) {
-        named_counter_t* n = p->next;
-        if (alloc) alloc->free(p);
+        named_counter_t *n = p->next;
+        FREE(alloc, p);
         p = n;
     }
-    g_named_counters = NULL;
+    g_named = NULL;
 }

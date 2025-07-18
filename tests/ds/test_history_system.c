@@ -9,12 +9,11 @@
 #include "ds/test_history_system.h"   /* TEST_CMD_PTR, test_command_init */
 #include "util/logger.h"
 
-/* ─────────────────────────────────────────────
- * 1. 標準 malloc/free を抽象アロケータへ束ねる
- *    （すべての API 呼び出しの第 1 引数に渡す）
- * ───────────────────────────────────────────── */
-static void* _std_alloc(size_t n, size_t sz) { return calloc(n, sz); }
-static void  _std_free (void* p)             { free(p);             }
+/*─────────────────────────────────────*
+ * 標準calloc/free→ds_allocator_t経由でDI
+ *─────────────────────────────────────*/
+static void* _std_alloc(size_t cnt, size_t sz) { return cnt ? calloc(cnt, sz) : NULL; }
+static void  _std_free(void* p)                { if (p) free(p); }
 
 static const ds_allocator_t g_alloc_impl = {
     .alloc = _std_alloc,
@@ -22,9 +21,9 @@ static const ds_allocator_t g_alloc_impl = {
 };
 #define G_ALLOC (&g_alloc_impl)
 
-/* ─────────────────────────────────────────────
- * 2. プロジェクト共通アサーション・マクロ
- * ───────────────────────────────────────────── */
+/*─────────────────────────────────────*
+ * プロジェクト共通アサーションマクロ
+ *─────────────────────────────────────*/
 #define DS_TEST_ASSERT(cond, msg)                                              \
     do {                                                                       \
         if (cond) { ds_log(DS_LOG_LEVEL_INFO , "[PASS] %s", (msg)); }          \
@@ -32,9 +31,9 @@ static const ds_allocator_t g_alloc_impl = {
                            (msg), __FILE__, __LINE__); }                       \
     } while (0)
 
-/* ─────────────────────────────────────────────
- * 3. 基本動作テスト
- * ───────────────────────────────────────────── */
+/*─────────────────────────────────────*
+ * 基本動作テスト
+ *─────────────────────────────────────*/
 void test__history_system_basic(void)
 {
     ds_error_t           err;
