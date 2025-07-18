@@ -7,11 +7,16 @@
 #define UTIL_MEMORY_H
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "data_structures.h"
 >>>>>>> feature
 #include <stddef.h>
 =======
 #include "data_structures.h"  // ds_allocator_t, ds_error_t など
+>>>>>>> feature
+=======
+#include <stddef.h>          // size_t
+#include "data_structures.h" // ds_allocator_t, ds_error_t など
 >>>>>>> feature
 
 #ifdef __cplusplus
@@ -37,9 +42,12 @@ void* ds_malloc(size_t size);
 void  ds_free(void* ptr);
 =======
 /**
- * @file    util/memory.h
- * @brief   メモリアロケーションAPI + メトリクス管理API
- * @details すべて「アロケータalloc経由」に統一。メモリ確保・解放・メトリクス管理を提供。
+ * @file    include/util/memory.h
+ * @brief   メモリアロケーションAPI宣言ヘッダ
+ * @details
+ * - すべて「アロケータalloc経由」に統一。
+ * - メモリ確保・解放（malloc/calloc/realloc/free）のみ提供。
+ * - メトリクス管理APIは metrics.h で一元管理（ここでは絶対に宣言しない）。
  */
 
 //=============================
@@ -50,6 +58,7 @@ void  ds_free   (const ds_allocator_t* alloc, void* ptr);
 void* ds_calloc (const ds_allocator_t* alloc, size_t count, size_t size);
 void* ds_realloc(const ds_allocator_t* alloc, void* ptr, size_t new_size);
 
+<<<<<<< HEAD
 //=============================
 // メトリクス管理API
 //=============================
@@ -73,6 +82,8 @@ void    ds_metrics_increment(const ds_allocator_t* alloc, const char* name);
 int64_t ds_metrics_get      (const ds_allocator_t* alloc, const char* name);
 >>>>>>> feature
 
+=======
+>>>>>>> feature
 #ifdef __cplusplus
 }
 #endif

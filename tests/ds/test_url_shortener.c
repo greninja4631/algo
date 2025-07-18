@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:tests/test_url_shortener.c
 #include "../include/ds/url_shortener.h"
 #include <assert.h>
@@ -15,38 +16,37 @@
  * @note    main() は tests/test_main.c に集約される
  */
 
+=======
+>>>>>>> feature
 #include "ds/url_shortener.h"
-#include "util/test_util.h"
 #include "util/logger.h"
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> feature
 #include <string.h>
 =======
 >>>>>>> feature
+=======
+#include <assert.h>
+#include <string.h>
+>>>>>>> feature
 
-#include <string.h>   /* strlen / strcmp */
+/*  DI allocator  */
+static void* _alloc(size_t n,size_t sz){ return n?calloc(n,sz):NULL; }
+static void  _free (void* p){ if(p) free(p); }
+static const ds_allocator_t G_ALLOC_IMPL = { .alloc=_alloc, .free=_free };
+#define G_ALLOC (&G_ALLOC_IMPL)
 
-/* ──────────────────────────────── */
-/*  グローバル DI アロケータ        */
-/*  tests/test_main.c で設定想定     */
-extern const ds_allocator_t *g_alloc;
+/*  tiny assert  */
+#define TASSERT(c,m) do{ if(c) ds_log(DS_LOG_LEVEL_INFO,"[PASS] %s",(m)); \
+                         else { ds_log(DS_LOG_LEVEL_ERROR,"[FAIL] %s",(m)); assert(0);} }while(0)
 
-/* ──────────────────────────────── */
-/*  共通アサート                    */
-#define DS_TEST_ASSERT(cond, msg)                                              \
-    do {                                                                       \
-        if (cond) { ds_log(DS_LOG_LEVEL_INFO,  "[PASS] %s", msg); }            \
-        else      { ds_log(DS_LOG_LEVEL_ERROR, "[FAIL] %s (%s:%d)",            \
-                           msg, __FILE__, __LINE__); }                         \
-    } while (0)
-
-/* ──────────────────────────────── */
-/*  基本動作テスト                  */
 void test__url_shortener_basic(void)
 {
-    ds_error_t          rc;
-    ds_url_shortener_t *us = NULL;
+    ds_url_shortener_t *us=NULL;
+    TASSERT(ds_url_shortener_create(G_ALLOC, 16, &us)==DS_SUCCESS,"create");
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
     url_shortener_destroy(s);
@@ -86,12 +86,16 @@ int main(void) {
     rc = ds_url_shortener_create(g_alloc, 10, &us);
     DS_TEST_ASSERT(rc == DS_SUCCESS && us, "create");
 >>>>>>> feature
+=======
+    char short_id[8], url_out[64];
+    const char *orig = "https://example.com/aaaaaaaa";
+>>>>>>> feature
 
-    /* --- shorten / expand 正常系 --- */
-    const char *orig = "https://www.openai.com/product/gpt";
-    char short_url[128] = {0};
-    char expanded [256] = {0};
+    TASSERT(ds_url_shortener_shorten(G_ALLOC, us, orig, short_id,sizeof short_id)==DS_SUCCESS,"shorten");
+    TASSERT(ds_url_shortener_expand (G_ALLOC, us, short_id, url_out,sizeof url_out)==DS_SUCCESS,"expand");
+    TASSERT(strcmp(orig,url_out)==0,"round-trip");
 
+<<<<<<< HEAD
     rc = ds_url_shortener_shorten(us, orig, short_url, sizeof short_url);
     DS_TEST_ASSERT(rc == DS_SUCCESS && strlen(short_url) > 0, "shorten");
 
@@ -138,5 +142,9 @@ void test__url_shortener_edge_cases(void)
     DS_TEST_ASSERT(rc == DS_ERR_OUT_OF_RANGE, "expand: small buf");
 
     ds_url_shortener_destroy(us);
+}
+>>>>>>> feature
+=======
+    ds_url_shortener_destroy(G_ALLOC, us);
 }
 >>>>>>> feature

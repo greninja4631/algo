@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "logger.h"
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -42,9 +43,13 @@ static int is_number(const char *str, double *out_val)
 >>>>>>> feature
 =======
 /*───────────────────────────────────────────────
+=======
+/*======================================================================*
+>>>>>>> feature
  *  src/ds/rpn_calculator.c
- *  RPN (逆ポーランド) 電卓 ― 抽象アロケータ DI 対応
- *──────────────────────────────────────────────*/
+ *  RPN (逆ポーランド) 電卓 — Opaque型＋抽象アロケータDI設計
+ *  2025-07 API設計・実装ガイドライン完全準拠
+ *======================================================================*/
 #include "ds/rpn_calculator.h"
 #include "ds/stack.h"
 #include "util/logger.h"
@@ -55,10 +60,9 @@ static int is_number(const char *str, double *out_val)
 #include <math.h>     /* 数学演算       */
 >>>>>>> feature
 
-/* ───── 内部構造体 (Opaque 実体) ───── */
+/* ───── Opaque実体 ───── */
 struct ds_rpn_calculator {
-    const ds_allocator_t *alloc;   /* DI アロケータを保持 */
-    ds_stack_t           *stack;   /* オペランドスタック */
+    ds_stack_t *stack; // DIでアロケータ渡し
 };
 
 <<<<<<< HEAD
@@ -79,10 +83,11 @@ is_number(const char *s, double *out_val)
 >>>>>>> feature
 }
 
-/*───────────────────────────────────────────────
- *                  API 実装
- *──────────────────────────────────────────────*/
+/*───────────────────────────────
+ *             API 実装
+ *───────────────────────────────*/
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -119,26 +124,34 @@ ds_error_t ds_rpn_calculator_create(ds_rpn_calculator_t** out_calc) {
     ds_rpn_calculator_t* calc = (ds_rpn_calculator_t*)ds_malloc(sizeof(ds_rpn_calculator_t));
 =======
 /* 生成 */
+=======
+>>>>>>> feature
 ds_error_t
 ds_rpn_calculator_create(const ds_allocator_t *alloc,
                          ds_rpn_calculator_t **out_calc)
 {
     if (!alloc || !out_calc) return DS_ERR_NULL_POINTER;
+<<<<<<< HEAD
 
     ds_rpn_calculator_t *calc =
         (ds_rpn_calculator_t *)ds_malloc(alloc, 1, sizeof(ds_rpn_calculator_t));
 >>>>>>> feature
+=======
+    ds_rpn_calculator_t *calc = ds_malloc(alloc, 1, sizeof(ds_rpn_calculator_t));
+>>>>>>> feature
     if (!calc) return DS_ERR_ALLOC;
 
-    calc->alloc = alloc;
     ds_error_t rc = ds_stack_create(alloc, &calc->stack);
-    if (rc != DS_SUCCESS) { ds_free(alloc, calc); return rc; }
-
+    if (rc != DS_SUCCESS) {
+        ds_free(alloc, calc);
+        return rc;
+    }
     *out_calc = calc;
     return DS_SUCCESS;
 >>>>>>> feature
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 ds_error_t ds_rpn_calculator_destroy(ds_rpn_calculator_t *calc)
@@ -176,29 +189,34 @@ ds_error_t ds_rpn_calculator_push(ds_rpn_calculator_t *calc, double value)
 ds_error_t ds_rpn_calculator_reset(ds_rpn_calculator_t* calc) {
 =======
 /* 破棄 */
+=======
+>>>>>>> feature
 ds_error_t
 ds_rpn_calculator_destroy(const ds_allocator_t *alloc, ds_rpn_calculator_t *calc)
 {
     if (!alloc || !calc) return DS_ERR_NULL_POINTER;
-
     ds_stack_destroy(alloc, calc->stack);
     ds_free(alloc, calc);
     return DS_SUCCESS;
 }
 
-/* リセット */
 ds_error_t
-ds_rpn_calculator_reset(ds_rpn_calculator_t *calc)
+ds_rpn_calculator_reset(const ds_allocator_t *alloc, ds_rpn_calculator_t *calc)
 {
+<<<<<<< HEAD
 >>>>>>> feature
     if (!calc) return DS_ERR_NULL_POINTER;
     return ds_stack_reset(calc->alloc, calc->stack);
+=======
+    if (!alloc || !calc) return DS_ERR_NULL_POINTER;
+    return ds_stack_reset(alloc, calc->stack);
+>>>>>>> feature
 }
 
-/* プッシュ */
 ds_error_t
-ds_rpn_calculator_push(ds_rpn_calculator_t *calc, double v)
+ds_rpn_calculator_push(const ds_allocator_t *alloc, ds_rpn_calculator_t *calc, double v)
 {
+<<<<<<< HEAD
     if (!calc) return DS_ERR_NULL_POINTER;
 <<<<<<< HEAD
     double* val_ptr = (double*)ds_malloc(sizeof(double));
@@ -324,58 +342,61 @@ ds_error_t ds_rpn_calculator_evaluate(ds_rpn_calculator_t* calc, const char* exp
 =======
 
     double *buf = (double *)ds_malloc(calc->alloc, 1, sizeof(double));
+=======
+    if (!alloc || !calc) return DS_ERR_NULL_POINTER;
+    double *buf = ds_malloc(alloc, 1, sizeof(double));
+>>>>>>> feature
     if (!buf) return DS_ERR_ALLOC;
-
     *buf = v;
-    return ds_stack_push(calc->alloc, calc->stack, buf);
+    ds_error_t rc = ds_stack_push(alloc, calc->stack, buf);
+    if (rc != DS_SUCCESS) ds_free(alloc, buf); // push失敗時のリーク防止
+    return rc;
 }
 
-/* ポップ */
 ds_error_t
-ds_rpn_calculator_pop(ds_rpn_calculator_t *calc, double *out_v)
+ds_rpn_calculator_pop(const ds_allocator_t *alloc, ds_rpn_calculator_t *calc, double *out_v)
 {
-    if (!calc || !out_v) return DS_ERR_NULL_POINTER;
-
+    if (!alloc || !calc || !out_v) return DS_ERR_NULL_POINTER;
     void *tmp = NULL;
-    ds_error_t rc = ds_stack_pop(calc->alloc, calc->stack, &tmp);
+    ds_error_t rc = ds_stack_pop(alloc, calc->stack, &tmp);
     if (rc != DS_SUCCESS) return rc;
-
     *out_v = *(double *)tmp;
-    ds_free(calc->alloc, tmp);
+    ds_free(alloc, tmp);
     return DS_SUCCESS;
 }
 
-/* 評価 */
 ds_error_t
-ds_rpn_calculator_evaluate(ds_rpn_calculator_t *calc,
-                           const char          *expr,
-                           double              *out_res)
+ds_rpn_calculator_evaluate(const ds_allocator_t *alloc,
+                           ds_rpn_calculator_t *calc,
+                           const char *expr,
+                           double *out_res)
 {
+<<<<<<< HEAD
     if (!calc || !expr || !out_res) return DS_ERR_INVALID_ARG;
 >>>>>>> feature
 
     ds_error_t rc = ds_rpn_calculator_reset(calc);
+=======
+    if (!alloc || !calc || !expr || !out_res) return DS_ERR_INVALID_ARG;
+    ds_error_t rc = ds_rpn_calculator_reset(alloc, calc);
+>>>>>>> feature
     if (rc != DS_SUCCESS) return rc;
 
-    /* strtok するために自前バッファを確保 */
     size_t len = strlen(expr) + 1;
-    char  *buf = (char *)ds_malloc(calc->alloc, len, sizeof(char));
+    char *buf = ds_malloc(alloc, len, sizeof(char));
     if (!buf) return DS_ERR_ALLOC;
     memcpy(buf, expr, len);
 
-    /* トークン走査 */
     for (char *tok = strtok(buf, " "); tok; tok = strtok(NULL, " ")) {
-
         double val = 0.0;
         if (is_number(tok, &val)) {
-            rc = ds_rpn_calculator_push(calc, val);
+            rc = ds_rpn_calculator_push(alloc, calc, val);
 
         } else if (strlen(tok) == 1 && strchr("+-*/", tok[0])) {
-
             double rhs, lhs;
-            rc = ds_rpn_calculator_pop(calc, &rhs);
+            rc = ds_rpn_calculator_pop(alloc, calc, &rhs);
             if (rc != DS_SUCCESS) break;
-            rc = ds_rpn_calculator_pop(calc, &lhs);
+            rc = ds_rpn_calculator_pop(alloc, calc, &lhs);
             if (rc != DS_SUCCESS) break;
 
             double res = 0.0;
@@ -389,7 +410,7 @@ ds_rpn_calculator_evaluate(ds_rpn_calculator_t *calc,
                 break;
             }
             if (rc != DS_SUCCESS) break;
-            rc = ds_rpn_calculator_push(calc, res);
+            rc = ds_rpn_calculator_push(alloc, calc, res);
 
         } else {
 <<<<<<< HEAD
@@ -403,10 +424,10 @@ ds_rpn_calculator_evaluate(ds_rpn_calculator_t *calc,
             rc = DS_ERR_INVALID_ARG;
 >>>>>>> feature
         }
-
         if (rc != DS_SUCCESS) break;
     }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
     if (err == DS_SUCCESS)
@@ -438,8 +459,16 @@ ds_rpn_calculator_evaluate(ds_rpn_calculator_t *calc,
     if (rc == DS_SUCCESS) {
         rc = ds_rpn_calculator_pop(calc, out_res);
     }
+=======
+    if (rc == DS_SUCCESS)
+        rc = ds_rpn_calculator_pop(alloc, calc, out_res);
+>>>>>>> feature
 
-    ds_free(calc->alloc, buf);
+    ds_free(alloc, buf);
     return rc;
+<<<<<<< HEAD
+}
+>>>>>>> feature
+=======
 }
 >>>>>>> feature

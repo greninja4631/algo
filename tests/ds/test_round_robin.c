@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "../include/ds/round_robin.h"
 #include <stdio.h>
 #include <assert.h>
@@ -71,53 +72,59 @@ int main(void) {
 #include "util/test_util.h"
 =======
 #include <stdio.h>
+=======
+/*
+ * tests/ds/test_round_robin.c
+ * Round-Robin Scheduler – unit tests (2025-07 guideline)
+ */
+#include <stdlib.h>
+>>>>>>> feature
 #include <assert.h>
-#include <stdlib.h>  
 #include "ds/process.h"
 >>>>>>> feature
 #include "ds/round_robin.h"
+#include "util/logger.h"
 
-// グローバルまたはローカルでテスト用アロケータを用意
-static ds_allocator_t g_test_allocator = {
-    .alloc = calloc,
-    .free  = free
-};
-#define g_test_alloc (&g_test_allocator)
+/* ── 1. アロケータ DI ── */
+static void* _std_alloc(size_t c,size_t z){ return c?calloc(c,z):NULL; }
+static void  _std_free (void* p){ if(p) free(p); }
+static const ds_allocator_t G_ALLOC_IMPL = { .alloc=_std_alloc, .free=_std_free };
+#define G_ALLOC (&G_ALLOC_IMPL)
 
-#define DS_TEST_ASSERT(cond, msg) \
-    do { if (!(cond)) { printf("[FAIL] %s\n", msg); assert(0); } \
-         else         { printf("[PASS] %s\n", msg); } } while (0)
+/* ── 2. ASSERT ── */
+#define TASSERT(x,msg) do{ if(x) ds_log(DS_LOG_LEVEL_INFO ,"[PASS] %s",msg); \
+                           else { ds_log(DS_LOG_LEVEL_ERROR,"[FAIL] %s",msg); assert(0);} }while(0)
 
-static ds_process_t *make_process(int id, int burst) {
-    ds_process_t *p = NULL;
-    ds_error_t rc = ds_process_create(g_test_alloc, id, burst, &p);
-    assert(rc == DS_SUCCESS && p != NULL);
+/* ── 3. helper ── */
+static ds_process_t *mk_proc(int32_t id,int32_t bt){
+    ds_process_t *p=NULL;
+    TASSERT(ds_process_create(G_ALLOC,id,bt,&p)==DS_SUCCESS&&p,"proc create");
     return p;
 }
 
-void test__round_robin_basic(void) {
-    ds_round_robin_scheduler_t *sched = NULL;
-    ds_error_t rc = ds_round_robin_scheduler_create(g_test_alloc, 10, &sched);
-    assert(rc == DS_SUCCESS && sched != NULL);
+/* ── 4-A. 基本テスト ── */
+void test__round_robin_basic(void)
+{
+    const int32_t QUANTUM = 4;
+    ds_round_robin_scheduler_t *sch=NULL;
+    TASSERT(ds_round_robin_scheduler_create(G_ALLOC,QUANTUM,&sch)==DS_SUCCESS,"create");
 
-    ds_error_t add_rc1 = ds_round_robin_scheduler_add_process(g_test_alloc, sched, make_process(1, 15));
-    ds_error_t add_rc2 = ds_round_robin_scheduler_add_process(g_test_alloc, sched, make_process(2, 30));
-    ds_error_t add_rc3 = ds_round_robin_scheduler_add_process(g_test_alloc, sched, make_process(3, 25));
-    assert(add_rc1 == DS_SUCCESS && add_rc2 == DS_SUCCESS && add_rc3 == DS_SUCCESS);
+    TASSERT(ds_round_robin_scheduler_add_process(G_ALLOC,sch,mk_proc(1,15))==DS_SUCCESS,"add p1");
+    TASSERT(ds_round_robin_scheduler_add_process(G_ALLOC,sch,mk_proc(2,30))==DS_SUCCESS,"add p2");
+    TASSERT(ds_round_robin_scheduler_add_process(G_ALLOC,sch,mk_proc(3,25))==DS_SUCCESS,"add p3");
 
-    ds_process_t *out = NULL;
-    ds_error_t get_rc1 = ds_round_robin_scheduler_get_next_process(g_test_alloc, sched, &out);
-    DS_TEST_ASSERT(get_rc1 == DS_SUCCESS && ds_process_get_id(out) == 1, "id=1");
-    ds_process_destroy(out);
+#ifdef DS_RR_HAS_SIZE_API
+    TASSERT(ds_round_robin_scheduler_size(sch)==3,"size 3");
+#endif
 
-    ds_error_t get_rc2 = ds_round_robin_scheduler_get_next_process(g_test_alloc, sched, &out);
-    DS_TEST_ASSERT(get_rc2 == DS_SUCCESS && ds_process_get_id(out) == 2, "id=2");
-    ds_process_destroy(out);
+    ds_process_t *p=NULL;
+    TASSERT(ds_round_robin_scheduler_get_next_process(G_ALLOC,sch,&p)==DS_SUCCESS&&ds_process_get_id(p)==1,"pop 1");
+    ds_process_destroy(G_ALLOC,p);
 
-    ds_error_t get_rc3 = ds_round_robin_scheduler_get_next_process(g_test_alloc, sched, &out);
-    DS_TEST_ASSERT(get_rc3 == DS_SUCCESS && ds_process_get_id(out) == 3, "id=3");
-    ds_process_destroy(out);
+    TASSERT(ds_round_robin_scheduler_get_next_process(G_ALLOC,sch,&p)==DS_SUCCESS&&ds_process_get_id(p)==2,"pop 2");
+    ds_process_destroy(G_ALLOC,p);
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
     // 3回目
@@ -181,4 +188,27 @@ void test__round_robin_edge_cases(void)
 =======
     ds_round_robin_scheduler_destroy(g_test_alloc, sched);
 }
+>>>>>>> feature
+=======
+    TASSERT(ds_round_robin_scheduler_get_next_process(G_ALLOC,sch,&p)==DS_SUCCESS&&ds_process_get_id(p)==3,"pop 3");
+    ds_process_destroy(G_ALLOC,p);
+
+#ifdef DS_RR_HAS_SIZE_API
+    TASSERT(ds_round_robin_scheduler_size(sch)==0,"size 0");
+#endif
+    ds_round_robin_scheduler_destroy(G_ALLOC,sch);
+}
+
+/* ── 4-B. 異常系 ── */
+void test__round_robin_edge_cases(void)
+{
+    ds_process_t *dummy=NULL;
+    TASSERT(ds_round_robin_scheduler_add_process(G_ALLOC,NULL,mk_proc(9,9))==DS_ERR_NULL_POINTER,"add NULL");
+    TASSERT(ds_round_robin_scheduler_get_next_process(G_ALLOC,NULL,&dummy)==DS_ERR_NULL_POINTER,"get NULL");
+}
+
+/* optional stand-alone */
+#ifdef DS_STANDALONE_TEST
+int main(void){ test__round_robin_basic(); test__round_robin_edge_cases(); return 0; }
+#endif
 >>>>>>> feature

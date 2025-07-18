@@ -103,7 +103,7 @@ typedef struct ds_stack                 ds_stack_t;
 typedef struct ds_statistics            ds_statistics_t;
 typedef struct ds_url_shortener         ds_url_shortener_t;
 typedef struct ds_allocator             ds_allocator_t;
-typedef struct ds_metrics               ds_metrics_t;
+typedef struct ds_metrics               ds_metrics_t;      // ←★ 必須: metrics_tの前方宣言
 typedef struct ds_config                ds_config_t;
 typedef struct ds_logger                ds_logger_t;
 typedef struct ds_memory                ds_memory_t;

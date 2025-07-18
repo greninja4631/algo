@@ -1,6 +1,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "logger.h"
 <<<<<<< HEAD
 #include "../../include/data_structures.h"
@@ -114,36 +115,43 @@ static void encode_id(int id, char* out, size_t outlen) {
     snprintf(out, outlen, "%06d", id); // 6桁ゼロパディング
 =======
 // src/ds/url_shortener.c
+=======
+>>>>>>> feature
 #include "ds/url_shortener.h"
-#include "ds/lru_cache.h"
-#include "util/memory.h"
-
+#include "util/logger.h"
+#include <assert.h>
 #include <string.h>
-#include <stdio.h>
 
-/* ───── 内部ユーティリティ ───── */
-static int  g_next_id = 1;
-static void encode_id(int id, char *out, size_t len)
+/*  DI allocator  */
+static void* _alloc(size_t n,size_t sz){ return n?calloc(n,sz):NULL; }
+static void  _free (void* p){ if(p) free(p); }
+static const ds_allocator_t G_ALLOC_IMPL = { .alloc=_alloc, .free=_free };
+#define G_ALLOC (&G_ALLOC_IMPL)
+
+/*  tiny assert  */
+#define TASSERT(c,m) do{ if(c) ds_log(DS_LOG_LEVEL_INFO,"[PASS] %s",(m)); \
+                         else { ds_log(DS_LOG_LEVEL_ERROR,"[FAIL] %s",(m)); assert(0);} }while(0)
+
+void test__url_shortener_basic(void)
 {
+<<<<<<< HEAD
     /* 000123 のような 6 桁ゼロパディング */
     (void)snprintf(out, len, "%06d", id);
 >>>>>>> feature
 }
+=======
+    ds_url_shortener_t *us=NULL;
+    TASSERT(ds_url_shortener_create(G_ALLOC, 16, &us)==DS_SUCCESS,"create");
+>>>>>>> feature
 
-/* ───── Opaque 本体（.c 限定） ───── */
-struct ds_url_shortener {
-    const ds_allocator_t *alloc;   /* DI アロケータ */
-    ds_lru_cache_t       *cache;   /* ID ↔ URL */
-};
+    char short_id[8], url_out[64];
+    const char *orig = "https://example.com/aaaaaaaa";
 
-/* ───── API 実装 ───── */
-ds_error_t
-ds_url_shortener_create(const ds_allocator_t *alloc,
-                        size_t                capacity,
-                        ds_url_shortener_t  **out_us)
-{
-    if (!alloc || !out_us) return DS_ERR_NULL_POINTER;
+    TASSERT(ds_url_shortener_shorten(G_ALLOC, us, orig, short_id,sizeof short_id)==DS_SUCCESS,"shorten");
+    TASSERT(ds_url_shortener_expand (G_ALLOC, us, short_id, url_out,sizeof url_out)==DS_SUCCESS,"expand");
+    TASSERT(strcmp(orig,url_out)==0,"round-trip");
 
+<<<<<<< HEAD
     ds_url_shortener_t *us = alloc->alloc(1, sizeof *us);
     if (!us) return DS_ERR_ALLOC;
     memset(us, 0, sizeof *us);
@@ -225,4 +233,8 @@ ds_url_shortener_expand(ds_url_shortener_t *us,
 <<<<<<< HEAD
 >>>>>>> feature
 =======
+>>>>>>> feature
+=======
+    ds_url_shortener_destroy(G_ALLOC, us);
+}
 >>>>>>> feature
