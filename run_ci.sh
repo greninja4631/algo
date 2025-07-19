@@ -1,62 +1,109 @@
-#!/bin/bash
-set -xe
-
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------
+# run_ci.sh  ―  ガイドライン 2025-07 改訂版 CI/CD パイプライン
+# 要件:
+#   * bash 4+ / set -euo pipefail
+#   * ビルドは Docker 内で実行する想定（ホストでも動作は可）
+#   * 終了ステータス 0 以外 → Jenkins / GitHub Actions は即 Fail
+# ------------------------------------------------------------------------
+set -euo pipefail
+IFS=$'\n\t'
 echo "[INFO] --- CI/CD Pipeline start ---"
-echo "[INFO] Current directory: $(pwd)"
-ls -l
+echo "[INFO] PWD           : $(pwd)"
+echo "[INFO] DATE(UTC)     : $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+echo "[INFO] COMMIT        : ${CI_COMMIT_SHA:-unknown}"
 
-# --- 主要ディレクトリ状態を全出力（デバッグ・CI視認性UP） ---
-for d in src tests src/util src/ds src/algo include include/ds include/util; do
-    echo "[INFO] $d :"
-    ls -l $d || echo "[WARN] $d does not exist"
+# ------------------------------------------------------------------------
+# 0. 主要ディレクトリ可視化（デバッグ用）
+# ------------------------------------------------------------------------
+for d in src tests include; do
+    echo "[INFO] Tree of $d"
+    [ -d "$d" ] && find "$d" -maxdepth 2 -type f | head -n 20 || echo "  (not found)"
 done
 
-# --- 必須ツールのインストール（CI環境用・ローカルでも無害/既存ならskip） ---
+# ------------------------------------------------------------------------
+# 1. 環境依存ツールのインストール（ホスト実行時のみ）
+#    * Docker イメージ内には事前インストール済み想定
+# ------------------------------------------------------------------------
 if command -v apt-get >/dev/null 2>&1; then
-     apt-get update
-     apt-get install -y doxygen cppcheck clang-tidy valgrind || true
+  sudo -n true >/dev/null 2>&1 && SUDO=sudo || SUDO=
+  ${SUDO} apt-get update -qq
+  ${SUDO} apt-get install -y -qq \
+        build-essential clang clang-tidy cppcheck valgrind doxygen gcovr
 fi
 
-# --- クリーンビルド ---
+# ------------------------------------------------------------------------
+# 2. クリーンビルド
+# ------------------------------------------------------------------------
 make clean
-
-# --- コード整形（存在しなければskip, formatは任意導入） ---
-make format || true
-
-# --- 本体ビルド ---
+CFLAGS='-Wall -Wextra -Werror -pedantic -std=c11 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -O2 -g'
+export CFLAGS
 make build
 
-# --- clang-tidy (malloc禁止/警告fail CI厳守) ---
-find src/ include/ -name "*.c" -or -name "*.h" > files.txt
-clang-tidy -p . --warnings-as-errors='*' $(cat files.txt)
+# ------------------------------------------------------------------------
+# 3. フォーマット (存在すれば)
+# ------------------------------------------------------------------------
+make format   || echo "[INFO] Format target skipped"
 
-# --- malloc直呼び禁止（grepチェック） ---
-echo "[CI] malloc/calloc/realloc/free 直呼び禁止チェック"
-if grep -R -n --include="*.c" --include="*.h" '\b\(malloc\|calloc\|realloc\|free\)\b' src/ include/ | grep -v 'ds_malloc\|ds_free\|ds_calloc\|ds_realloc'; then
-    echo '[ERROR] 禁止API（malloc/calloc/realloc/free）の直呼びを検出！'
-    exit 1
-else
-    echo '[PASS] 禁止APIの直呼びは検出されませんでした。'
+# ------------------------------------------------------------------------
+# 4. 静的解析 ― clang-tidy 全ファイル (警告→Fail)
+# ------------------------------------------------------------------------
+find src include -name '*.c' -print0 | xargs -0 -r clang-tidy \
+      --warnings-as-errors='*' --quiet \
+      -- -Iinclude -std=c11 $CFLAGS
+
+# ------------------------------------------------------------------------
+# 5. 禁止 API grep (malloc/calloc/realloc/free 直呼び)
+# ------------------------------------------------------------------------
+echo "[CI] Forbidden malloc-family 呼び出しチェック"
+if grep -R --line-number --include='*.c' --include='*.h' \
+      -E '\b(malloc|calloc|realloc|free)\b' src include \
+      | grep -vE 'ds_(malloc|calloc|realloc|free)'; then
+  echo '[ERROR] Forbidden memory API detected'
+  exit 1
 fi
+echo '[PASS] Forbidden memory API none'
 
-# --- ユニットテスト ---
+# ------------------------------------------------------------------------
+# 6. cppcheck (警告→Fail)
+# ------------------------------------------------------------------------
+cppcheck --enable=all --error-exitcode=1 --inline-suppr src include
+
+# ------------------------------------------------------------------------
+# 7. ユニットテスト
+# ------------------------------------------------------------------------
 make test
 
-# --- Valgrindによるメモリチェック ---
+# ------------------------------------------------------------------------
+# 8. Valgrind（“definitely lost” = 0 を強制）
+# ------------------------------------------------------------------------
 if command -v valgrind >/dev/null 2>&1; then
-    make memcheck || true
+  echo "[CI] Valgrind memcheck"
+  valgrind --leak-check=full --error-exitcode=1 \
+           --suppressions=valgrind.supp \
+           build/tests/test_main
 else
-    echo "[INFO] Valgrind not installed; skipping memcheck"
+  echo "[WARN] valgrind not found; skipping memcheck"
 fi
 
-# --- 静的解析（cppcheck/clang-tidy。失敗でもCI続行可） ---
-make lint || true
+# ------------------------------------------------------------------------
+# 9. カバレッジ (gcovr, optional)
+# ------------------------------------------------------------------------
+if command -v gcovr >/dev/null 2>&1; then
+  make coverage || echo "[INFO] coverage skipped"
+fi
 
-# --- ドキュメント自動生成（Doxygen有無はプロジェクトに依存。なければ無視） ---
-make docs || true
+# ------------------------------------------------------------------------
+# 10. Doxygen (docs 生成は警告扱い, 生成失敗≠CI Fail)
+# ------------------------------------------------------------------------
+make docs || echo "[INFO] docs skipped"
 
-# --- 成果物・成果ディレクトリ一覧（ビルド結果もCIログに残す） ---
-ls -l build || echo "[INFO] build dir not exist"
-ls -l docs  || echo "[INFO] docs dir not exist"
+# ------------------------------------------------------------------------
+# 11. 成果物一覧
+# ------------------------------------------------------------------------
+echo "[INFO] build/ tree (top level)"
+[ -d build ] && find build -maxdepth 2 | head -n 20 || echo "(empty)"
+echo "[INFO] docs/ tree"
+[ -d docs  ] && find docs  -maxdepth 2 | head -n 20 || echo "(empty)"
 
-echo "[INFO] --- CI/CD Pipeline finished ---"
+echo "[INFO] --- CI/CD Pipeline finished SUCCESS ---"

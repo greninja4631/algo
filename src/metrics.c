@@ -4,19 +4,19 @@
  * @details
  *   - Opaque本体は.cに隠蔽
  *   - すべての関数がガイドライン形式（DI/シグネチャ/エラー処理統一）
- *   - allocator DI／alloc==NULL時は標準calloc/free
+ *   - メモリ確保・解放はds_malloc/ds_freeのみ、直呼び/NULLフォールバック完全禁止
  *   - printf禁止→ds_log()のみ
  *   - -Werror下で未使用警告ゼロ
  */
 
 #include "data_structures.h"
+#include "util/metrics.h"
+#include "util/memory.h"
+#include "util/logger.h"
 #include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "util/metrics.h"
-#include "util/logger.h"
 
 //---------------------------------------------------
 // Opaque 本体
@@ -31,8 +31,13 @@ struct ds_metrics {
 //---------------------------------------------------
 // DIアロケータラッパ
 //---------------------------------------------------
-#define ALLOC(a, n, sz) ((a) ? (a)->alloc((n), (sz)) : calloc((n), (sz)))
-#define FREE(a, p)      do { if ((p)) { (a) ? (a)->free(p) : free(p); } } while (0)
+static inline void* xalloc(const ds_allocator_t *a, size_t n, size_t sz) {
+    if (!a) return NULL; // alloc==NULL禁止。DI必須
+    return ds_malloc(a, n, sz);
+}
+static inline void xfree(const ds_allocator_t *a, void *p) {
+    if (a && p) ds_free(a, p);
+}
 
 //---------------------------------------------------
 // 基本API
@@ -40,8 +45,7 @@ struct ds_metrics {
 ds_error_t
 ds_metrics_init(const ds_allocator_t *alloc, ds_metrics_t *metrics)
 {
-    (void)alloc;
-    if (!metrics) return DS_ERR_NULL_POINTER;
+    if (!alloc || !metrics) return DS_ERR_NULL_POINTER;
     memset(metrics, 0, sizeof *metrics);
     metrics->creation_timestamp = (uint64_t)time(NULL);
     return DS_SUCCESS;
@@ -50,8 +54,7 @@ ds_metrics_init(const ds_allocator_t *alloc, ds_metrics_t *metrics)
 ds_error_t
 ds_metrics_increment_ops(const ds_allocator_t *alloc, ds_metrics_t *metrics)
 {
-    (void)alloc;
-    if (!metrics) return DS_ERR_NULL_POINTER;
+    if (!alloc || !metrics) return DS_ERR_NULL_POINTER;
     metrics->operations_count++;
     return DS_SUCCESS;
 }
@@ -59,8 +62,7 @@ ds_metrics_increment_ops(const ds_allocator_t *alloc, ds_metrics_t *metrics)
 ds_error_t
 ds_metrics_increment_elements(const ds_allocator_t *alloc, ds_metrics_t *metrics)
 {
-    (void)alloc;
-    if (!metrics) return DS_ERR_NULL_POINTER;
+    if (!alloc || !metrics) return DS_ERR_NULL_POINTER;
     metrics->total_elements++;
     return DS_SUCCESS;
 }
@@ -68,8 +70,7 @@ ds_metrics_increment_elements(const ds_allocator_t *alloc, ds_metrics_t *metrics
 ds_error_t
 ds_metrics_decrement_elements(const ds_allocator_t *alloc, ds_metrics_t *metrics)
 {
-    (void)alloc;
-    if (!metrics) return DS_ERR_NULL_POINTER;
+    if (!alloc || !metrics) return DS_ERR_NULL_POINTER;
     if (metrics->total_elements) metrics->total_elements--;
     return DS_SUCCESS;
 }
@@ -77,8 +78,7 @@ ds_metrics_decrement_elements(const ds_allocator_t *alloc, ds_metrics_t *metrics
 ds_error_t
 ds_metrics_add_memory(const ds_allocator_t *alloc, ds_metrics_t *metrics, size_t bytes)
 {
-    (void)alloc;
-    if (!metrics) return DS_ERR_NULL_POINTER;
+    if (!alloc || !metrics) return DS_ERR_NULL_POINTER;
     metrics->memory_allocated += bytes;
     return DS_SUCCESS;
 }
@@ -86,8 +86,7 @@ ds_metrics_add_memory(const ds_allocator_t *alloc, ds_metrics_t *metrics, size_t
 ds_error_t
 ds_metrics_sub_memory(const ds_allocator_t *alloc, ds_metrics_t *metrics, size_t bytes)
 {
-    (void)alloc;
-    if (!metrics) return DS_ERR_NULL_POINTER;
+    if (!alloc || !metrics) return DS_ERR_NULL_POINTER;
     if (metrics->memory_allocated >= bytes)
         metrics->memory_allocated -= bytes;
     else
@@ -137,10 +136,10 @@ find_counter(const char *name)
 void
 ds_metrics_increment(const ds_allocator_t *alloc, const char *name)
 {
-    if (!name) return;
+    if (!alloc || !name) return;
     named_counter_t *c = find_counter(name);
     if (!c) {
-        c = ALLOC(alloc, 1, sizeof *c);
+        c = xalloc(alloc, 1, sizeof *c);
         if (!c) return;
         strncpy(c->name, name, sizeof c->name - 1);
         c->name[sizeof c->name - 1] = '\0';
@@ -162,10 +161,11 @@ ds_metrics_get(const ds_allocator_t *alloc, const char *name)
 void
 ds_metrics_reset_all(const ds_allocator_t *alloc)
 {
+    if (!alloc) return;
     named_counter_t *p = g_named;
     while (p) {
         named_counter_t *n = p->next;
-        FREE(alloc, p);
+        xfree(alloc, p);
         p = n;
     }
     g_named = NULL;

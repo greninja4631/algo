@@ -14,21 +14,10 @@ doxygen docs/Doxyfile       # ドキュメント生成
 
 【2. 直接 malloc/calloc/realloc/free 残存箇所】
 ----------------------------------------
-[❌] src/statistics.c
-   → int *work = malloc(...); free(work); 
-      → ds_malloc/ds_free へ置換
+を行ったコードを既存のコードを含めて完璧にガイドラインに沿って再構築して下さい
 
-[⚠️] src/statistics.c.bak
-   → バックアップに malloc/free
-      → 削除 or .gitignoreで無視
 
-[⚠️] src/ds/history_system.c
-   → xmalloc/xfree マクロ: alloc==NULL で calloc/free フォールバック
-      → 設計方針次第（禁止なら置換）
 
-[⚠️] src/metrics.c
-   → ALLOC()/FREE() マクロ: alloc==NULL で calloc/free フォールバック
-      → 方針により置換
 
 [✅] src/ds/url_shortener.c
    → _alloc/_free によるテスト用内部アロケータ（G_ALLOC）

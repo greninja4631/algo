@@ -3,167 +3,245 @@
 
 (2025-07 改訂版 — ソフトウェア工学の最前線 + 現場実装チェックリスト完全統合版)
 
-目的 – “設計ドキュメント”と“実装現場チェックリスト”を 1 枚に統合し、
-ABI 安定性・静的解析合格・Valgrind 漏れゼロ・将来拡張容易性を同時に満たす。
+
+以下は 「C プロジェクト API 設計・実装 完全統一ガイドライン（2025-07 改訂版）」 を
+ChatGPT が（＝機械が）もっとも誤解なく理解できるよう、自然言語での“説明＋仕様”形式に書き直したものです。
+―― 見出し階層・語彙・例示・理由を極力明示し、単なる箇条書きより因果関係が追えるようにしました。
 
 ⸻
 
-0. コア原則（全モジュール共通・必須）
-
-#	原則	要旨
-0-1	アロケータ DI 統一	すべての公開 API の第 1 引数はconst ds_allocator_t *alloc固定。alloc==NULL時は ds_malloc/ds_freeへ自動フォールバック。
-0-2	calloc/free 安全設計	_std_allocは「cnt==0→NULL」、_std_freeは「p==NULL→no-op」。本番/テストいずれも free(NULL) が必ず安全。
-0-3	NULL セーフ API	あらゆる API は NULL を⾮致命的エラーとして扱い DS_ERR_NULL_POINTER を返す – CI で NULL deref が無いことを保証。
-0-4	命名・out_・@ownership 統一	命名ルールは §1、出力引数は 必ず out_ プレフィクス、メモリ所有権は Doxygen @ownership を 100 % 明示。
-0-5	破棄は 1 回だけ	どのリソースも 二重 free 禁止。destroy/reset/clear など破棄系列 API は free 済ポインタを NULL へセットし再利用不可にする。
-0-6	構造体本体は .c	DTO 例外を除き 構造体本体は .c ファイル 1 か所のみ。ヘッダでメンバ公開禁止。
-0-7	ログ 6 段 + アサーション	ログは TRACE/DEBUG/INFO/WARN/ERROR/FATAL の 6 段、アサートは DS_TEST_ASSERT / TASSERT 統一。
-0-8	テスト main() 分離	各テストはスタンドアロン実行可能だが、実際の CI ランは tests/test_main.c が一括呼び出し。
-0-9	Valgrind & 拡張容易性	すべてのモジュールは Valgrind “definitely lost” = 0 を CI で保証し、後方互換を壊さず拡張できる設計にする。
-
+0. 目的と適用範囲
+	1.	目的
+	•	「ABI 安定性」「静的解析ノーエラー」「Valgrind 漏れゼロ」「将来拡張容易性」の同時達成。
+	•	“設計ドキュメント”と“現場チェックリスト”を 1 ファイル に統合し、改訂を１か所で完結させる。
+	2.	適用範囲
+	•	src/, include/, tests/ 以下に置かれる すべての C コード とビルドスクリプト。
+	•	CI/CD（Docker 内で走らせるシェル / Jenkinsfile / GitHub Actions）も含む。
 
 ⸻
 
-1. 命名規約 & 型設計ルール（超詳細版）
+1. コア原則（「守らないとビルド or CI が即落ちる」レベル）
 
-項目	強制ルール	工学的理由
-構造体本体	struct ds_<module> { … }; を src/ds/.c 内 1 か所だけ	本体隠蔽で不変条件を実装側に閉じ込め、ABI を安定させる
-前方宣言 typedef	すべて include/data_structures.h に typedef struct ds_<module> ds_<module>_t; を集中管理	型依存ループ・多重定義・ヘッダ爆発を防止
-関数	ds_<module>_<verb>() – verb は必ず動詞（create/destroy/push …）	grep / IDE ジャンプ効率化、API グルーピング
-関数ポインタ型	ds_<module>_<verb>_func_t	型安全 DI・コールバック実装容易
-列挙型/エラー	DS_ERR_<MODULE>_<CAUSE>、成功は DS_SUCCESS=0	errno と混同無し、一発で原因特定
-ゲッター/セッター	ds_<module>_get_<field>() / set_<field>()（MT版は _atomicサフィックス）	カプセル化維持＆スレッド安全保証
-clone	ds_<module>_clone(const ds_<module>_t *src) は 必ず深いコピー	値型セマンティクスを安全に実現
-グローバル変数	原則禁止。必要時は ds_<module>_g_<name> + Mutex/TLS、ユニットテストで競合検証必須	隠れた副作用排除・初期化順序バグ回避
+ID	原則名	具体ルール（曖昧さゼロで記述）	理由 / 効果
+0-1	アロケータ DI 統一	公開 API の 第 1 引数は const ds_allocator_t *alloc に固定。 alloc == NULL の場合は ds_malloc/ds_free/ds_realloc が暗黙フォールバック。	・テスト時にモックアロケータを注入できる。・メモリ出口を 1 か所に集約できる。
+0-2	calloc/free 安全設計	_std_alloc(cnt,sz) は cnt == 0 で NULL を返す。_std_free(p) は p == NULL で no-op。	“ゼロバイト確保”や “free(NULL)” でクラッシュしない。
+0-3	NULL セーフ API	どの API も NULL を致命的クラッシュにしない。必ず DS_ERR_NULL_POINTER を返す。	NULL-deref を CI でゼロに保つ。
+0-4	命名・@ownership 統一	出力ポインタはすべて out_ プレフィクス。Doxygen の @ownership は caller frees / callee frees / transfer の 3 択を必ず付ける。	人間・静的解析ツールが所有権を誤解しない。
+0-5	破棄は 1 回だけ	destroy/reset 系 API は、内部で free 後 ポインタを NULL へ。二重 free が起きても no-op。	二重 free バグ完全防止。
+0-6	構造体本体は .c	DTO を除き、メンバ宣言は .c ファイル 1 箇所のみ。ヘッダは forward-decl のみ。	ABI 変更がヘッダに波及しない。
+0-7	ログ 6 段	`ds_log(TRACE	DEBUG
+0-8	テスト main 分離	個別 test ファイルは #ifdef DS_STANDALONE_TEST 時のみ main() を持つ。CI では tests/test_main.c が全テストを集約。	単体実行と CI 実行の両立。
+0-9	Valgrind 0 漏れ	CI の valgrind --leak-check=full で “definitely lost” = 0 を強制。	リークを早期に潰す。
 
 
 ⸻
 
-2. API 設計ポリシー（全関数共通 Big-Five）
-	1.	戻り値は ds_error_t 一択 – 成功は DS_SUCCESS
-	2.	Doxygen @ownership – caller frees / callee frees / transfer の三択のみ
-	3.	出力引数は out_ – IDE 補完＆静的解析で誤検知ゼロ
-	4.	サイズは size_t, 負数は int64_t – 32/64bit 差異を排除
-	5.	Opaque 三原則 – 外部はポインタのみ・メンバ不可視・コピーは clone()
+2. 命名規約・型設計（IDE 補完 & リファクタに強い）
+	1.	構造体本体
+
+// src/ds/stack.c のみ
+struct ds_stack { … };
+
+
+	2.	前方宣言 typedef
+
+/* include/data_structures.h */
+typedef struct ds_stack ds_stack_t;
+
+すべての typedef を 1 ファイルに集中させることで多重定義を排除。
+
+	3.	関数命名 ds_stack_create() / ds_stack_push() … 動詞必須
+	4.	エラーコード DS_ERR_STACK_OVERFLOW
+	5.	getter/setter ds_stack_get_size() / ds_stack_set_limit()
+	6.	clone ds_stack_clone(const ds_stack_t *src) は必ず深いコピー
 
 ⸻
 
-3. 抽象アロケータ DI（依存性逆転・安全メモリ管理）
-	•	すべての公開 API：const ds_allocator_t *alloc が第 1 引数
-	•	alloc == NULL → ds_malloc/ds_free/ds_realloc にフォールバック
-	•	唯一のメモリ出口 – malloc/calloc/realloc/free 直呼び禁止
+3. 契約プログラミング
+
+/**
+ * @pre  alloc != NULL
+ * @pre  out_stack != NULL
+ * @post *out_stack != NULL
+ */
+ds_error_t ds_stack_create(const ds_allocator_t *alloc,
+                           ds_stack_t          **out_stack)
+{
+    assert(alloc && out_stack);
+    …
+}
+
+	•	assert() で 開発時に即クラッシュ、リリースビルドでは戻り値で通知。
+	•	@pre/@post コメントを Doxygen で生成 → CI で欠落を検出。
+
+⸻
+
+4. 抽象アロケータ DI ― 実装チェック手順
+	1.	禁止 API 検出スクリプト
 
 grep -R --include='*.c' --include='*.h' -n \
   '\b\(malloc\|calloc\|realloc\|free\)\b' src/ include/ \
-  | grep -v 'ds_malloc\|ds_free\|ds_realloc'
+  | grep -v 'ds_malloc\|ds_free\|ds_realloc' \
+  && { echo 'Forbidden malloc/free detected'; exit 1; }
 
-上記が 1 行でもヒットしたら CI 失敗
 
-	•	_std_alloc/_std_free 実装例
+	2.	フォールバック実装（抜粋）
 
-static void* _std_alloc(size_t cnt, size_t sz){ return cnt? calloc(cnt,sz):NULL; }
+static void* _std_alloc(size_t n,size_t sz){ return n?calloc(n,sz):NULL; }
 static void  _std_free (void* p){ if(p) free(p); }
 
-	•	free(NULL) は no-op で 必ず安全
 
-	•	free 回数 = alloc 回数 – ノード→マップ→本体の順に必ず一度だけ free
-	•	Valgrind “definitely lost” = 0 を CI で強制
 
 ⸻
 
-4. ヘッダ & ソースレイアウト
+5. ファイルレイアウト
 
 include/
- ├─ data_structures.h   # typedef / enum / forward-decl
- └─ ds/
-     └─ <module>.h      # API ヘッダ（本体なし）
+├ data_structures.h         # typedef 集中
+└ ds/
+   └ stack.h                # API プロトタイプのみ
 src/ds/
- └─ <module>.c          # 本実装（構造体本体定義はここだけ）
+└ stack.c                   # 実装 + 構造体本体
 tests/
- ├─ include/ds/         # テスト専用ヘッダ
- └─ ds/                 # テストコード
+├ include/ds/               # テスト用 stub
+└ ds/                       # テストコード
 
-	•	DTO を公開する場合は include/ds/<module>_dto.h を追加
-
-⸻
-
-5. ログ & 監視
-
-レイヤ	使用関数	備考
-本番	ds_log(level, fmt, …)	出力先は ds_set_log_function() で差替可
-テスト	printf / fprintf(stderr, …)	CI では --quiet で抑止可能
-
-	•	ログレベルは 6 段固定 – TRACE/DEBUG/INFO/WARN/ERROR/FATAL
-	•	本番コードで printf 系を検出したら CI Fail
+ルール：ビルド成果物・.bak などは .gitignore。
 
 ⸻
 
-6. テスト & CI/CD ストラテジ
+6. ログ & 構造化ログ（拡張タスク）
+　　 • “Docker コンテナ内で run_ci.sh を実行する” という一文を追加。
+	•	最小フォーマット：level|timestamp|module|message
+	•	将来的に json モードを ds_set_log_function() で差し替え → ELK で解析。
 
-6.1 ビルドフラグ
+⸻
+
+7. CI/CD & ビルドフラグ
 
 CFLAGS = -Wall -Wextra -Werror -pedantic -std=c11 \
          -D_FORTIFY_SOURCE=2 -fstack-protector-strong -O2 -g
 
-6.2 CI 手順（run_ci.sh 抜粋）
-	1.	make clean && make build
-	2.	cppcheck --enable=all --error-exitcode=1
-	3.	clang-tidy -warnings-as-errors=* $(find src -name '*.c') -- $(CFLAGS)
-	4.	make test → 失敗で exit 1
-	5.	valgrind --leak-check=full $(TEST_BIN)
-	6.	禁止 API grep チェック（§3）
+CI 手順要点
+	1.	make build
+	2.	cppcheck --error-exitcode=1
+	3.	clang-tidy (-warnings-as-errors=*)
+	4.	make test
+	5.	valgrind --leak-check=full
+	6.	禁止 API grep (前述)
 
-	•	Docker コンテナ実行必須 – 環境差異排除
-	•	テスト関数名は test__<module>_<case>()
-	•	tests/test_main.c が全テストを集約（個別 main() は #ifdef DS_STANDALONE_TEST で有効化可）
+Docker コンテナで実行し、環境差を排除。
 
 ⸻
 
-7. セキュリティ & パフォーマンス
-
-カテゴリ	必須設定 / ルール	目的
-バッファ安全	_FORTIFY_SOURCE=2, -fstack-protector-strong	境界外書込を実行時検知
-Hot Path	__attribute__((hot)) を明示	gprof 等で性能分析容易
-Doxygen	@ownership 未記載 → CI Fail	リークを静的解析で潰す
-memcpy/strcpy	長さチェック or memmove_s 必須	典型的なCVEを根絶
-
-
-⸻
-
-8. ドキュメント (README / CONTRIBUTING)
-	•	README – 目的、設計ルール、ビルド方法（Docker & ホスト）、最小サンプル
-	•	CONTRIBUTING.md – ブランチ戦略、コミット規約、PR テンプレ、CI/CD パイプライン図
-	•	図は Mermaid もしくは PlantUML 形式必須
-
-⸻
-
-9. 既存コード移行チェックリスト（Pull Request Before-Merge）
+8. 既存コード移行チェックリスト（PR Before-Merge）
 
 チェック項目	Yes / No
-typedef が data_structures.h に集約済みか	
-すべての公開 API が const ds_allocator_t *alloc を第 1 引数に持つか	
-malloc/calloc/realloc/free 直呼びがゼロか (grep済)	
-構造体本体が .c のみで再定義されていないか	
-グローバル変数が残っていないか	
-必要なモジュールに clone() があるか	
-すべてのヘッダで @ownership 記載済みか	
-テスト名が test__<module>_<case>() 形式か	
-Valgrind “definitely lost” がゼロか	
+typedef が data_structures.h に集約されている	
+公開 API が alloc を第 1 引数に持つ	
+直 malloc/free が 0 行 (grep 済)	
+構造体本体が .c のみ	
+グローバル変数ゼロ (例外は Mutex/TLS 保護)	
+clone() 実装（必要モジュールのみ）	
+ヘッダで @ownership 明記済み	
+テスト名 test__<module>_<case>() 形式	
+Valgrind “definitely lost” = 0	
 
-全て “Yes” なら Merge OK
-
-⸻
-
-10. DI 拡張性・テスト層独立性・Infrastructure 後置き原則
-
-ビジネスロジック (Domain) → インターフェース (Ports) → ドライバ層 (Adapters)
-の依存方向を厳格に守り、本番ロジックが OS/Driver 依存コードを直接参照しない。
-memory.c・logger.c はいつでも差し替え可能なドライバ層と定義。
 
 ⸻
 
-11. 絶対 NG アンチパターン
-	•	型多重定義 / 構造体本体のヘッダ重複
-	•	テストのためにプリプロセッサで本番ヘッダを切替
-	•	本番コードで printf / perror / fprintf(stderr, …)
-	•	スパゲティな goto fail; 多用
+9. アンチパターン（検出＝即 Fail）
+	•	構造体本体をヘッダに書いて再定義
+	•	テストのためにプリプロセッサで本番ヘッダを切り替える
+	•	本番コードに printf/puts/perror 系
+	•	goto fail; スパゲティ
+
+⸻
+
+10. 拡張ロードマップ（優先順位つきタスク）
+	1.	ヘルパ / stack.c など残る直 malloc を grep → 修正
+	2.	全 API に契約プログラミング導入 (@pre/@post)
+	3.	ジェネリック DS (_Generic + copy/compare)
+	4.	スレッド安全版 DS（mutex / lock-free）
+	5.	メモリプール API (ds_pool_alloc) + ベンチマーク
+	6.	ds_error_t にメッセージテーブル + ds_strerror()
+	7.	構造化ログ JSON → ELK 連携
+	8.	Jenkins CI/CD 完全自動化
+	9.	gcovr カバレッジ 80%↑, Fuzzing, MISRA-C 静的解析
+	10.	形式手法 (Frama-C / CBMC) Nightly 実行
+
+各タスク完了時点で ガイドラインを都度更新し、CI にチェックを追加する。
+
+⸻
+
+11. 参考実装スニペット
+
+11-1. スタック生成 API 完全版
+
+/**
+ * @brief    スタック生成
+ * @pre      alloc != NULL
+ * @pre      out_stack != NULL
+ * @post     *out_stack != NULL
+ * @ownership caller frees (ds_stack_destroy)
+ */
+ds_error_t ds_stack_create(const ds_allocator_t *alloc,
+                           ds_stack_t          **out_stack)
+{
+    assert(alloc && out_stack);
+
+    ds_stack_t *s = ds_malloc(alloc, 1, sizeof *s);
+    if (!s) return DS_ERR_ALLOC;
+
+    s->alloc = alloc;
+    s->size  = 0;
+    s->cap   = 16;
+    s->data  = ds_malloc(alloc, s->cap, sizeof(void*));
+    if (!s->data) { ds_free(alloc, s); return DS_ERR_ALLOC; }
+
+    *out_stack = s;
+    return DS_SUCCESS;
+}
+
+
+⸻
+11-2. CI/CD 実行方法（run_ci.sh 採用）
+
+● 原則  
+  Jenkins／GitHub Actions／GitLab CI 等の上位ツールは  
+  「Docker コンテナ内で run_ci.sh を 1 行実行する」だけでよい。
+
+● 手順  
+  - Jenkinsfile 例
+      pipeline {
+        agent any
+        stages {
+          stage('CI') {
+            steps {
+              sh 'chmod +x ./run_ci.sh && ./run_ci.sh'
+            }
+          }
+        }
+      }
+
+  - GitHub Actions 例 (.github/workflows/ci.yml)
+      jobs:
+        build:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v4
+            - run: chmod +x ./run_ci.sh && ./run_ci.sh
+
+● run_ci.sh の責務  
+  1) make clean / make build  
+  2) clang-tidy ＋ cppcheck（警告→エラー）  
+  3) 禁止 API grep（malloc/calloc/realloc/free 直呼びゼロ）  
+  4) ユニットテスト実行  
+  5) Valgrind --leak-check=full (definitely lost = 0)  
+  6) 生成物一覧／Doxygen／カバレッジ (任意)  
+  7) エラー発生時は非ゼロ終了で CI Fail
+
+● 重要ポイント  
+  - CI ツール固有の YAML／Groovy は “run_ci.sh を呼ぶだけ” に抑え、  
+    すべての品質チェックを **run_ci.sh 側**で一元管理する。  
+  - これにより複数 CI プラットフォーム間で品質条件がずれない。
