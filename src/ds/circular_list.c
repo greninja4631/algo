@@ -1,6 +1,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "../../include/data_structures.h"
 #include "../../include/ds/circular_list.h"
 =======
@@ -26,6 +27,9 @@ struct ds_circular_node {
     struct ds_circular_node* next;
 };
 =======
+=======
+#include <stddef.h>
+>>>>>>> feature
 /*======================================================================*
  *  src/ds/circular_list.c
  *  Singly-linked circular list — Opaque型 + DI + ガイドライン完全遵守

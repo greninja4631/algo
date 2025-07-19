@@ -1,3 +1,4 @@
+#include <stddef.h>
 /*
  * tests/ds/test_lru_cache.c
  * LRUキャッシュ ユニットテスト

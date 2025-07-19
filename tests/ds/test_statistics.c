@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "ds/statistics.h"
 #include <stdlib.h>
 #include <string.h>

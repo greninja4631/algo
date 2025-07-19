@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "logger.h"
 <<<<<<< HEAD
 #include "../../include/data_structures.h"
@@ -313,6 +314,9 @@ size_t ds_hashmap_size(const ds_hashmap_t* map) {
 // src/ds/history_system.c
 #include "util/memory.h"
 =======
+=======
+#include <stddef.h>
+>>>>>>> feature
 /*======================================================================*
  *  src/ds/history_system.c
  *  Undo / Redo history system (opaque, allocator-aware, non-thread-safe)

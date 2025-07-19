@@ -1,6 +1,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "../include/ds/round_robin.h"
 #include <stdio.h>
 #include <assert.h>
@@ -73,6 +74,9 @@ int main(void) {
 =======
 #include <stdio.h>
 =======
+=======
+#include <stddef.h>
+>>>>>>> feature
 /*
  * tests/ds/test_round_robin.c
  * Round-Robin Scheduler – unit tests (2025-07 guideline)

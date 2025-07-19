@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:tests/test_doubly_list.c
 #include "../include/ds/doubly_list.h"
 =======
@@ -7,6 +8,9 @@
 #include <stdio.h>
 #include <assert.h>
 =======
+=======
+#include <stddef.h>
+>>>>>>> feature
 /**
  * @file    tests/ds/test_doubly_list.c
  * @brief   ds_doubly_list モジュール単体テスト

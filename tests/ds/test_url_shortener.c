@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:tests/test_url_shortener.c
 #include "../include/ds/url_shortener.h"
 #include <assert.h>
@@ -17,6 +18,9 @@
  */
 
 =======
+>>>>>>> feature
+=======
+#include <stddef.h>
 >>>>>>> feature
 #include "ds/url_shortener.h"
 #include "util/logger.h"

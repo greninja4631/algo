@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 #ifndef URL_SHORTENER_H
 #define URL_SHORTENER_H
 
@@ -6,6 +7,9 @@
 #include <stdbool.h>
 #include "../data_structures.h"// ds_error_t型など共通定義
 =======
+=======
+#include <stddef.h>
+>>>>>>> feature
 #ifndef DS_URL_SHORTENER_H
 #define DS_URL_SHORTENER_H
 /*───────────────────────────────────────────────────────────*\

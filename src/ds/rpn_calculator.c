@@ -1,6 +1,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "logger.h"
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -44,6 +45,9 @@ static int is_number(const char *str, double *out_val)
 =======
 /*───────────────────────────────────────────────
 =======
+=======
+#include <stddef.h>
+>>>>>>> feature
 /*======================================================================*
 >>>>>>> feature
  *  src/ds/rpn_calculator.c

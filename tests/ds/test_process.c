@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdlib.h>                 /* calloc / free */
 #include "ds/process.h"
 #include "util/logger.h"

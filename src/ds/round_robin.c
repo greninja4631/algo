@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include <stdio.h>
 #ifndef DATA_STRUCTURES_H
 #define DATA_STRUCTURES_H
@@ -16,6 +17,9 @@
 #include "util/memory.h"
 >>>>>>> feature
 =======
+=======
+#include <stddef.h>
+>>>>>>> feature
 /*======================================================================*
  *  src/ds/round_robin_scheduler.c
  *  Round-Robin Scheduler  –  2025-07 ガイドライン準拠

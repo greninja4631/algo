@@ -1,3 +1,4 @@
+#include <stdint.h>
 /**
  * @file    tests/util/test_metrics.c
  * @brief   util/metrics モジュールのユニットテスト
