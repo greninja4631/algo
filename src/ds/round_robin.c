@@ -1,3 +1,4 @@
+#include <stddef.h>
 /*======================================================================*
  *  src/ds/round_robin_scheduler.c
  *  Round-Robin Scheduler  –  2025-07 ガイドライン準拠

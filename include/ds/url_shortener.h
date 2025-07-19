@@ -1,3 +1,4 @@
+#include <stddef.h>
 #ifndef DS_URL_SHORTENER_H
 #define DS_URL_SHORTENER_H
 /*───────────────────────────────────────────────────────────*\

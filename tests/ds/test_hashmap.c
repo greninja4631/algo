@@ -1,3 +1,4 @@
+#include <stddef.h>
 /**
  * @file    tests/ds/test_hashmap.c
  * @brief   ds_hashmap モジュール単体テスト

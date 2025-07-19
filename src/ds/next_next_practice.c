@@ -1,3 +1,5 @@
+#include <stdint.h>
+#include <stddef.h>
 /*======================================================================
  *  src/ds/next_next_practice.c
  *  Demo 実装 – Undo/Redo & Stack/Queue

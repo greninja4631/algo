@@ -1,3 +1,4 @@
+#include <stddef.h>
 /**
  * @file    src/ds/statistics.c
  * @brief   ds_statistics モジュール実装（Opaque + 抽象アロケータ DI）

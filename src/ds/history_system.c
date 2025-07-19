@@ -1,3 +1,4 @@
+#include <stddef.h>
 /*======================================================================*
  *  src/ds/history_system.c
  *  Undo / Redo history system (opaque, allocator-aware, non-thread-safe)

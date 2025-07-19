@@ -1,3 +1,4 @@
+#include <stddef.h>
 /*======================================================================*
  *  src/ds/circular_list.c
  *  Singly-linked circular list — Opaque型 + DI + ガイドライン完全遵守

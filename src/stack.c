@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "ds/stack.h"
 #include "util/memory.h"
 #include <string.h>

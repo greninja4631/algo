@@ -1,3 +1,4 @@
+#include <stddef.h>
 /**
  * @file test_memory.c
  * @brief メモリ管理(memory)モジュールのテスト

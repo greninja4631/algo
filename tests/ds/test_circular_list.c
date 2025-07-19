@@ -1,3 +1,4 @@
+#include <stddef.h>
 /**
  * @file    tests/ds/test_circular_list.c
  * @brief   ds_circular_list モジュール単体テスト

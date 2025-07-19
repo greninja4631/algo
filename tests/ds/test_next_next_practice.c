@@ -1,3 +1,4 @@
+#include <stddef.h>
 /**
  * @file    tests/ds/test_next_next_practice.c
  * @brief   ds_next_next_practice ― ユニットテスト

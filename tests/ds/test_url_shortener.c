@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "ds/url_shortener.h"
 #include "util/logger.h"
 #include <assert.h>

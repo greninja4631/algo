@@ -1,67 +1,103 @@
+docker使用前提なので、grepなどで検証するときは,Homebrew前提で教えて。
 
 
 
-5. 共通（.c/.h）
-	•	5-1 依存ヘッダ必須
-	•	理由: size_t, int64_tは標準型なので <stddef.h>, <stdint.h>が無いとコンパイルエラー。
-	•	修正方法:
-	•	metrics系APIを宣言/実装するヘッダ・Cファイルの先頭で必ず
+brew install doxygen  # 導入していない場合のみ
 
-#include <stddef.h>
-#include <stdint.h>
+doxygen -g docs/Doxyfile    # 雛形生成（初回のみ）
+doxygen docs/Doxyfile       # ドキュメント生成
 
-を忘れず記載。
 
-	•	5-2 metrics系API競合
-	•	理由: 他ヘッダ・Cファイルでmetrics系API宣言とmetrics.h内の型が完全一致していない場合も危険。
-	•	修正方法:
-	•	grepでds_metrics_を全件横断し、metrics.h以外に宣言があればmetrics.hだけに統一し他では削除する。
+
+🗂️ Dockerプロジェクト “ゼロから” エラー解決・品質担保フロー
+
+
+【2. 直接 malloc/calloc/realloc/free 残存箇所】
+----------------------------------------
+[❌] src/statistics.c
+   → int *work = malloc(...); free(work); 
+      → ds_malloc/ds_free へ置換
+
+[⚠️] src/statistics.c.bak
+   → バックアップに malloc/free
+      → 削除 or .gitignoreで無視
+
+[⚠️] src/ds/history_system.c
+   → xmalloc/xfree マクロ: alloc==NULL で calloc/free フォールバック
+      → 設計方針次第（禁止なら置換）
+
+[⚠️] src/metrics.c
+   → ALLOC()/FREE() マクロ: alloc==NULL で calloc/free フォールバック
+      → 方針により置換
+
+[✅] src/ds/url_shortener.c
+   → _alloc/_free によるテスト用内部アロケータ（G_ALLOC）
+      → 問題なし
+
+[✅] src/memory.c
+   → ds_malloc 実装のデフォルトで calloc フォールバック
+      → 設計方針による
+
+【方針メモ】
+- "一切の直接呼び出し禁止" → 上記 ❌/⚠️ を全て ds_malloc/ds_free へ置換
+- "alloc==NULL時の標準利用OK" → コメントやドキュメントで許容を明示
+
+【3. grep置換チェックパターン】
+----------------------------------------
+- API宣言・定義に alloc 無しを抽出:
+    grep -r 'ds_[a-zA-Z0-9_]*(.*)' include src | grep -v 'const ds_allocator_t *alloc'
+- malloc/free/calloc/realloc 検出:
+    grep -rE 'malloc|calloc|realloc|free' src include
+- main定義統一チェック:
+    grep -rE '^int main' src
+
+
+
+
+
+
+
+	•	すべてのAPI呼び出しで alloc を渡しているか確認・修正
+	•	すべてのcallocは alloc->alloc+memset に書き換え済みか確認・修正
+	•	alloc->alloc(1, sizeof(T)) など構文エラーが無いか確認
+	•	直接malloc/free/calloc/realloc呼び出しは一切残っていないか確認・grep修正
+	•	テストでも適切なアロケータをDIしているか確認・修正
+	•	include/util/memory.h の ds_malloc / ds_free 宣言を新型に統一、旧型を削除
+	•	main関数を int main(int argc, char *argv[]) に統一
+	•	ds_malloc 等を使うファイルすべてで #include "util/memory.h" を追加
+	•	API呼び出しのalloc抜けを全て修正（手動/grepチェック）
+	•	全ファイル末尾に改行を追加
+※このフェーズで「grep」「ビルド」両面から“alloc DI徹底”を実現
 
 ⸻
 
-コピペ推奨：「metrics.h」最強版の冒頭例
-
-#ifndef UTIL_METRICS_H
-#define UTIL_METRICS_H
-
-#include <stddef.h>
-#include <stdint.h>
-#include "data_structures.h"  // ds_error_t, ds_allocator_t, ds_metrics_t
-
-// metrics系API宣言はここに一本化
-// 例
-ds_error_t ds_metrics_init(const ds_allocator_t *alloc, ds_metrics_t *metrics);
-void       ds_metrics_print(const ds_allocator_t *alloc, const ds_metrics_t *metrics);
-void       ds_metrics_reset_all(const ds_allocator_t *alloc);
-void       ds_metrics_increment(const ds_allocator_t *alloc, const char *name);
-int64_t    ds_metrics_get(const ds_allocator_t *alloc, const char *name);
-
-#endif /* UTIL_METRICS_H */
-
+2️⃣ Docker/ビルド・コンパイルエラー潰し
+	•	🐳 Docker ビルドが通るかだけ確認
+docker build --no-cache --progress=plain -t algo-ci .
+	•	🔧 コンパイル停止系 (-Werror) を全部潰す
+	•	必要なインクルード/プロトタイプ修正
+	•	implicit declaration/redefinition/multiple definition等の解決
 
 ⸻
 
-✅ 上記を実行すれば、「型未定義」「多重宣言」「宣言型競合」のエラーは全て消えます。
+3️⃣ ユニットテスト緑化 & メモリチェック
+	•	🧪 ユニットテスト緑化
+docker run --rm -it algo-ci ./build/run_all_tests
+	•	💧 Valgrind (リークゼロ)
+docker run --rm -it algo-ci valgrind --leak-check=full build/run_all_tests
 
-もし「まだエラーが出る」「このAPIはどこが正解？」など具体ファイルや関数名で相談くれれば最短ルートで指摘・修正案を作成します！
+⸻
 
+4️⃣ 静的解析/Lint/ドキュメント/CI整備
+	•	🔍 Lint（cppcheck / clang-tidy）
+	•	📚 Doxygen
+	•	🔁 ２段ロック CI スクリプト整備
+	•	run_dev.sh / run_ci_prod.sh / CI_MODE=prod対応
 
+⸻
 
+5️⃣ 開発環境/運用補助
+	•	🛠️ Jenkins プラグイン依存
+	•	plugin-cli/jenkins自体のセットアップ
 
-
-
-
-
-
-
-
-
-# <stddef.h> 挿入（size_t使用＆未インクルードのみ）
-find . \( -name "*.c" -o -name "*.h" \) -exec grep -l "size_t" {} + | xargs grep -L "#include <stddef.h>" | while read f; do
-  sed -i '' '1s;^;#include <stddef.h>\n;' "$f"
-done
-
-# <stdint.h> 挿入（int64_t使用＆未インクルードのみ）
-find . \( -name "*.c" -o -name "*.h" \) -exec grep -l "int64_t" {} + | xargs grep -L "#include <stdint.h>" | while read f; do
-  sed -i '' '1s;^;#include <stdint.h>\n;' "$f"
-done
+⸻

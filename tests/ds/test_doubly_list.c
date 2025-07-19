@@ -1,3 +1,4 @@
+#include <stddef.h>
 /**
  * @file    tests/ds/test_doubly_list.c
  * @brief   ds_doubly_list モジュール単体テスト

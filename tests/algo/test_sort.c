@@ -1,3 +1,4 @@
+#include <stddef.h>
 /**
  * @file test_sort.c
  * @brief ソートAPI（バブル・挿入）単体テスト

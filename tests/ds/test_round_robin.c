@@ -1,3 +1,4 @@
+#include <stddef.h>
 /*
  * tests/ds/test_round_robin.c
  * Round-Robin Scheduler – unit tests (2025-07 guideline)
