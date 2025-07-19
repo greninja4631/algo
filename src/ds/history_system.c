@@ -1,6 +1,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "logger.h"
 <<<<<<< HEAD
 #include "../../include/data_structures.h"
@@ -323,141 +324,118 @@ size_t ds_hashmap_size(const ds_hashmap_t* map) {
  *  ガイドライン 2025-07 完全対応：警告ゼロ・DI・ABI安全・所有権明示
  *======================================================================*/
 >>>>>>> feature
+=======
+/**
+ * @file    src/ds/history_system.c
+ * @brief   コマンド履歴管理システム – アロケータDI/安全設計/ガイドライン厳守
+ * @details
+ *   - すべての確保/解放はds_malloc/ds_free経由、直呼び完全禁止
+ *   - alloc==NULLは禁止、呼び出し側で必ずDIする前提
+ *   - Opaque設計、構造体本体は.cのみ
+ */
+
+>>>>>>> feature
 #include "ds/history_system.h"
 #include "util/memory.h"
+#include "util/logger.h"
+#include <stddef.h>
 #include <string.h>
-#include <stdlib.h>
-#include <time.h>
 
-/*──────────────────── 内部ノード型 ────────────────────*/
+/*────────────────────────────
+ * 内部構造体（Opaque本体）
+ *────────────────────────────*/
 typedef struct history_node {
-    ds_command_t        *cmd;     // 外部所有: コマンド本体は呼び出し側管理
-    struct history_node *prev;
-    struct history_node *next;
+    void *command;
+    struct history_node *prev, *next;
 } history_node_t;
 
-/*──────────────────── Opaque本体 ────────────────────*/
 struct ds_history_system {
-    const ds_allocator_t *alloc;  // NULL許可: デフォルトにフォールバック
-    size_t                max_hist;
-    history_node_t       *head;   // 先頭（最古）
-    history_node_t       *tail;   // 末尾（最新／MRU）
-    history_node_t       *curr;   // 現在位置（Undoポインタ）
-    ds_stats_t            stats;  // 統計情報（将来のために保持）
+    const ds_allocator_t *alloc;
+    history_node_t *head, *tail, *current;
+    size_t size, max_size;
 };
 
-/*──────────────────── 内部 util ────────────────────*/
-/* 汎用 xmalloc/xfree：alloc優先（テスト時DI/本番はNULLでmalloc/calloc） */
-static void *xmalloc(const ds_allocator_t *a, size_t n, size_t sz)
-{ return a ? a->alloc(n, sz) : calloc(n, sz); }
-
-static void xfree(const ds_allocator_t *a, void *p)
-{ if (p) (a ? a->free(p) : free(p)); }
-
-/* 全履歴ノード解放＋ポインタ初期化。alloc責任を明示。*/
-static void clear_all(const ds_allocator_t *a, ds_history_system_t *h)
+/*────────────────────────────
+ * 内部ユーティリティ
+ *────────────────────────────*/
+static inline void *xalloc(const ds_allocator_t *a, size_t n, size_t sz)
 {
-    for (history_node_t *p = h->head; p; ) {
-        history_node_t *nxt = p->next;
-        xfree(a, p);
-        p = nxt;
+    // 禁止: a==NULLでのフォールバック
+    if (!a) return NULL;
+    return ds_malloc(a, n, sz);
+}
+static inline void xfree(const ds_allocator_t *a, void *p)
+{
+    if (a && p) ds_free(a, p);
+}
+
+/*────────────────────────────
+ * 生成／破棄
+ *────────────────────────────*/
+ds_error_t ds_history_system_create(const ds_allocator_t *alloc, size_t max_size, ds_history_system_t **out_sys)
+{
+    if (!alloc || !out_sys) return DS_ERR_NULL_POINTER;
+    ds_history_system_t *sys = xalloc(alloc, 1, sizeof *sys);
+    if (!sys) return DS_ERR_ALLOC;
+    memset(sys, 0, sizeof *sys);
+    sys->alloc = alloc;
+    sys->max_size = max_size;
+    *out_sys = sys;
+    return DS_SUCCESS;
+}
+
+ds_error_t ds_history_system_destroy(const ds_allocator_t *alloc, ds_history_system_t *sys)
+{
+    if (!sys) return DS_ERR_NULL_POINTER;
+    history_node_t *cur = sys->head;
+    while (cur) {
+        history_node_t *next = cur->next;
+        xfree(sys->alloc, cur->command);
+        xfree(sys->alloc, cur);
+        cur = next;
     }
-    h->head = h->tail = h->curr = NULL;
-    h->stats.total_elements = 0;
-    h->stats.operations_count++;  // クリア操作も記録
-    (void)h->stats.operations_count; // unused-but-set防止（CI警告ゼロ）
-}
-
-/*======================================================================*
- *  Public API implementation
- *======================================================================*/
-ds_error_t
-ds_history_system_create(const ds_allocator_t *alloc,
-                         size_t                max_hist,
-                         ds_history_system_t **out_history)
-{
-    if (!out_history) return DS_ERR_NULL_POINTER;
-    if (max_hist == 0) max_hist = SIZE_MAX;
-
-    ds_history_system_t *h = xmalloc(alloc, 1, sizeof *h);
-    if (!h) return DS_ERR_ALLOC;
-
-    memset(h, 0, sizeof *h);
-    h->alloc    = alloc;
-    h->max_hist = max_hist;
-    h->stats.creation_timestamp = (size_t)time(NULL);
-    h->stats.total_elements = 0;
-    h->stats.operations_count = 0;
-
-    *out_history = h;
+    xfree(sys->alloc, sys);
     return DS_SUCCESS;
 }
 
-ds_error_t
-ds_history_system_destroy(const ds_allocator_t *alloc,
-                          ds_history_system_t  *hist)
+/*────────────────────────────
+ * コマンド登録・操作系
+ *────────────────────────────*/
+ds_error_t ds_history_system_execute_command(const ds_allocator_t *alloc, ds_history_system_t *sys, void *cmd)
 {
-    if (!hist) return DS_ERR_NULL_POINTER;
-    /* 最優先：明示的にalloc→hist->alloc優先、必ず全ノード→本体free */
-    const ds_allocator_t *a = alloc ? alloc : hist->alloc;
-    clear_all(a, hist);
-    xfree(a, hist);
-    return DS_SUCCESS;
-}
+    if (!alloc || !sys || !cmd) return DS_ERR_NULL_POINTER;
 
-ds_error_t
-ds_history_system_execute_command(const ds_allocator_t *alloc,
-                                  ds_history_system_t  *hist,
-                                  const ds_command_t   *command)
-{
-    (void)alloc; // 現状はhist->allocのみ使う。DI将来拡張用
-    if (!hist || !command)         return DS_ERR_NULL_POINTER;
-    if (!command->execute)         return DS_ERR_INVALID_ARG;
-
-    ds_error_t rc = command->execute(command->ctx);
-    if (rc != DS_SUCCESS)          return rc;
-
-    // 新ノード作成
-    history_node_t *node = xmalloc(hist->alloc, 1, sizeof *node);
+    // ノード生成
+    history_node_t *node = xalloc(sys->alloc, 1, sizeof *node);
     if (!node) return DS_ERR_ALLOC;
-    node->cmd  = (ds_command_t *)command;
-    node->prev = hist->tail;
+    node->command = cmd;
+    node->prev = sys->tail;
     node->next = NULL;
 
-    // MRU挿入
-    if (hist->tail) hist->tail->next = node;
-    else            hist->head       = node;
-    hist->tail  = node;
-    hist->curr  = node;
+    if (sys->tail)
+        sys->tail->next = node;
+    else
+        sys->head = node;
+    sys->tail = node;
+    sys->current = node;
+    sys->size++;
 
-    // 履歴数カウント・統計反映
-    size_t count = 0;
-    for (history_node_t *p = hist->tail; p; p = p->prev) ++count;
-    hist->stats.total_elements = count;
-    hist->stats.operations_count++;
-    (void)hist->stats.operations_count; // unused-but-set防止
-
-    // 容量超過ならFIFO削除（最古ノードだけfree。他ノード影響なし）
-    if (hist->max_hist != SIZE_MAX && count > hist->max_hist) {
-        history_node_t *victim = hist->head;
-        hist->head = victim->next;
-        if (hist->head) hist->head->prev = NULL;
-        xfree(hist->alloc, victim);
-        hist->stats.total_elements--;
+    // FIFO最大数超えたら先頭ノード削除
+    if (sys->size > sys->max_size) {
+        history_node_t *victim = sys->head;
+        sys->head = victim->next;
+        if (sys->head)
+            sys->head->prev = NULL;
+        xfree(sys->alloc, victim->command);
+        xfree(sys->alloc, victim);
+        sys->size--;
     }
     return DS_SUCCESS;
 }
 
-bool ds_history_system_can_undo(const ds_history_system_t *hist)
-{ return hist && hist->curr; }
-
-bool ds_history_system_can_redo(const ds_history_system_t *hist)
-{ return hist && hist->curr && hist->curr->next; }
-
-ds_error_t
-ds_history_system_undo(const ds_allocator_t *alloc,
-                       ds_history_system_t  *hist)
+ds_error_t ds_history_system_undo(const ds_allocator_t *alloc, ds_history_system_t *sys)
 {
+<<<<<<< HEAD
     (void)alloc;
     if (!hist)                 return DS_ERR_NULL_POINTER;
     if (!hist->curr)           return DS_ERR_EMPTY;
@@ -483,35 +461,46 @@ ds_history_system_undo(const ds_allocator_t *alloc,
 >>>>>>> feature
 =======
     return rc;
+=======
+    if (!alloc || !sys || !sys->current) return DS_ERR_INVALID_ARG;
+    if (sys->current->prev)
+        sys->current = sys->current->prev;
+    return DS_SUCCESS;
+>>>>>>> feature
 }
 
-ds_error_t
-ds_history_system_redo(const ds_allocator_t *alloc,
-                       ds_history_system_t  *hist)
+ds_error_t ds_history_system_redo(const ds_allocator_t *alloc, ds_history_system_t *sys)
 {
-    (void)alloc;
-    if (!hist)                             return DS_ERR_NULL_POINTER;
-    if (!hist->curr || !hist->curr->next)  return DS_ERR_EMPTY;
+    if (!alloc || !sys || !sys->current) return DS_ERR_INVALID_ARG;
+    if (sys->current->next)
+        sys->current = sys->current->next;
+    return DS_SUCCESS;
+}
 
-    history_node_t *next = hist->curr->next;
-    if (!next->cmd->execute)               return DS_ERR_INVALID_ARG;
+bool ds_history_system_can_undo(const ds_history_system_t *sys)
+{
+    return sys && sys->current && sys->current->prev;
+}
+bool ds_history_system_can_redo(const ds_history_system_t *sys)
+{
+    return sys && sys->current && sys->current->next;
+}
 
-    ds_error_t rc = next->cmd->execute(next->cmd->ctx);
-    if (rc == DS_SUCCESS) {
-        hist->curr = next;
-        hist->stats.operations_count++;
-        (void)hist->stats.operations_count;
+/*────────────────────────────
+ * クリア
+ *────────────────────────────*/
+ds_error_t ds_history_system_clear(const ds_allocator_t *alloc, ds_history_system_t *sys)
+{
+    if (!alloc || !sys) return DS_ERR_NULL_POINTER;
+    history_node_t *cur = sys->head;
+    while (cur) {
+        history_node_t *next = cur->next;
+        xfree(sys->alloc, cur->command);
+        xfree(sys->alloc, cur);
+        cur = next;
     }
-    return rc;
-}
-
-ds_error_t
-ds_history_system_clear(const ds_allocator_t *alloc,
-                        ds_history_system_t  *hist)
-{
-    if (!hist) return DS_ERR_NULL_POINTER;
-    const ds_allocator_t *a = alloc ? alloc : hist->alloc;
-    clear_all(a, hist);
+    sys->head = sys->tail = sys->current = NULL;
+    sys->size = 0;
     return DS_SUCCESS;
 }
 >>>>>>> feature
