@@ -8,6 +8,7 @@
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "data_structures.h"
 >>>>>>> feature
 #include <stddef.h>
@@ -17,6 +18,10 @@
 =======
 #include <stddef.h>          // size_t
 #include "data_structures.h" // ds_allocator_t, ds_error_t など
+>>>>>>> feature
+=======
+#include <stddef.h>           /* size_t               */
+#include "data_structures.h"  /* ds_allocator_t, ds_error_t */
 >>>>>>> feature
 
 #ifdef __cplusplus
@@ -43,20 +48,60 @@ void  ds_free(void* ptr);
 =======
 /**
  * @file    include/util/memory.h
- * @brief   メモリアロケーションAPI宣言ヘッダ
+ * @brief   抽象アロケータ経由のメモリ確保・解放API
  * @details
- * - すべて「アロケータalloc経由」に統一。
- * - メモリ確保・解放（malloc/calloc/realloc/free）のみ提供。
- * - メトリクス管理APIは metrics.h で一元管理（ここでは絶対に宣言しない）。
+ *  - すべて公開APIの第1引数にconst ds_allocator_t *allocを取る。
+ *  - alloc==NULL時は内部でcalloc/free/reallocへフォールバック。
+ *  - 直接malloc/calloc/realloc/freeは一切使用せず、全体のメモリ出口を集約。
  */
 
-//=============================
-// メモリアロケーションAPI
-//=============================
-void* ds_malloc (const ds_allocator_t* alloc, size_t count, size_t size);
-void  ds_free   (const ds_allocator_t* alloc, void* ptr);
-void* ds_calloc (const ds_allocator_t* alloc, size_t count, size_t size);
-void* ds_realloc(const ds_allocator_t* alloc, void* ptr, size_t new_size);
+/**
+ * @brief   メモリ割り当て
+ * @pre     count > 0, size > 0
+ * @param   alloc 抽象アロケータ（NULL→callocフォールバック）
+ * @param   count 要素数
+ * @param   size  各要素のバイト数
+ * @return  確保されたメモリへのポインタ（NULLならDS_ERR_ALLOC扱い）
+ * @ownership caller frees via ds_free/alloc->free
+ */
+void *ds_malloc(const ds_allocator_t *alloc,
+                size_t                count,
+                size_t                size);
+
+/**
+ * @brief   メモリ解放
+ * @pre     ptr != NULL
+ * @param   alloc 抽象アロケータ（NULL→freeフォールバック）
+ * @param   ptr   解放対象ポインタ
+ */
+void ds_free(const ds_allocator_t *alloc,
+             void                 *ptr);
+
+/**
+ * @brief   ゼロ初期化付きメモリ割り当て
+ * @pre     count > 0, size > 0
+ * @param   alloc 抽象アロケータ（NULL→callocフォールバック）
+ * @param   count 要素数
+ * @param   size  各要素のバイト数
+ * @return  確保されたゼロ初期化メモリへのポインタ
+ * @ownership caller frees via ds_free/alloc->free
+ */
+void *ds_calloc(const ds_allocator_t *alloc,
+                size_t                count,
+                size_t                size);
+
+/**
+ * @brief   メモリ再確保
+ * @pre     ptr != NULL, new_size > 0
+ * @param   alloc    抽象アロケータ（NULL→malloc+freeフォールバック）
+ * @param   ptr      再確保対象ポインタ
+ * @param   new_size 新しいバイト数
+ * @return  再確保後のポインタ（NULLなら元メモリは解放せず）
+ * @ownership caller frees via ds_free/alloc->free
+ */
+void *ds_realloc(const ds_allocator_t *alloc,
+                 void                 *ptr,
+                 size_t                new_size);
 
 <<<<<<< HEAD
 //=============================

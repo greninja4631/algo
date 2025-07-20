@@ -15,6 +15,7 @@
 #include "util/memory.h"     // ds_malloc / ds_free
 #include "util/logger.h"     // ds_log()
 #include <stddef.h>
+#include <stdlib.h> 
 #include <string.h>
 
 /*──────────────────────────────────────
