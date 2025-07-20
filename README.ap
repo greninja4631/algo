@@ -35,14 +35,29 @@ void test__metrics_basic(void)
 　上記をパッチ形式ではなく、上記と下記のを既存のコードを含めて、良い部分を残し、悪い部分を削除して省略せずにガイドラインを厳格に守ってコードを再生成して下さい。　　　
 >>>>>>> feature
 
-(2025-07 改訂版 — ソフトウェア工学の最前線 + 現場実装チェックリスト完全統合版)
 
 
+はい、あなたの全要件と「再帰的定義」「形式言語理論」「セキュアアロケータ」「OS/VM/GC連携」「静的解析・形式手法」等の全ての知見を一元統合した完全版ガイドラインを、良い部分だけを残しつつ一切省略なしで加筆修正版として提示します。
 
+⸻
+
+🏗️【ソフトウェア工学最前線ガイドライン 完全強化版（2025-07・統合版）】
+
+⸻
 
 0. 目的と適用範囲
-	•	src/, include/, tests/ 以下に置かれる すべての C コード とビルドスクリプト。
-	•	CI/CD（Docker 内で走らせるシェル / Jenkinsfile / GitHub Actions）も含む。
+	•	src/, include/, tests/ 以下に置かれる全Cソース・ヘッダ・テスト・CI/CDスクリプトを完全に包含。
+	•	Dockerコンテナ内で走る全ビルド＆CI（run_ci.sh, Jenkinsfile, GitHub Actions）を標準化。
+	•	「再帰的設計」「形式手法」「セキュリティ」「静的解析」「教育」「現場運用」まで全層的品質保証を担保。
+
+⸻
+
+1. 🧩「再帰的定義」：アーキテクチャの本質
+
+全ての抽象データ構造・VM・GC・アロケータ・Undo/Redoは「再帰的定義」で構築することが必須条件。
+	•	リスト（自己参照構造体）
+
+struct node { T value; struct node* next; };
 
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -62,8 +77,16 @@ void test__metrics_basic(void)
 =======
 >>>>>>> feature
 
-1. コア原則（「守らないとビルド or CI が即落ちる」レベル）
+	•	ツリー・AST（抽象構文木）
+子ノードを再帰的にたどり、JIT/VMでも各ノードを再帰的にinterpret/compile
+	•	コマンド履歴（Undo/Redo）
+Commandオブジェクトのapply/undoを再帰的連鎖で履歴管理
+	•	ヒープ管理（Buddy Allocatorなど）
+メモリを2^n単位で再帰分割/統合することでヒープ効率とセキュリティを両立
+	•	GC（Mark & Sweep等）
+オブジェクトグラフを再帰的に走査、到達不能メモリを自動開放
 
+<<<<<<< HEAD
 ID	原則名	具体ルール（曖昧さゼロで記述）	理由 / 効果
 0-1	アロケータ DI 統一	公開 API の 第 1 引数は const ds_allocator_t *alloc に固定。 alloc == NULL の場合は ds_malloc/ds_free/ds_realloc が暗黙フォールバック。	・テスト時にモックアロケータを注入できる。・メモリ出口を 1 か所に集約できる。
 0-2	calloc/free 安全設計	_std_alloc(cnt,sz) は cnt == 0 で NULL を返す。_std_free(p) は p == NULL で no-op。	“ゼロバイト確保”や “free(NULL)” でクラッシュしない。
@@ -74,6 +97,87 @@ ID	原則名	具体ルール（曖昧さゼロで記述）	理由 / 効果
 0-7	ログ 6 段	`ds_log(TRACE	DEBUG
 0-8	テスト main 分離	個別 test ファイルは #ifdef DS_STANDALONE_TEST 時のみ main() を持つ。CI では tests/test_main.c が全テストを集約。	単体実行と CI 実行の両立。
 0-9	Valgrind 0 漏れ	CI の valgrind --leak-check=full で “definitely lost” = 0 を強制。	リークを早期に潰す。
+>>>>>>> feature
+=======
+補足：
+再帰設計を無視したAPIはif-else/switch肥大地獄・スパゲティ設計となり、現場で即座に技術負債となる。
+再帰性＝拡張性・テスト容易性・責務分割の核。CSの基礎理論の実践的価値。
+
+⸻
+
+2. 🧮「形式言語理論・有限オートマトン」：実装の安全・予測性
+	•	FSM設計はパーサ・VM・Undo/Redo・スケジューラ全ての信頼性保証の根幹
+	•	正規表現→有限オートマトン化で入力検証、LL(k)/LR(k)パーサで構文解釈
+	•	Undo/Redo/履歴管理はFSMとして設計：State/Command/Invariantsで安全担保
+	•	ラウンドロビンスケジューラや多段階状態機械にも応用
+
+current_state = (prev + quantum) % n;
+
+
+
+補足：
+FSM的な抽象がなければ「バグ地獄・分岐地獄・テスト地獄」。
+FSM設計こそ現場エンジニアの基本教養。
+
+⸻
+
+3. 🔐 セキュリティ設計：「アロケータ」が守る防壁
+	•	Double Free防御：free時にfreed_flag/ヒープ監視テーブルを実装。2重freeでクラッシュ/不整合回避
+	•	UAF (Use After Free)防御：Canaryやfree_tableにより開放済みアクセスを即検知
+	•	バウンダリチェック：すべてのバッファ操作は境界検証if (idx >= size)を明示・CIでも検査
+	•	ASLR対応：アロケーション位置ランダム化（OSのASLR機構も併用）
+	•	Valgrind対応：全てのds_malloc/ds_freeのトレースログを出力・ヒープリークゼロを保証
+
+補足：
+ds_allocator/ヒープ管理はLinuxカーネルやglibc技術の集大成。自作できれば「OS・IoT・SaaS」全分野に直結。
+
+⸻
+
+4. 🎯「OS/VM/GC」：一体設計・車の両輪
+
+構成要素	担当領域	備考
+OS (Virtual Memory)	ページ管理/保護	mmap/sbrkでカスタムアロケータ設計
+Allocator	ユーザーヒープ管理	malloc/buddy/slab/TLSF設計戦略
+GC	メモリリーク/循環参照除去	Mark & Sweep/Generational/Arena方式
+VM/LLVM/WASM	型・バイトコード・スタック	GC有無でABI・最適化が根本的に変わる
+
+	•	arena_allocator/bump_allocatorの実装でWASM/JIT/LLVMへの移植性大幅UP
+	•	VM設計・GC設計とアロケータは「設計・最適化・安全性」の両輪
+
+⸻
+
+5. 🧪「静的解析・形式検証・Fuzzing」：CI/CDと一体化した高品質保証
+	•	clang-tidy/cppcheck：構文/論理/メモリエラーの事前発見を自動化
+	•	CBMC / Frama-C：関数ごとの契約（requires/ensures/invariant）を形式的に証明
+例:
+
+/*@ requires 0 <= index < size;
+    ensures \result == array[index];
+*/
+int get_element(int *array, int size, int index);
+
+
+	•	libFuzzer/AFL++：クラッシュ/未定義動作を自動探索→必ずCI/CDに組み込む
+
+補足：
+CI/CDでrun_ci.shから「valgrind definitely lost=0」「静的解析・形式検証・Fuzzing全自動」を実現せよ。
+
+⸻
+
+
+
+7. コア原則（違反はビルド/CI即Fail）
+
+ID	原則名	具体ルール	効果
+0-1	アロケータDI統一	公開APIの第1引数はconst ds_allocator_t* alloc固定	テスト性/モック化/品質保証
+0-2	calloc/free安全設計	_std_alloc(0,sz)はNULL、_std_free(NULL)はno-op	ゼロバイト/NULLクラッシュ防止
+0-3	NULLセーフAPI	NULL引数は必ずDS_ERR_NULL_POINTER	NULL-deref完全排除
+0-4	命名・@ownership統一	出力はout_プレフィクス、@ownership明記	静的解析/人間ミス予防
+0-5	破棄は1回だけ	destroy/reset後はNULL化	二重free完全防止
+0-6	構造体本体は.c	DTO以外はヘッダにメンバ禁止	ABI変更の影響極小化
+0-7	ログ6段階	ds_log(TRACE..FATAL)	運用監視/トレーサビリティ
+0-8	テストmain分離	tests/test_main.cに集約	CIと単体実行の両立
+0-9	Valgrind 0漏れ	definitely lost=0必須	ヒープリーク根絶
 >>>>>>> feature
 
     /* 2. カウンタ加算 */
@@ -86,6 +190,7 @@ ID	原則名	具体ルール（曖昧さゼロで記述）	理由 / 効果
     ds_metrics_increment(g_alloc, "other");
     DS_TEST_ASSERT(ds_metrics_get(g_alloc, "other") == 1, "other == 1");
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
     /* 4. 合計チェック（get_total API が無い場合は個別集計） */
@@ -118,85 +223,53 @@ typedef struct ds_stack ds_stack_t;
 	4.	エラーコード DS_ERR_STACK_OVERFLOW
 	5.	getter/setter ds_stack_get_size() / ds_stack_set_limit()
 	6.	clone ds_stack_clone(const ds_stack_t *src) は必ず深いコピー
+=======
+8. 拡張ロードマップ（教育・運用・OSSレベル拡張）
+	•	LLVM/JIT/仮想メモリとの連携
+	•	buddy/slab allocator設計・GC拡張・LLVM最適化連携・JIT生成コード領域の安全管理
+	•	セキュリティ最前線
+	•	double free/UAF/poisoning/Fortify Source/stack canary/ASLR/fault injection全ての自動検証
+	•	メモリ可視化・ヒープトレース
+	•	ds_malloc_traceモード/heapマップ/JSONログ/ELK連携
+	•	教育・カリキュラム統合
+	•	ヒープ可視化/undo-redo有限オートマトン図示/ABI図解/pointer ownershipのSVG出力
+	•	形式手法・静的解析
+	•	Frama-C/CBMCによる証明/MISRA-C/カバレッジ/fuzzingによる死角ゼロ設計
+>>>>>>> feature
 
 ⸻
 
-3. 契約プログラミング
+9. 参考API実装（契約プログラミング&Doxygen）
 
 /**
- * @pre  alloc != NULL
- * @pre  out_stack != NULL
- * @post *out_stack != NULL
+ * @brief    スタック生成
+ * @pre      alloc != NULL
+ * @pre      out_stack != NULL
+ * @post     *out_stack != NULL
+ * @ownership caller frees (ds_stack_destroy)
  */
 ds_error_t ds_stack_create(const ds_allocator_t *alloc,
                            ds_stack_t          **out_stack)
 {
     assert(alloc && out_stack);
-    …
+    ds_stack_t *s = ds_malloc(alloc, 1, sizeof *s);
+    if (!s) return DS_ERR_ALLOC;
+    s->alloc = alloc;
+    s->size  = 0;
+    s->cap   = 16;
+    s->data  = ds_malloc(alloc, s->cap, sizeof(void*));
+    if (!s->data) { ds_free(alloc, s); return DS_ERR_ALLOC; }
+    *out_stack = s;
+    return DS_SUCCESS;
 }
 
-	•	assert() で 開発時に即クラッシュ、リリースビルドでは戻り値で通知。
-	•	@pre/@post コメントを Doxygen で生成 → CI で欠落を検出。
 
 ⸻
 
-4. 抽象アロケータ DI ― 実装チェック手順
-	1.	禁止 API 検出スクリプト
-
-grep -R --include='*.c' --include='*.h' -n \
-  '\b\(malloc\|calloc\|realloc\|free\)\b' src/ include/ \
-  | grep -v 'ds_malloc\|ds_free\|ds_realloc' \
-  && { echo 'Forbidden malloc/free detected'; exit 1; }
-
-
-	2.	フォールバック実装（抜粋）
-
-static void* _std_alloc(size_t n,size_t sz){ return n?calloc(n,sz):NULL; }
-static void  _std_free (void* p){ if(p) free(p); }
-
-
-
-⸻
-
-5. ファイルレイアウト
-
-include/
-├ data_structures.h         # typedef 集中
-└ ds/
-   └ stack.h                # API プロトタイプのみ
-src/ds/
-└ stack.c                   # 実装 + 構造体本体
-tests/
-├ include/ds/               # テスト用 stub
-└ ds/                       # テストコード
-
-ルール：ビルド成果物・.bak などは .gitignore。
-
-⸻
-
-6. ログ & 構造化ログ（拡張タスク）
-　　 • “Docker コンテナ内で run_ci.sh を実行する” という一文を追加。
-	•	最小フォーマット：level|timestamp|module|message
-	•	将来的に json モードを ds_set_log_function() で差し替え → ELK で解析。
-
-⸻
-
-7. CI/CD & ビルドフラグ
-
-CFLAGS = -Wall -Wextra -Werror -pedantic -std=c11 \
-         -D_FORTIFY_SOURCE=2 -fstack-protector-strong -O2 -g
-
-CI 手順要点
-	1.	make build
-	2.	cppcheck --error-exitcode=1
-	3.	clang-tidy (-warnings-as-errors=*)
-	4.	make test
-	5.	valgrind --leak-check=full
-	6.	禁止 API grep (前述)
-
-Docker コンテナで実行し、環境差を排除。
-
-⸻
+10. CI/CD統合とrun_ci.sh（最重要）
+	•	Jenkins/GitHub Actions/GitLab等、run_ci.sh一発で全品質管理
+	•	禁止API grep、clang-tidy/cppcheck/valgrind/Fuzzingを完全自動化
+	•	どのCIサービスでも全く同じ品質条件で管理（YAML/Groovyでrun_ci.shを呼ぶだけ）
 
 8. 既存コード移行チェックリスト（PR Before-Merge）
 
@@ -218,6 +291,7 @@ Valgrind “definitely lost” = 0
 	•	構造体本体をヘッダに書いて再定義
 	•	テストのためにプリプロセッサで本番ヘッダを切り替える
 	•	本番コードに printf/puts/perror 系
+<<<<<<< HEAD
 	•	goto fail; スパゲティ
 
 ⸻
@@ -247,6 +321,9 @@ Valgrind “definitely lost” = 0
 ⸻
 
 11. 参考実装スニペット
+=======
+	•	goto fail; スパゲティ　　　　11. 参考実装スニペット
+>>>>>>> feature
 
 11-1. スタック生成 API 完全版
 
@@ -303,6 +380,7 @@ ds_error_t ds_stack_create(const ds_allocator_t *alloc,
           steps:
             - uses: actions/checkout@v4
             - run: chmod +x ./run_ci.sh && ./run_ci.sh
+<<<<<<< HEAD
 
 ● run_ci.sh の責務  
   1) make clean / make build  
@@ -390,4 +468,6 @@ CBMC のモデル検査	状態遷移（undo/redo, スタック溢れ）に対し
 MISRA-C 対応	医療・自動車業界の静的コードルール。ルール適合を cppcheck で自動化
 fuzzing 対応	AFL++ による heap overflow / use-after-free など未定義動作の発見
 
+>>>>>>> feature
+=======
 >>>>>>> feature
