@@ -144,7 +144,7 @@
 ├── .clang-tidy            # clang-tidy（静的解析ツール）のルール設定
 ├── All_task.ap            # プロジェクト全体タスク・仕様管理（個人運用やプロジェクト用メモ）
 ├── dockercommand.txt      # Docker関連コマンドや補助メモ、ビルド/実行tips
-├── Dockerfile             # Dockerイメージビルド用のレシピ
+├── docker_compose.yml
 ├── lint.log               # Linter（コード規約チェック等）の出力ログ（CIで自動生成/記録）
 ├── README.ap              # AP（アプリ設計書や別用途README。内容で用途明記推奨）
 ├── workspace-fix.patch    # パッチファイル。エディタやCI/CD用の一括修正/暫定対応等で利用です。
