@@ -147,4 +147,4 @@
 ├── Dockerfile             # Dockerイメージビルド用のレシピ
 ├── lint.log               # Linter（コード規約チェック等）の出力ログ（CIで自動生成/記録）
 ├── README.ap              # AP（アプリ設計書や別用途README。内容で用途明記推奨）
-├── workspace-fix.patch    # パッチファイル。エディタやCI/CD用の一括修正/暫定対応等で利用
+├── workspace-fix.patch    # パッチファイル。エディタやCI/CD用の一括修正/暫定対応等で利用です。
