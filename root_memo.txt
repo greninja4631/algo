@@ -1,148 +1,150 @@
 プロジェクトルート/
-├── src/                      # 実装本体（Cソース、細分化したディレクトリ単位推奨）
-│   └── ds/                   # データ構造・アルゴリズム実装（例: stack.c, queue.c, ...）
+├── src/                                   # [C/C++/TypeScript/Python等の実装本体]
+│   ├── ds/                                # データ構造・アルゴリズム実装（stack.c, queue.c など）
+│   ├── internal/                          # 内部ユーティリティ・非公開API（ユニット/共通/実験用）
+│   ├── bin/                               # CLIバイナリ/小ツール用実装
+│   └── examples/                          # 最小実装例・ドキュメント連動サンプル
 │
-├── include/                  # ヘッダ全般
-│   ├── data_structures.h     # typedef/enum/forward-decl集約（全体の型宣言のみに専念）
-│   └── ds/                   # 各APIヘッダ（例: stack.h, queue.h ... 実装ごとに分割）
+├── include/                               # [C/C++用] ヘッダファイル群
+│   ├── data_structures.h                  # typedef/enum/forward-decl集約（全体型宣言）
+│   └── ds/                                # 各APIヘッダ（stack.h, queue.h等）
 │
-├── tests/                    # テスト実装（.c本体はds/に、テスト用ヘッダはinclude/ds/に分離）
-│   ├── ds/                   # テストコード本体（例: stack_test.c, ...）
-│   └── include/ds/           # テスト用スタブ・ヘッダ等
-
-
-
-build/
-├── bin/             # 実行バイナリ（main, tool, cli等）
-├── obj/             # オブジェクトファイル（*.o）
-├── lib/             # 静的/動的ライブラリ（*.a, *.so, *.dylib）
-├── test/            # テスト成果物・テストログ
-├── coverage/        # カバレッジHTML, xml等
-├── static_analysis/ # 静的解析ログ・レポート
-├── docs/            # 自動生成ドキュメント（Doxygen/Sphinx/HTML）
-├── release/         # 配布/リリース用zip/tar.gz/installer等
-├── log/             # ビルド/テスト/デバッグのログ
-├── stamp/           # cmake等のbuild stamp（一時ファイル）
-├── fuzz/            # fuzz成果物・クラッシュケース
-└── misc/            # その他一時生成物（用途次第で追加）
-
-
-
-docs/
-├── doxygen/                # Doxygen生成HTML（仕様API自動ドキュメント）
-│   └── index.html
-├── design/                 # アーキテクチャ・設計書（論理設計/物理設計/ER図/データフロー/責務分担）
-│   ├── architecture.md
-│   ├── er_diagram.png
-│   ├── class_diagram.uml
-│   └── ...（各種図面やmdファイル）
-├── diagrams/               # 各種UML図/シーケンス図/構成図/状態遷移/コールグラフ等
-│   ├── sequence.drawio
-│   ├── state_fsm.svg
-│   └── ...
-├── tutorials/              # 学習・教育コンテンツ（HowTo/実装例/サンプル/CS基礎）
-│   ├── getting_started.md
-│   ├── memory_allocator_walkthrough.md
-│   └── ...
-├── api/                    # REST/gRPC/GraphQL等の外部API定義（OpenAPI/Swagger/proto等）
-│   ├── openapi.yaml
-│   ├── grpc.proto
-│   └── ...
-├── requirements/           # 要件定義（仕様/ユーザー要求/非機能要件/変更履歴）
-│   ├── functional_requirements.md
-│   ├── nonfunctional.md
-│   └── change_log.md
-├── reviews/                # コード/設計/QAレビュー結果・議事録・チェックリスト
-│   └── review_log.md
-├── research/               # 参考論文/外部資料/調査サマリ
-│   └── allocator_benchmark.pdf
-├── education/              # 新人教育/研修カリキュラム/CS基礎講義
-│   └── curriculum.md
-├── test_plans/             # テスト設計書・カバレッジ表・テストケース管理
-│   └── test_plan.md
-├── migration/              # バージョンアップ/DB移行/リファクタ履歴
-│   └── migration_plan.md
-├── security/               # セキュリティ設計/脅威分析/脆弱性診断結果
-│   └── threat_model.md
-└── README.md               # ドキュメントルートのナビゲーション（docs全体の概要）
-
-
-
-scripts/
-├── lint.sh            # Linter起動・CI/ローカル共通
-├── format.sh          # コード整形（clang-format等）
-├── build.sh           # ビルド補助/clean/release
-├── test.sh            # 単体/統合テスト起動
-├── fuzz.sh            # Fuzzing自動化
-├── coverage.sh        # カバレッジ集計・HTML出力
-├── docgen.sh          # ドキュメント自動生成（Doxygen, Sphinx, mdbook等）
-├── static_analysis.sh # 静的解析（cppcheck, clang-tidy, frama-c, cbmc…）
-├── security.sh        # セキュリティチェック（CVE, SAST, OSS依存性診断）
-├── release.sh         # バージョン付与・リリース自動化
-├── clean.sh           # 成果物削除
-├── precommit.sh       # pre-commit用ラッパ
-└── misc.sh            # その他（例：bench, perf, format, gdb自動起動 など）
-
-
-
-ci/
-├── cbmc/
-│   ├── run_cbmc.sh
-│   └── stack_invariant.prp
-├── frama-c/
-│   ├── allocator_spec.acsl
-│   └── run_frama-c.sh
-├── coverage/
-│   ├── gcovr.cfg
-│   ├── gen_coverage_report.sh
-│   └── lcovrc
-├── fuzz/
-│   ├── run_afl_fuzz.sh
-│   └── run_libfuzzer.sh
-├── scripts/
-│   ├── check_format.sh
-│   └── notify_slack.sh
-├── templates/
-│   ├── release_note_template.md
-│   └── test_report_template.md
-├── env/
-│   └── .env.sample
-└── reports/
-    └── .gitkeep
-
-
-docker/
-├── Dockerfile                 # 標準開発用（Cビルド＆ユニットテスト最小構成）
-├── Dockerfile.dev             # 開発用（clangd, gdb, lcov, Doxygen, fzf, bash補完入り）
-├── Dockerfile.ci              # CI/CD専用（cppcheck, clang-tidy, valgrind, frama-c, afl++等）
-├── docker-compose.yml         # サービス連携用（db連携・多重CI・fuzz等にも）
-├── entrypoint.sh              # コンテナ起動時の初期化スクリプト
-├── requirements.txt           # Python等の依存（Sphinx/Doxygen/CI用tooling等）
-├── scripts/                   # Dockerイメージ内だけで使う初期化・ユーティリティ
-│   ├── setup_user.sh
-│   ├── install_llvm.sh
-│   ├── setup_doxygen.sh
-│   └── cleanup.sh
-└── ci.env                     # CI用環境変数サンプル（セキュア値は.env等に分離）
-
-
-.github/
-└── workflows/
-    ├── ci.yml                 # プルリク/プッシュでのCIビルド・テスト自動化（メインCI/CD）
-    ├── lint.yml               # 静的解析・コード規約チェック専用
-    ├── coverage.yml           # カバレッジ自動計測・レポート生成
-    ├── doc.yml                # DoxygenやSphinxによるドキュメント自動生成＆デプロイ
-    ├── fuzz.yml               # Fuzzing自動実行（AFL++等）
-    ├── release.yml            # タグ/リリース時の成果物ビルド・リリース自動化
-    └── secrets.example.yml    # シークレット管理テンプレ（GITHUB_TOKEN等の説明用/除外可）
+├── tests/                                 # テスト実装（C/C++/Python/TS/各言語）
+│   ├── ds/                                # テストコード本体（stack_test.cなど）
+│   └── include/ds/                        # テスト用スタブ・テストヘッダ等
 │
-├── Doxyfile                  # Doxygen用設定ファイル
-├── Makefile                  # make用ビルド定義
-├── run_ci.sh                 # CI/CD一元管理・自動化スクリプト
-├── Jenkinsfile               # Jenkins CIパイプライン（あれば）
-├── .gitlab-ci.yml            # GitLab用CI定義（あれば）
-├── README.md                 # ドキュメント（最上位README。拡張子は.md強く推奨）
-├── .gitignore                # Git管理対象外リスト
-├── memo.txt                  # メモ
-├── log.txt                   # ログ
-└── ...（必要に応じ追加）
+├── build/                                 # ビルド成果物・中間生成物
+│   ├── bin/                               # 実行バイナリ(main, cli等)
+│   ├── obj/                               # オブジェクトファイル（*.o）
+│   ├── lib/                               # 静的/動的ライブラリ（*.a, *.so, *.dylib）
+│   ├── test/                              # テスト成果物・テストログ
+│   ├── coverage/                          # カバレッジHTML, XML
+│   ├── static_analysis/                   # 静的解析レポート
+│   ├── docs/                              # Doxygen/Sphinx等の自動生成ドキュメント
+│   ├── release/                           # 配布用(zip, tar.gz, インストーラ等)
+│   ├── pkg/                               # Homebrew/deb/rpm等パッケージ
+│   ├── sandbox/                           # 依存ビルド・仮想DB等の一時領域
+│   ├── log/                               # ビルド/テスト/デバッグログ
+│   ├── stamp/                             # cmake等のbuild stamp
+│   ├── fuzz/                              # fuzz成果物・クラッシュケース
+│   └── misc/                              # その他一時生成物
+│
+├── docs/                                  # 仕様書・設計・教育・運用ドキュメント
+│   ├── doxygen/                           # Doxygen生成APIドキュメント(HTML)
+│   ├── design/                            # アーキテクチャ・設計書
+│   ├── diagrams/                          # UML図・シーケンス・FSM等
+│   ├── tutorials/                         # 学習・教育HowTo/サンプル/実装例
+│   ├── api/                               # OpenAPI/Swagger/gRPC/proto定義
+│   ├── requirements/                      # 要件定義・仕様
+│   ├── reviews/                           # コード/設計/QAレビュー結果
+│   ├── research/                          # 外部論文/調査・技術資料
+│   ├── education/                         # 新人研修/CS講義
+│   ├── test_plans/                        # テスト設計書・カバレッジ表
+│   ├── migration/                         # バージョンアップ/DB移行計画
+│   ├── security/                          # セキュリティ設計・脆弱性分析
+│   ├── release_notes/                     # リリースノート履歴
+│   ├── api/examples/                      # REST/gRPCサンプル
+│   ├── snippets/                          # 設定例・FAQ
+│   └── README.md                          # docs全体ナビゲーション
+│
+├── scripts/                               # CI/品質/運用/開発補助スクリプト（bash, py, etc.）
+│   ├── lint.sh                            # Linter起動（clang-format, eslint等）
+│   ├── format.sh                          # コード整形
+│   ├── build.sh                           # ビルド補助
+│   ├── test.sh                            # 単体/統合テスト起動
+│   ├── fuzz.sh                            # Fuzzing自動化
+│   ├── coverage.sh                        # カバレッジ集計・HTML出力
+│   ├── docgen.sh                          # ドキュメント自動生成
+│   ├── static_analysis.sh                 # 静的解析（cppcheck, clang-tidy等）
+│   ├── security.sh                        # セキュリティ診断
+│   ├── release.sh                         # リリース/バージョン付与
+│   ├── clean.sh                           # 成果物削除
+│   ├── precommit.sh                       # pre-commit用ラッパ
+│   ├── misc.sh                            # その他（bench, perf等）
+│   ├── benchmark.sh                       # 性能ベンチ自動化
+│   ├── ci_env_setup.sh                    # CI用環境変数・依存セットアップ
+│   ├── check_license.sh                   # OSSライセンスチェック
+│   ├── docker_utils.sh                    # Docker系操作ユーティリティ
+│   └── git-hooks/                         # git pre-commit等
+│       └── (pre-commit, pre-push等)
+│
+├── db/                                    # PostgreSQL・DB運用（開発・本番・テストDB分離可）
+│   ├── schema/                            # テーブル/インデックス定義（*.sql）
+│   ├── migrations/                        # マイグレーションスクリプト
+│   ├── seeds/                             # 初期データ
+│   ├── backup/                            # dump, バックアップ
+│   ├── scripts/                           # DBメンテナンススクリプト
+│   └── README.md                          # DB運用・仕様まとめ
+│
+├── jenkins/                               # Jenkinsオンプレ運用・設定
+│   ├── jobs/                              # ジョブconfig.xml群（バックアップ可）
+│   ├── init.groovy.d/                     # Jenkins起動時Groovyスクリプト
+│   ├── pipelines/                         # Jenkins Pipeline（Groovy）
+│   ├── plugins.txt                        # 必須プラグイン一覧
+│   ├── backup/                            # Jenkins設定バックアップ
+│   └── README.md                          # Jenkins運用・復旧マニュアル
+│
+├── ci/                                    # 形式検証・CI/CD補助
+│   ├── cbmc/                              # CBMCモデル検査
+│   ├── frama-c/                           # Frama-C検証用
+│   ├── coverage/                          # カバレッジ生成・管理
+│   ├── fuzz/                              # Fuzzing成果物
+│   ├── scripts/                           # CI専用補助スクリプト
+│   ├── templates/                         # テンプレート類
+│   ├── env/                               # CI/CD専用環境変数
+│   ├── badges/                            # バッジSVG等
+│   ├── artifacts/                         # ジョブ成果物一時置き場
+│   └── reports/                           # 検証/静的解析/成果物レポート
+│
+├── docker/                                # Docker/Compose/開発・本番/CI/CD運用
+│   ├── Dockerfile                         # 開発/本番ビルド用
+│   ├── Dockerfile.dev                     # 開発用(ツール/デバッグ特化)
+│   ├── Dockerfile.ci                      # CI/CD用(解析/自動化特化)
+│   ├── Dockerfile.postgres                # PostgreSQL専用
+│   ├── Dockerfile.jenkins                 # Jenkins専用
+│   ├── docker-compose.yml                 # サービス一括起動用
+│   ├── entrypoint.sh                      # メインエントリポイント
+│   ├── entrypoint-postgres.sh             # PostgreSQL用エントリポイント
+│   ├── entrypoint-jenkins.sh              # Jenkins用エントリポイント
+│   ├── requirements.txt                   # Python, Sphinx等tool依存
+│   ├── ci.env                             # CI/CD用環境変数
+│   ├── scripts/                           # Dockerイメージ内専用スクリプト
+│   │   ├── setup_user.sh
+│   │   ├── install_llvm.sh
+│   │   ├── setup_doxygen.sh
+│   │   ├── cleanup.sh
+│   │   ├── healthcheck.sh
+│   │   └── entrypoint.dev.sh
+│   └── ...                                # 必要に応じて拡張
+│
+├── .github/                               # GitHub専用（CI, PR, Issue管理）
+│   ├── workflows/                         # GitHub Actions（CI/CD全自動ワークフロー）
+│   │   ├── ci.yml                         # メインCI/CD
+│   │   ├── lint.yml                       # 静的解析等
+│   │   ├── coverage.yml                   # カバレッジ
+│   │   ├── doc.yml                        # ドキュメント生成
+│   │   ├── fuzz.yml                       # Fuzzing
+│   │   ├── release.yml                    # リリース
+│   │   └── secrets.example.yml            # シークレット設定サンプル
+│   ├── ISSUE_TEMPLATE/                    # Issue作成テンプレ
+│   └── PULL_REQUEST_TEMPLATE.md           # PR作成テンプレ
+│
+├── Doxyfile                               # Doxygen設定（API仕様書自動生成）
+├── Makefile                               # ビルドシステム定義
+├── run_ci.sh                              # CI/CD一元管理スクリプト
+├── Jenkinsfile                            # Jenkins用パイプライン（オンプレ）
+├── .gitlab-ci.yml                         # GitLab用CI定義
+├── .env                                   # 環境変数一元管理（DB, Jenkins, etc.）
+├── README.md                              # プロジェクト概要/セットアップ案内
+├── .gitignore                             # Git管理除外リスト
+├── memo.txt                               # メモ/アイディア/打合せ等
+├── log.txt                                # 実行/運用/ビルドログ
+├── .dockerignore          # Dockerビルド時に除外するファイルリスト
+├── .cfg                   # ツール/CI用の共通設定ファイル（用途に応じて中身明記）
+├── .clang-tidy            # clang-tidy（静的解析ツール）のルール設定
+├── All_task.ap            # プロジェクト全体タスク・仕様管理（個人運用やプロジェクト用メモ）
+├── dockercommand.txt      # Docker関連コマンドや補助メモ、ビルド/実行tips
+├── Dockerfile             # Dockerイメージビルド用のレシピ
+├── lint.log               # Linter（コード規約チェック等）の出力ログ（CIで自動生成/記録）
+├── README.ap              # AP（アプリ設計書や別用途README。内容で用途明記推奨）
+├── workspace-fix.patch    # パッチファイル。エディタやCI/CD用の一括修正/暫定対応等で利用
