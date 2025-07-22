@@ -1,24 +1,16 @@
-#ifndef DS_TEST_UTIL_METRICS_H
-#define DS_TEST_UTIL_METRICS_H
+#ifndef TEST_UTIL_MEMORY_H
+#define TEST_UTIL_MEMORY_H
+
+#include "data_structures.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @file    tests/include/ds/test_util_metrics.h
- * @brief   メトリクス機能のユニットテスト宣言（実装は.cのみ）
- * @note    ODR違反や多重定義リスクを避けるため、ここでは宣言のみ
- */
-
-/**
- * @brief メトリクスAPIの基本動作検証
- * @test   CIの自動検出用関数名 (test__<module>_<case>)
- */
-void test__metrics_basic(void);
+void test__memory_basic(void);
+void test__memory_edge_cases(void);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* DS_TEST_UTIL_METRICS_H */
+#endif // TEST_UTIL_MEMORY_H

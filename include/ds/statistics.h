@@ -19,7 +19,9 @@ ds_error_t ds_statistics_get_average(const ds_statistics_t* stats, double* out_a
 ds_error_t ds_statistics_get_median (const ds_statistics_t* stats, double* out_median);
 ds_error_t ds_statistics_get_mode   (const ds_statistics_t* stats, int* out_mode);
 
+// ✅ allocator引数ありに統一！
 ds_error_t ds_statistics_calculate_all(
+    const ds_allocator_t* alloc,
     const int* data, size_t size,
     int* out_sum, int* out_min, int* out_max,
     double* out_avg, double* out_median, int* out_mode

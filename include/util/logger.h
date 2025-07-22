@@ -1,56 +1,38 @@
 /**
  * @file   util/logger.h
- * @brief  共通ロガー API ― 全モジュールで共有
+ * @brief  全モジュール共通ロガー API (APIプロトタイプ専用、typedef一切禁止)
  *
- * ▼ 2025-07 Cプロジェクト APIガイドライン適合ポイント
- *   • enum 名は必ず DS_LOG_LEVEL_* で統一し、値を明示
- *   • エラー処理と同じ “DI” 方針：外部からロガー実装を差し替え可能
- *   • printf 直接使用禁止 ──> すべて ds_log() 経由
- *   • Opaque 型は不要なのでヘッダに実装は置かない
+ * ▼ 2025-07 Cプロジェクト APIガイドライン
+ *   • typedef/enum/前方宣言は "必ず" data_structures.h だけに集約
+ *   • 本ヘッダには関数宣言・マクロのみ
+ *   • printf/puts直書き禁止・必ずds_log()経由
+ *   • DI（差し替え）API提供
  */
 
-#ifndef DS_UTIL_LOGGER_H          /* <include guard> */
+#ifndef DS_UTIL_LOGGER_H
 #define DS_UTIL_LOGGER_H
 
-#include "data_structures.h"      /* プロジェクト共通型 */
-#include <stdarg.h>               /* va_list            */
+#include "data_structures.h"  /* 共通型（ds_log_level_t, ds_log_func_t） */
+
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*──────────────────────────────────────
- * ログレベル（値が小さいほど重大）
- *──────────────────────────────────────*/
-typedef enum {
-    DS_LOG_LEVEL_ERROR = 0,   /* 重大なエラー ― 直ちに対処が必要 */
-    DS_LOG_LEVEL_WARN,        /* 警告 ― 動作は継続するが要注意  */
-    DS_LOG_LEVEL_INFO,        /* 情報 ― 通常運転の状態遷移など    */
-    DS_LOG_LEVEL_DEBUG,       /* デバッグ ― 詳細トレース          */
-    DS_LOG_LEVEL_FATAL        /* 致命的 ― 強制終了前最後のログ   */
-} ds_log_level_t;
-
-/* 後方互換マクロ（過去コードに配慮） */
-#define DS_LOG_ERROR DS_LOG_LEVEL_ERROR
-
-/*──────────────────────────────────────
- * DI 用ロガー関数ポインタ
- *──────────────────────────────────────*/
-typedef void (*ds_log_func_t)(ds_log_level_t level,
-                              const char    *fmt,
-                              va_list        args);
+/*** 本ヘッダには"typedef/enum/struct宣言は一切書かない"！ ***/
 
 /**
- * @brief ロガー実装を差し替える
- * @param func  printf 互換のロガー。NULL でデフォルトに戻す
- * @note  スレッドセーフ保証は呼び出し側で行うこと
+ * @brief ロガー関数のDI差し替え
+ * @param func   printf互換、NULLでデフォルト
+ * @note   スレッドセーフは呼び出し側責任
  */
 void ds_set_log_function(ds_log_func_t func);
 
 /**
- * @brief  共通ログAPI（可変長引数）
- * @param  level  DS_LOG_LEVEL_*
- * @param  fmt    printf 互換フォーマット
+ * @brief 共通ログAPI
+ * @param level DS_LOG_LEVEL_*
+ * @param fmt   printf互換
  */
 void ds_log(ds_log_level_t level, const char *fmt, ...);
 

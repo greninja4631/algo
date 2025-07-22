@@ -1,16 +1,13 @@
-FROM gcc:13.2.0
-
-WORKDIR /workspace
-
+FROM arm64v8/gcc:13 AS builder
+WORKDIR /app
 COPY . .
+RUN chmod +x ./scripts/*.sh ./run_ci.sh
+RUN ./scripts/lint.sh && ./scripts/build.sh
 
-RUN apt-get update && \
-    apt-get install -y make git doxygen cppcheck clang-tidy clang-format valgrind && \
-    rm -rf /var/lib/apt/lists/*
+FROM builder AS ci
+RUN ./run_ci.sh
 
-# ここで一度必ずクリーンしてからCI実行（.o, .d残り対策）
-RUN make clean
-
-RUN bash run_ci.sh
-
-CMD ["bash"]
+FROM arm64v8/debian:bullseye-slim AS prod
+WORKDIR /app
+COPY --from=builder /app/build/bin /app/bin
+ENTRYPOINT ["/app/bin/main"]

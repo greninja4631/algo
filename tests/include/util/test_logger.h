@@ -11,5 +11,4 @@ void test__logger_edge_cases(void);
 #ifdef __cplusplus
 }
 #endif
-
 #endif // TEST_UTIL_TEST_LOGGER_H

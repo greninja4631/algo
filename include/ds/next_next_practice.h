@@ -23,7 +23,6 @@ extern "C" {
 
 /* ──────────────────────────────
  * Opaque 本体は .c 内でのみ定義
- * typedef struct ds_next_next_practice ds_next_next_practice_t;
  * （↑ は data_structures.h に集中宣言済み）
  * ────────────────────────────── */
 

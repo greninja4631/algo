@@ -11,22 +11,29 @@ URLのポート:8080 である。
 
 Homebrewで検査するDockerコマンド
 
-  docker build --no-cache -t my-ds-ci .
 
+set -e
 
-初期段階の検証コマンド↓
+echo "-----------------------------"
+echo "🔨 Docker build（キャッシュなし）開始"
+echo "-----------------------------"
+if docker build --no-cache -t my-ds-ci -f docker/Dockerfile .; then
+    echo "✅ build成功"
+else
+    echo "❌ build失敗"
+    exit 1
+fi
 
+echo "-----------------------------"
+echo "🖼 イメージ一覧（my-ds-ci）"
+docker images | grep my-ds-ci || { echo "❌ イメージが見つかりません"; exit 1; }
+echo "-----------------------------"
 
- docker build --no-cache --progress=plain -t algo-ci .
-
-   エラーを分析し、異なるエラー内容でもエラーが発生したファイルが同名ファイルであれば、デザイン的に見やすい形で整理して、
-   ファイルごとにエラー内容を記載して下さい。エラー内容自体は妥協せずに、長文でも良いのでエラー箇所を全て漏れなく完璧に記載して下さい。
-
-
-
-
-
-
-
-
-
+echo "▶️ コンテナ実行テスト"
+if docker run --rm my-ds-ci; then
+    echo "✅ run成功"
+    echo "✅ 全て正常に完了しました。"
+else
+    echo "❌ runでエラーが発生しました"
+    exit 1
+fi
