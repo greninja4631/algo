@@ -180,6 +180,40 @@ clone() 実装（必要モジュールのみ）
 テスト名 test__<module>_<case>() 形式	
 Valgrind “definitely lost” = 0	
 
+■ クロスプラットフォーム対応の基本原則
+	1.	すべての開発・ビルド・テスト・CI/CDの工程は、Mac・Windows（WSL2/PowerShell）・Linux・Dockerの全環境で
+“まったく同じ操作・同じコマンド”で動くことを原則とする。
+	•	Makefile・CIスクリプト（run_ci.sh）・DockerfileはOSの違いを吸収し、どの環境でも全く同じコマンドで実行・ビルド・リリースできるよう設計すること。
+	•	WindowsではWSL2（Ubuntu）推奨。どうしてもPowerShellのみの場合は、Bashやmingw32-make互換のMakefileも用意する。
+	•	依存パッケージ（gcc/clang/valgrindなど）は、MacはHomebrew・Linuxはapt/yum・WindowsはChocolateyやscoopなど各OS標準の方法で自動インストールできる設計にする。
+	2.	CI/CD（Jenkins, GitHub Actions, GitLab等）は、Docker上の run_ci.sh 一発実行だけで全品質タスクを完全自動化する。
+	•	CIの設定ファイル（yamlやGroovy）は**「chmod +x ./run_ci.sh && ./run_ci.sh」一行で全自動化**されることを前提とする。
+	•	どのCIサービスでも同じ品質基準が守れることを保証する。
+	3.	クロスアーキテクチャ（x86_64/amd64、arm64/Apple Silicon）両対応をMakefile/Dockerfile/CIで徹底する。
+	•	Makefileには make docker-arm64・make docker-amd64・make docker-all などクロスビルド用のターゲットを必ず用意し、どの環境でも手軽にクロスビルド検証できること。
+	•	Dockerfileは multi-stage + buildx 対応とし、複数アーキテクチャの成果物を簡単に作れるようにする。
+
+⸻
+
+■ 推奨される運用フロー（実務・教育現場向け）
+	•	開発者は make build make test make docker-xxx など、どのOS/シェルでも同じコマンド体系を使うこと。
+	•	OSごとのパスやシェル差異（/bin/bashとpowershellなど）はrun_ci.shやMakefileで自動判別・切り替えできるようにする。
+	•	依存パッケージのセットアップガイド（Homebrew/Mac、apt/Linux、Chocolateyやscoop/Windows）はREADMEやドキュメントで明示しておく。
+	•	設計原則（禁止API・グローバル変数非使用・構造体本体.c隔離など）はCIですべて強制検査し、どのOSでも違反が起きないことを保証する。
+
+⸻
+
+■ 実践チェックリスト（これが満たされていればOK！）
+	•	全ビルド・テスト・品質検証コマンドがMac/Windows/Linux/Docker全てで同じ動作を保証
+	•	run_ci.sh一発で全工程（ビルド・テスト・lint・フォーマット・Valgrind・ドキュメント生成）が自動化
+	•	Multi-Arch Dockerイメージ（arm64/amd64）がMakefile一発で作成可能
+	•	依存解決（apt/brew/pip/npm）がOSごとに自動判別できる
+	•	禁止API・メモリリーク・未登録テスト・静的解析/形式手法/ Fuzzingも全てCIで自動検証
+	•	どのCIサービス（Jenkins/GitHub Actions等）でもrun_ci.sh一発で同じ品質基準
+	•	新規開発者はREADMEのセットアップ通りに進めれば、どのOSでも即参画・開発可能
+
+
+
 
 
 11-1. スタック生成 API 完全版

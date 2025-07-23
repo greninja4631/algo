@@ -1,0 +1,27 @@
+ds_error_t ds_search_binary(const int* arr, size_t n, int target, ptrdiff_t* out_index) {
+ds_error_t ds_search_linear(const int* arr, size_t n, int target, ptrdiff_t* out_index) {
+ds_error_t ds_sort_bubble(int* arr, size_t n) {
+ds_error_t ds_sort_insertion(int* arr, size_t n) {
+ds_error_t ds_statistics_calculate(const ds_allocator_t* alloc, ds_statistics_t* stats, const int* data, size_t size) {
+ds_error_t ds_statistics_create(const ds_allocator_t* alloc, ds_statistics_t** out_stats) {
+ds_error_t ds_statistics_get_average(const ds_statistics_t *stats, double *out){ SAFE_GET(average, out); }
+ds_error_t ds_statistics_get_average(const ds_statistics_t* stats, double* out_avg)    { SAFE_GET(avg, out_avg); }
+ds_error_t ds_statistics_get_max    (const ds_statistics_t *stats, int    *out){ SAFE_GET(max,     out); }
+ds_error_t ds_statistics_get_max(const ds_statistics_t* stats, int* out_max)           { SAFE_GET(max, out_max); }
+ds_error_t ds_statistics_get_median (const ds_statistics_t *stats, double *out){ SAFE_GET(median,  out); }
+ds_error_t ds_statistics_get_median(const ds_statistics_t* stats, double* out_median)  { SAFE_GET(median, out_median); }
+ds_error_t ds_statistics_get_min    (const ds_statistics_t *stats, int    *out){ SAFE_GET(min,     out); }
+ds_error_t ds_statistics_get_min(const ds_statistics_t* stats, int* out_min)           { SAFE_GET(min, out_min); }
+ds_error_t ds_statistics_get_mode   (const ds_statistics_t *stats, int    *out){ SAFE_GET(mode,    out); }
+ds_error_t ds_statistics_get_mode(const ds_statistics_t* stats, int* out_mode)         { SAFE_GET(mode, out_mode); }
+ds_error_t ds_statistics_get_sum    (const ds_statistics_t *stats, int    *out){ SAFE_GET(sum,     out); }
+ds_error_t ds_statistics_get_sum(const ds_statistics_t* stats, int* out_sum)           { SAFE_GET(sum, out_sum); }
+int main(void) {
+int main(void){ test__round_robin_basic(); test__round_robin_edge_cases(); return 0; }
+int32_t ds_process_get_burst_time(const ds_process_t *p) { return p ? p->burst : -1; }
+int32_t ds_process_get_id(const ds_process_t *p)         { return p ? p->pid   : -1; }
+void ds_log(ds_log_level_t level, const char *fmt, ...) {
+void ds_set_log_function(ds_log_func_t func) {
+void ds_statistics_destroy(const ds_allocator_t* alloc, ds_statistics_t* stats) {
+void ds_test_logger_basic(void) {
+void ds_test_logger_edge_cases(void) {

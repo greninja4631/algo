@@ -4,36 +4,9 @@ docker start jenkins
 
 
 URLのポート:8080 である。
+【クロスアーキテクチャ Docker Build ワンライナー】
 
 
 
-
-
-Homebrewで検査するDockerコマンド
-
-
-set -e
-
-echo "-----------------------------"
-echo "🔨 Docker build（キャッシュなし）開始"
-echo "-----------------------------"
-if docker build --no-cache -t my-ds-ci -f docker/Dockerfile .; then
-    echo "✅ build成功"
-else
-    echo "❌ build失敗"
-    exit 1
-fi
-
-echo "-----------------------------"
-echo "🖼 イメージ一覧（my-ds-ci）"
-docker images | grep my-ds-ci || { echo "❌ イメージが見つかりません"; exit 1; }
-echo "-----------------------------"
-
-echo "▶️ コンテナ実行テスト"
-if docker run --rm my-ds-ci; then
-    echo "✅ run成功"
-    echo "✅ 全て正常に完了しました。"
-else
-    echo "❌ runでエラーが発生しました"
-    exit 1
-fi
+docker buildx build -f Docker/Dockerfile --platform linux/arm64 -t yourapp:arm64 . --load && \
+docker buildx build -f Docker/Dockerfile --platform linux/amd64 -t yourapp:amd64 . --load
