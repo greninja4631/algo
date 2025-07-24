@@ -94,3 +94,4 @@ int main(int argc, char *argv[])
     report();
     return g_stats.failed ? 1 : 0;
 }
+
