@@ -1,25 +1,35 @@
 # =========================
-# 🏗️ GAFA流・完全成果物保証 Dockerfile
+# 🏗️ GAFA流・完全成果物保証 Dockerfile【2025年最新版・multiarch対応】
 # =========================
 
-FROM arm64v8/gcc:13 AS builder
+# -------- Build Stage（multiarch両対応） --------
+FROM gcc:12 AS builder     
 WORKDIR /app
 
 # コード全体コピー
 COPY . .
 
+# ビルド前に全成果物を完全消去
+RUN rm -rf build/ docs/ coverage/
+
 # 全スクリプトを必ず実行可能化
-RUN chmod +x ./scripts/*.sh ./run_ci.sh
+RUN chmod +x ./scripts/*.sh ./run_ci.sh || true
 
-# Lint（静的解析）+ Build（Makefile）+ 成果物(バイナリ)検証（ls）
+# Lint + Build + mainバイナリ存在チェック
 RUN ./scripts/lint.sh && ./scripts/build.sh \
- && ls -l build/bin/ \
- && [ -f build/bin/main ] || (echo "mainバイナリが無い！Makefile/ビルド失敗！パス設定・.dockerignore漏れ等を再確認！" && exit 1)
+ && echo "------ build/bin/ディレクトリ ------" \
+ && ls -lh build/bin || echo "build/bin ディレクトリ無し" \
+ && [ -d build/bin ] || (echo "❌ build/bin ディレクトリが無い！" && exit 1) \
+ && [ -f build/bin/main ] && chmod +x build/bin/main || (echo "❌ mainバイナリが無い！ビルド失敗！" && exit 1)
 
+# -------- 🧪 CI/CD Stage（必要な場合だけ） --------
 FROM builder AS ci
 RUN ./run_ci.sh
 
-FROM arm64v8/debian:bullseye-slim AS prod
+# -------- Production Stage（multiarch両対応） --------
+FROM debian:bullseye-slim AS prod   
 WORKDIR /app
 COPY --from=builder /app/build/bin /app/bin
+
+# 本番バイナリの唯一のエントリポイント
 ENTRYPOINT ["/app/bin/main"]

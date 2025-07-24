@@ -18,7 +18,8 @@
         "stdarg.h": "c",
         "{}": "c",
         "stddef.h": "c",
-        "hashmap.h": "c"
+        "hashmap.h": "c",
+        "statistics.h": "c"
     },
 
     /* ---------- 2. 自動保存設定 ---------- */

@@ -34,7 +34,7 @@ CLEAN_DOCS := $(DOCS_DIR)
 
 all: build test
 
-build: $(BIN)
+build: clean $(BIN)   # <<-- ビルド前に必ずクリーン！
 
 $(BIN): $(CORE_OBJS)
 	@mkdir -p $(dir $@)

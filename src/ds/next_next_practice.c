@@ -170,11 +170,6 @@ queue_enqueue(const ds_allocator_t *alloc, ds_dlist_t *list, int32_t v)
     return DS_SUCCESS;
 }
 
-static inline ds_error_t
-queue_dequeue(const ds_allocator_t *alloc, ds_dlist_t *list, int32_t *out_v)
-{
-    return stack_pop(alloc, list, out_v); /* dequeue = pop head */
-}
 
 /* --- Undo / Redo ------------------------------------------------------ */
 static ds_error_t ur_init(ds_undo_redo_system_t *sys)
