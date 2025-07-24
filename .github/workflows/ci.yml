@@ -1,49 +1,105 @@
 # .github/workflows/ci.yml
-name: CI (Build, Test, Clang-Tidy)
+# ────────────────────────────────────────────────────────────
+#  🌐 2025-Ready CI / CD Pipeline  ―  Linux/arm64 & amd64 両対応
+#     * buildx + QEMU でクロスビルド
+#     * lint → build → unit-test → memcheck → artefact upload
+#     * clang-tidy 静的解析を独立ジョブで実施
+#     * main ブランチ完了時に Jenkins もキック
+# ────────────────────────────────────────────────────────────
+name: CI (multi-arch + clang-tidy)
 
 on:
   push:
     branches: [ main, pre, feature ]
   pull_request:
-    paths:
-      - '**/*.c'
-      - '**/*.h'
-      - '.clang-tidy'
-      - 'Makefile'
-      - '.github/workflows/ci.yml'
+
+env:
+  DOCKER_CONTEXT: .
+  DOCKERFILE: docker/Dockerfile
+  TAG_PREFIX: yourapp:test       # platform 文字列を後ろに付与
 
 jobs:
-  build-and-test:
+# ============================================================
+# 1️⃣ Build & Test  （matrix = amd64 / arm64）
+# ============================================================
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    steps:
+    # 1. ソース取得
+    - uses: actions/checkout@v4
+
+    # 2. QEMU / buildx セットアップ
+    - uses: docker/setup-qemu-action@v3
+    - uses: docker/setup-buildx-action@v3
+
+    # 3. buildx でコンテナを “ローカルに LOAD”
+    - uses: docker/build-push-action@v5
+      with:
+        context: ${{ env.DOCKER_CONTEXT }}
+        file:    ${{ env.DOCKERFILE }}
+        platforms: ${{ matrix.platform }}
+        tags: ${{ env.TAG_PREFIX }}-${{ matrix.platform }}
+        load: true
+        cache-from: type=gha
+        cache-to:   type=gha,mode=max   # レイヤキャッシュ共有（任意）
+
+    # 4. コンテナ内でユニットテスト実行
+    - name: Run unit tests in container
+      run: |
+        docker run --rm ${{ env.TAG_PREFIX }}-${{ matrix.platform }}
+
+    # 5. Valgrind メモリチェック（失敗は CI Fail）
+    - name: Run Valgrind (memcheck)
+      run: |
+        docker run --rm \
+          --entrypoint valgrind \
+          ${{ env.TAG_PREFIX }}-${{ matrix.platform }} \
+          --leak-check=full /app/bin/main
+
+    # 6. artefact アップロード（main バイナリや junit XML など）
+    - uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ matrix.platform }}
+        path: build/
+
+    # 7. main ブランチ時のみ Jenkins もトリガー
+    - name: Trigger Jenkins job
+      if: ${{ github.ref == 'refs/heads/main' }}
+      env:
+        JENKINS_TOKEN: ${{ secrets.JENKINS_TOKEN }}
+      run: |
+        curl -s -X POST "https://your-jenkins-domain/job/your-job-name/build?token=${JENKINS_TOKEN}"
+
+# ============================================================
+# 2️⃣ clang-tidy 静的解析  （ソースのみ対象）
+# ============================================================
+  clang-tidy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Set up gcc
-        run: sudo apt-get update && sudo apt-get install -y gcc make valgrind curl
+    - name: Install clang-tidy
+      run: sudo apt-get update && sudo apt-get install -y clang-tidy
 
-      - name: Build
-        run: make build
+    - name: Run clang-tidy (all warnings → error)
+      run: |
+        find src/ include/ -type f \( -name '*.c' -o -name '*.h' \) > files.txt
+        # -quiet で警告のみ表示、--warnings-as-errors='*' で 1 警告でも Fail
+        clang-tidy --quiet --warnings-as-errors='*' \
+          -p . $(cat files.txt)
 
-      - name: Test
-        run: make test
-
-      - name: Memcheck
-        run: make memcheck || true  # Valgrindなければエラー無視
-
-      - name: Trigger Jenkins job
-        if: ${{ github.ref == 'refs/heads/main' }}
-        run: |
-          curl -X POST "https://your-jenkins-domain/job/your-job-name/build?token=YOUR_TOKEN"
-
-  clang-tidy-check:
+# ============================================================
+# 3️⃣ ワークフロー全体結果まとめ
+# ============================================================
+  summary:
+    needs: [build-test, clang-tidy]
     runs-on: ubuntu-latest
+    if: always()
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install clang-tidy
-        run: sudo apt-get update && sudo apt-get install -y clang-tidy
-
-      - name: Run clang-tidy (fail on warnings)
-        run: |
-          find src/ include/ -type f \( -name "*.c" -o -name "*.h" \) > files.txt
-          clang-tidy -p . --quiet --warnings-as-errors='*' $(cat files.txt)
+    - name: Print CI summary
+      run: |
+        echo "📝  Build-&-Test:  ${{ needs.build-test.result }}"
+        echo "📝  clang-tidy:   ${{ needs.clang-tidy.result }}"

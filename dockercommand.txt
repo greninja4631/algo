@@ -7,6 +7,35 @@ URLのポート:8080 である。
 【クロスアーキテクチャ Docker Build ワンライナー】
 
 
+『Mac用コマンド』
 
-docker buildx build -f Docker/Dockerfile --platform linux/arm64 -t yourapp:arm64 . --load && \
-docker buildx build -f Docker/Dockerfile --platform linux/amd64 -t yourapp:amd64 . --load
+
+docker buildx build \
+  --platform linux/arm64 \
+  -t yourapp:arm64 \
+  -f docker/Dockerfile . \
+  --load        
+docker run --rm -it --platform linux/arm64 yourapp:arm64
+
+
+
+『Windows用コマンド』
+
+
+docker buildx build \
+  --platform linux/amd64 \
+  -t yourapp:amd64 \
+  -f docker/Dockerfile . \
+  --load
+
+
+
+
+
+
+
+chmod +x scripts/local_build.sh      # 1 回だけ
+./scripts/local_build.sh             # 自動判定
+
+# Intel Mac / WSL だが arm64 イメージを試したい場合
+./scripts/local_build.sh --arch=arm64

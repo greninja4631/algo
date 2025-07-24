@@ -1,81 +1,53 @@
-#!/bin/bash
-set -xe
+#!/usr/bin/env bash
+# ==========================================================
+# local_build.sh – マルチアーキ build & run ワンライナー
+#   • Apple-Silicon → arm64 イメージをビルド＆実行
+#   • Intel/WSL      → amd64 イメージをビルド＆実行
+#   • --arch=amd64 / arm64 で強制指定も可
+# ==========================================================
+set -euo pipefail
 
-echo "[INFO] カレントディレクトリ:"
-pwd || true
-ls -l || true
+# ---------- 🔧 CLI オプション ----------
+ARCH_OVERRIDE=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --arch=*)
+      ARCH_OVERRIDE="${1#*=}"         # amd64 / arm64
+      ;;
+    -h|--help)
+      echo "Usage: $0 [--arch=amd64|arm64]"
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
 
-echo "[INFO] srcディレクトリの中身:"
-ls -l src || true
+# ---------- 🖥️ ホスト CPU からプラットフォーム決定 ----------
+HOST_ARCH_RAW=$(uname -m)            # arm64 / aarch64 / x86_64 …
+HOST_ARCH=${HOST_ARCH_RAW/aarch64/arm64}
 
-echo "[INFO] testディレクトリの中身:"
-if [ -d test ]; then
-    ls -l test || true
-else
-    echo "[WARN] test ディレクトリが存在しません"
-fi
+TARGET_ARCH=${ARCH_OVERRIDE:-$HOST_ARCH}
+case "$TARGET_ARCH" in
+  arm64|aarch64)   PLATFORM="linux/arm64"  ;;
+  amd64|x86_64)    PLATFORM="linux/amd64"  ;;
+  *)
+    echo "❌ Unsupported arch: $TARGET_ARCH" >&2
+    exit 2
+    ;;
+esac
 
-echo "[INFO] practiceディレクトリの中身:"
-if [ -d practice ]; then
-    ls -l practice || true
-else
-    echo "[WARN] practice ディレクトリが存在しません"
-fi
+IMAGE_TAG="yourapp:${TARGET_ARCH}"
 
-# ルート直下Makefile（src/用）でビルド
-if make clean; then
-    echo "[INFO] Clean完了"
-else
-    echo "[WARN] make clean失敗（スルー）"
-fi
+echo "🛠️  Building $IMAGE_TAG for $PLATFORM …"
+docker buildx build \
+  --platform "$PLATFORM" \
+  -t  "$IMAGE_TAG" \
+  -f docker/Dockerfile . \
+  --load
 
-# コード整形
-if make -q format 2>/dev/null; then
-    make format
-else
-    echo "[INFO] formatターゲットなし"
-fi
-
-# ビルド
-if ! make build; then
-    echo "[ERROR] make build失敗"
-    exit 1
-fi
-
-# テスト
-if ! make test; then
-    echo "[ERROR] make test失敗"
-    exit 1
-fi
-
-# memcheck
-if command -v valgrind >/dev/null 2>&1; then
-    if make -q memcheck 2>/dev/null; then
-        make memcheck
-    else
-        echo "[INFO] memcheckターゲットなし"
-    fi
-else
-    echo "[INFO] Valgrindがインストールされていません。memcheckスキップ"
-fi
-
-# --- 🔻 practice/ ディレクトリ用の追加ビルド/テスト ---
-if [ -d practice ]; then
-    echo "[INFO] practiceディレクトリで写経コードをビルド＆テスト"
-    for srcfile in practice/*.c; do
-        [ -e "$srcfile" ] || continue
-        binfile="${srcfile%.c}.out"
-        gcc -Wall -Wextra -Werror -g "$srcfile" -o "$binfile" && echo "[SUCCESS] $srcfile → $binfile"
-        if [ -f "$binfile" ]; then
-            echo "[INFO] $binfile 実行:"
-            ./"$binfile"
-        fi
-    done
-else
-    echo "[WARN] practiceディレクトリが存在しません（スキップ）"
-fi
-
-echo "[INFO] ビルド後の成果物:"
-ls -l || true
-
-exit 0
+echo "🚀 Running $IMAGE_TAG …"
+docker run --rm -it --platform "$PLATFORM" "$IMAGE_TAG"
