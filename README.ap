@@ -2,272 +2,205 @@
 未使用関数の使用しないようにすることも気をつけて。
 
 
+🏗️ ソフトウェア工学最前線ガイドライン – 2025-07 完全統合版（先頭に核心ルール配置）
 
-🏗️【ソフトウェア工学最前線ガイドライン 完全強化版（2025-07・統合版）】
+A. コア原則（違反 = CI Fail）　
+
+ID	原則	効果
+0-1	アロケータ DI 統一 – 公開 API 第1引数は const ds_allocator_t *alloc 固定	テスト容易・外部依存切替可
+0-2	safe calloc/free – alloc(0,sz)→NULL, free(NULL)→no-op	0 byte, NULL クラッシュ防止
+0-3	NULL セーフ – NULL 受領時は必ず DS_ERR_NULL_POINTER	NULL-deref 根絶
+0-4	命名 & @ownership 統一 – 出力は out_ プレフィクス＋コメントで Ownership 明記	静的解析・人間ミス予防
+0-5	破棄は 1 回＋NULL 化	Double-Free/Use-After-Free 防止
+0-6	構造体本体は .c – ヘッダにメンバを書かない	ABI 安定・再コンパイル最小化
+0-7	ログ 6 段階 (TRACE..FATAL)	運用監視 & デバッグ容易
+0-8	テスト main 分離 – すべて tests/test_main.c に集約	CI と単体実行を両立
+0-9	Valgrind 0 漏れ – definitely lost = 0	ヒープリーク根絶
+0-10	typedef 集約 – 公開型は include/data_structures.h のみ	型定義の迷子を防止
+
 
 ⸻
+
+B. 実践チェックリスト（PR Before-Merge） 
+
+チェック項目	✅ / ❌
+公開 typedef は data_structures.h のみに存在する	
+公開 API の第1引数が const ds_allocator_t *alloc	
+直 malloc/free が 0 行	
+構造体本体が .c のみに実装されている	
+グローバル変数ゼロ（Mutex/TLS 保護を除く）	
+clone() 実装は必要モジュールのみ	
+ヘッダに @ownership コメントあり	
+テスト関数名が test__<module>_<case>() 形式	
+Valgrind definitely lost = 0	
+CI（GitHub / Jenkins）で run_ci.sh がパス	
+
+⚠️ どれか 1 つでも × なら即 CI Fail。
+特に typedef の場所違反 は最も重い違反です。
+
 
 0. 目的と適用範囲
-	•	src/, include/, tests/ 以下に置かれる全Cソース・ヘッダ・テスト・CI/CDスクリプトを完全に包含。
-	•	Dockerコンテナ内で走る全ビルド＆CI（run_ci.sh, Jenkinsfile, GitHub Actions）を標準化。
-	•	「再帰的設計」「形式手法」「セキュリティ」「静的解析」「教育」「現場運用」まで全層的品質保証を担保。
-
-
-
-アンチパターン（検出＝即 Fail）
-typedef が data_structures.h に集約されており、data_structures.hに集約するルールは「本番API・本番ヘッダから触る型」「外部公開型」に限定。
-	•	構造体本体をヘッダに書いて再定義
-	•	テストのためにプリプロセッサで本番ヘッダを切り替える
-	•	本番コードに printf/puts/perror 系
-	•	goto fail; スパゲティ　　　　11. 参考実装スニペット
-
-1. 🧩「再帰的定義」：アーキテクチャの本質
-
-全ての抽象データ構造・VM・GC・アロケータ・Undo/Redoは「再帰的定義」で構築することが必須条件。
-	•	リスト（自己参照構造体）
-
-struct node { T value; struct node* next; };
-
-
-	•	ツリー・AST（抽象構文木）
-子ノードを再帰的にたどり、JIT/VMでも各ノードを再帰的にinterpret/compile
-	•	コマンド履歴（Undo/Redo）
-Commandオブジェクトのapply/undoを再帰的連鎖で履歴管理
-	•	ヒープ管理（Buddy Allocatorなど）
-メモリを2^n単位で再帰分割/統合することでヒープ効率とセキュリティを両立
-	•	GC（Mark & Sweep等）
-オブジェクトグラフを再帰的に走査、到達不能メモリを自動開放
-
-補足：
-再帰設計を無視したAPIはif-else/switch肥大地獄・スパゲティ設計となり、現場で即座に技術負債となる。
-再帰性＝拡張性・テスト容易性・責務分割の核。CSの基礎理論の実践的価値。
+	•	再帰的設計・形式手法・セキュリティ・静的解析・教育・運用 を 1 ドキュメントで統一。
+	•	すべての品質タスクは run_ci.sh １発 に集約し、
+Jenkins・GitHub Actions・GitLab CI など上位ツールは「コンテナで run_ci.sh を実行するだけ」で済む。
 
 ⸻
 
-2. 🧮「形式言語理論・有限オートマトン」：実装の安全・予測性
-	•	FSM設計はパーサ・VM・Undo/Redo・スケジューラ全ての信頼性保証の根幹
-	•	正規表現→有限オートマトン化で入力検証、LL(k)/LR(k)パーサで構文解釈
-	•	Undo/Redo/履歴管理はFSMとして設計：State/Command/Invariantsで安全担保
-	•	ラウンドロビンスケジューラや多段階状態機械にも応用
+1. 再帰的定義 ― アーキテクチャの核
+	•	すべてのデータ構造／VM／GC／Undo-Redo を “自己参照構造体＋再帰関数” で表現。
 
-current_state = (prev + quantum) % n;
+struct node { int value; struct node *next; };
 
-
-
-補足：
-FSM的な抽象がなければ「バグ地獄・分岐地獄・テスト地獄」。
-FSM設計こそ現場エンジニアの基本教養。
+	•	if-else/switch 地獄を排除し、拡張・テスト・責務分割を容易にする。
 
 ⸻
 
-3. 🔐 セキュリティ設計：「アロケータ」が守る防壁
-	•	Double Free防御：free時にfreed_flag/ヒープ監視テーブルを実装。2重freeでクラッシュ/不整合回避
-	•	UAF (Use After Free)防御：Canaryやfree_tableにより開放済みアクセスを即検知
-	•	バウンダリチェック：すべてのバッファ操作は境界検証if (idx >= size)を明示・CIでも検査
-	•	ASLR対応：アロケーション位置ランダム化（OSのASLR機構も併用）
-	•	Valgrind対応：全てのds_malloc/ds_freeのトレースログを出力・ヒープリークゼロを保証
+2. 形式言語理論・有限オートマトン
 
-補足：
-ds_allocator/ヒープ管理はLinuxカーネルやglibc技術の集大成。自作できれば「OS・IoT・SaaS」全分野に直結。
-
-⸻
-
-4. 🎯「OS/VM/GC」：一体設計・車の両輪
-
-構成要素	担当領域	備考
-OS (Virtual Memory)	ページ管理/保護	mmap/sbrkでカスタムアロケータ設計
-Allocator	ユーザーヒープ管理	malloc/buddy/slab/TLSF設計戦略
-GC	メモリリーク/循環参照除去	Mark & Sweep/Generational/Arena方式
-VM/LLVM/WASM	型・バイトコード・スタック	GC有無でABI・最適化が根本的に変わる
-
-	•	arena_allocator/bump_allocatorの実装でWASM/JIT/LLVMへの移植性大幅UP
-	•	VM設計・GC設計とアロケータは「設計・最適化・安全性」の両輪
-
-⸻
-
-5. 🧪「静的解析・形式検証・Fuzzing」：CI/CDと一体化した高品質保証
-	•	clang-tidy/cppcheck：構文/論理/メモリエラーの事前発見を自動化
-	•	CBMC / Frama-C：関数ごとの契約（requires/ensures/invariant）を形式的に証明
-例:
-
-/*@ requires 0 <= index < size;
-    ensures \result == array[index];
-*/
-int get_element(int *array, int size, int index);
-
-
-	•	libFuzzer/AFL++：クラッシュ/未定義動作を自動探索→必ずCI/CDに組み込む
-
-補足：
-CI/CDでrun_ci.shから「valgrind definitely lost=0」「静的解析・形式検証・Fuzzing全自動」を実現せよ。
-
-⸻
-
-
-
-7. コア原則（違反はビルド/CI即Fail）
-
-ID	原則名	具体ルール	効果
-0-1	アロケータDI統一	公開APIの第1引数はconst ds_allocator_t* alloc固定	テスト性/モック化/品質保証
-0-2	calloc/free安全設計	_std_alloc(0,sz)はNULL、_std_free(NULL)はno-op	ゼロバイト/NULLクラッシュ防止
-0-3	NULLセーフAPI	NULL引数は必ずDS_ERR_NULL_POINTER	NULL-deref完全排除
-0-4	命名・@ownership統一	出力はout_プレフィクス、@ownership明記	静的解析/人間ミス予防
-0-5	破棄は1回だけ	destroy/reset後はNULL化	二重free完全防止
-0-6	構造体本体は.c	DTO以外はヘッダにメンバ禁止	ABI変更の影響極小化
-0-7	ログ6段階	ds_log(TRACE..FATAL)	運用監視/トレーサビリティ
-0-8	テストmain分離	tests/test_main.cに集約	CIと単体実行の両立
-0-9	Valgrind 0漏れ	definitely lost=0必須	ヒープリーク根絶
+用途	実装指針
+入力検証	正規表現 ➜ NFA/DFA
+パーサ	LL(k) / LR(k)
+Undo/Redo / 履歴	Command パターン＋FSM
+スケジューラ	ラウンドロビン FSM
 
 
 ⸻
 
-8. 拡張ロードマップ（教育・運用・OSSレベル拡張）
-	•	LLVM/JIT/仮想メモリとの連携
-	•	buddy/slab allocator設計・GC拡張・LLVM最適化連携・JIT生成コード領域の安全管理
-	•	セキュリティ最前線
-	•	double free/UAF/poisoning/Fortify Source/stack canary/ASLR/fault injection全ての自動検証
-	•	メモリ可視化・ヒープトレース
-	•	ds_malloc_traceモード/heapマップ/JSONログ/ELK連携
-	•	教育・カリキュラム統合
-	•	ヒープ可視化/undo-redo有限オートマトン図示/ABI図解/pointer ownershipのSVG出力
-	•	形式手法・静的解析
-	•	Frama-C/CBMCによる証明/MISRA-C/カバレッジ/fuzzingによる死角ゼロ設計
+3. セキュリティ設計 ― アロケータが守る防壁
+	•	Double Free : freed_flag で二重解放検出
+	•	UAF : Canary と free_table で即時クラッシュ
+	•	バウンダリチェック : すべてのバッファ操作が idx >= size を検証
+	•	ASLR : mmap + ランダムオフセット
+	•	Valgrind : definitely lost = 0 を CI で強制
 
 ⸻
 
-9. 参考API実装（契約プログラミング&Doxygen）
+4. OS / VM / GC ― 車の両輪
 
-/**
- * @brief    スタック生成
- * @pre      alloc != NULL
- * @pre      out_stack != NULL
- * @post     *out_stack != NULL
- * @ownership caller frees (ds_stack_destroy)
- */
-ds_error_t ds_stack_create(const ds_allocator_t *alloc,
-                           ds_stack_t          **out_stack)
-{
-    assert(alloc && out_stack);
-    ds_stack_t *s = ds_malloc(alloc, 1, sizeof *s);
-    if (!s) return DS_ERR_ALLOC;
-    s->alloc = alloc;
-    s->size  = 0;
-    s->cap   = 16;
-    s->data  = ds_malloc(alloc, s->cap, sizeof(void*));
-    if (!s->data) { ds_free(alloc, s); return DS_ERR_ALLOC; }
-    *out_stack = s;
-    return DS_SUCCESS;
-}
+コンポーネント	役割	メモ
+仮想メモリ	mmap/sbrk ページ管理	
+Allocator	ユーザーヒープ	buddy/slab/TLSF
+GC	メモリリーク排除	Mark-Sweep／世代別
+VM / JIT	型・バイトコード運用	Arena alloc で高速
 
 
 ⸻
 
-10. CI/CD統合とrun_ci.sh（最重要）
-	•	Jenkins/GitHub Actions/GitLab等、run_ci.sh一発で全品質管理
-	•	禁止API grep、clang-tidy/cppcheck/valgrind/Fuzzingを完全自動化
-	•	どのCIサービスでも全く同じ品質条件で管理（YAML/Groovyでrun_ci.shを呼ぶだけ）
-
-8. 既存コード移行チェックリスト（PR Before-Merge）
-
-チェック項目	Yes / No
-typedef が data_structures.h に集約されている	
-公開 API が alloc を第 1 引数に持つ	
-直 malloc/free が 0 行 (grep 済)	
-構造体本体が .c のみ	
-グローバル変数ゼロ (例外は Mutex/TLS 保護)	
-clone() 実装（必要モジュールのみ）	
-ヘッダで @ownership 明記済み	
-テスト名 test__<module>_<case>() 形式	
-Valgrind “definitely lost” = 0	
-
-■ クロスプラットフォーム対応の基本原則
-	1.	すべての開発・ビルド・テスト・CI/CDの工程は、Mac・Windows（WSL2/PowerShell）・Linux・Dockerの全環境で
-“まったく同じ操作・同じコマンド”で動くことを原則とする。
-	•	Makefile・CIスクリプト（run_ci.sh）・DockerfileはOSの違いを吸収し、どの環境でも全く同じコマンドで実行・ビルド・リリースできるよう設計すること。
-	•	WindowsではWSL2（Ubuntu）推奨。どうしてもPowerShellのみの場合は、Bashやmingw32-make互換のMakefileも用意する。
-	•	依存パッケージ（gcc/clang/valgrindなど）は、MacはHomebrew・Linuxはapt/yum・WindowsはChocolateyやscoopなど各OS標準の方法で自動インストールできる設計にする。
-	2.	CI/CD（Jenkins, GitHub Actions, GitLab等）は、Docker上の run_ci.sh 一発実行だけで全品質タスクを完全自動化する。
-	•	CIの設定ファイル（yamlやGroovy）は**「chmod +x ./run_ci.sh && ./run_ci.sh」一行で全自動化**されることを前提とする。
-	•	どのCIサービスでも同じ品質基準が守れることを保証する。
-	3.	クロスアーキテクチャ（x86_64/amd64、arm64/Apple Silicon）両対応をMakefile/Dockerfile/CIで徹底する。
-	•	Makefileには make docker-arm64・make docker-amd64・make docker-all などクロスビルド用のターゲットを必ず用意し、どの環境でも手軽にクロスビルド検証できること。
-	•	Dockerfileは multi-stage + buildx 対応とし、複数アーキテクチャの成果物を簡単に作れるようにする。
+5. 静的解析・形式検証・Fuzzing
+	•	clang-tidy --warnings-as-errors=*
+	•	cppcheck --error-exitcode=1
+	•	CBMC / Frama-C で契約 (requires / ensures) を自動証明
+	•	libFuzzer / AFL++ を run_ci.sh で自動実行
 
 ⸻
 
-■ 推奨される運用フロー（実務・教育現場向け）
-	•	開発者は make build make test make docker-xxx など、どのOS/シェルでも同じコマンド体系を使うこと。
-	•	OSごとのパスやシェル差異（/bin/bashとpowershellなど）はrun_ci.shやMakefileで自動判別・切り替えできるようにする。
-	•	依存パッケージのセットアップガイド（Homebrew/Mac、apt/Linux、Chocolateyやscoop/Windows）はREADMEやドキュメントで明示しておく。
-	•	設計原則（禁止API・グローバル変数非使用・構造体本体.c隔離など）はCIですべて強制検査し、どのOSでも違反が起きないことを保証する。
+
+7. クロスプラットフォーム原則
+	•	make build && make test は Mac / Windows(WSL) / Linux / Docker で完全同一。
+	•	make docker-arm64 / make docker-amd64 / make docker-all でクロスビルド検証。
+	•	依存パッケージは scripts/ci_env_setup.sh が OS 判定して自動導入。
 
 ⸻
 
-■ 実践チェックリスト（これが満たされていればOK！）
-	•	全ビルド・テスト・品質検証コマンドがMac/Windows/Linux/Docker全てで同じ動作を保証
-	•	run_ci.sh一発で全工程（ビルド・テスト・lint・フォーマット・Valgrind・ドキュメント生成）が自動化
-	•	Multi-Arch Dockerイメージ（arm64/amd64）がMakefile一発で作成可能
-	•	依存解決（apt/brew/pip/npm）がOSごとに自動判別できる
-	•	禁止API・メモリリーク・未登録テスト・静的解析/形式手法/ Fuzzingも全てCIで自動検証
-	•	どのCIサービス（Jenkins/GitHub Actions等）でもrun_ci.sh一発で同じ品質基準
-	•	新規開発者はREADMEのセットアップ通りに進めれば、どのOSでも即参画・開発可能
+8. CI/CD 統合 ― run_ci.sh 採用
 
+8-1 run_ci.sh 主要タスク
 
+#!/usr/bin/env bash
+set -euo pipefail
+scripts/lint.sh          # clang-format / eslint …
+scripts/static_analysis.sh
+scripts/build.sh         # Makefile 経由
+scripts/test.sh          # 単体 + 統合
+scripts/coverage.sh      # gcov→HTML
+scripts/fuzz.sh          # libFuzzer / AFL++
+valgrind --leak-check=full build/bin/main
 
+8-2 Jenkinsfile（抜粋）
 
-
-11-1. スタック生成 API 完全版
-
-/**
- * @brief    スタック生成
- * @pre      alloc != NULL
- * @pre      out_stack != NULL
- * @post     *out_stack != NULL
- * @ownership caller frees (ds_stack_destroy)
- */
-ds_error_t ds_stack_create(const ds_allocator_t *alloc,
-                           ds_stack_t          **out_stack)
-{
-    assert(alloc && out_stack);
-
-    ds_stack_t *s = ds_malloc(alloc, 1, sizeof *s);
-    if (!s) return DS_ERR_ALLOC;
-
-    s->alloc = alloc;
-    s->size  = 0;
-    s->cap   = 16;
-    s->data  = ds_malloc(alloc, s->cap, sizeof(void*));
-    if (!s->data) { ds_free(alloc, s); return DS_ERR_ALLOC; }
-
-    *out_stack = s;
-    return DS_SUCCESS;
-}
-
-
-⸻
-11-2. CI/CD 実行方法（run_ci.sh 採用）
-
-● 原則  
-  Jenkins／GitHub Actions／GitLab CI 等の上位ツールは  
-  「Docker コンテナ内で run_ci.sh を 1 行実行する」だけでよい。
-
-● 手順  
-  - Jenkinsfile 例
-      pipeline {
-        agent any
-        stages {
-          stage('CI') {
-            steps {
-              sh 'chmod +x ./run_ci.sh && ./run_ci.sh'
-            }
-          }
-        }
+pipeline {
+  agent { docker { image 'docker:24.0-cli' args '--privileged' } }
+  stages {
+    stage('CI') {
+      steps {
+        sh 'chmod +x ./run_ci.sh && ./run_ci.sh'
       }
+    }
+  }
+  post {
+    always {
+      archiveArtifacts artifacts: 'build/**'
+      junit 'build/test/*.xml'
+    }
+  }
+}
 
-  - GitHub Actions 例 (.github/workflows/ci.yml)
-      jobs:
-        build:
-          runs-on: ubuntu-latest
-          steps:
-            - uses: actions/checkout@v4
-            - run: chmod +x ./run_ci.sh && ./run_ci.sh
+8-3 GitHub Actions .github/workflows/ci.yml
+
+name: CI (multi-arch)
+on: [push, pull_request]
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - run: chmod +x ./run_ci.sh && ./run_ci.sh
+
+
+⸻
+
+9. Docker (multi-arch, GLIBC 統一)
+
+##################### 🔨 Build Stage #####################
+FROM gcc:12-bookworm AS builder        # GLIBC 2.38
+WORKDIR /app
+COPY . .
+RUN rm -rf build/ docs/ coverage/ && \
+    chmod +x ./scripts/*.sh ./run_ci.sh || true && \
+    ./scripts/build.sh && \
+    test -f build/bin/main && chmod +x build/bin/main
+
+##################### 🚀 Production Stage ################
+FROM debian:bookworm-slim
+WORKDIR /app
+COPY --from=builder /app/build/bin /app/bin
+ENTRYPOINT ["/app/bin/main"]
+
+	•	docker buildx build --platform linux/{amd64,arm64} -t yourapp . --load で両アーキテクチャ成功済み。
+
+
+
+11. 参考実装スニペット（契約プログラミング & Doxygen）
+
+/**
+ * @brief  スタック生成
+ * @pre    alloc != NULL
+ * @pre    out_stack != NULL
+ * @post   *out_stack != NULL
+ * @ownership caller frees via ds_stack_destroy()
+ */
+ds_error_t
+ds_stack_create(const ds_allocator_t *alloc,
+                ds_stack_t          **out_stack)
+{
+    assert(alloc && out_stack);
+
+    ds_stack_t *s = ds_malloc(alloc, 1, sizeof *s);
+    if (!s) return DS_ERR_ALLOC;
+
+    s->alloc = alloc;
+    s->size  = 0;
+    s->cap   = 16;
+    s->data  = ds_malloc(alloc, s->cap, sizeof(void *));
+    if (!s->data) { ds_free(alloc, s); return DS_ERR_ALLOC; }
+
+    *out_stack = s;
+    return DS_SUCCESS;
+}
+
+上記コメントはそのまま Doxygen で API ドキュメント化される。

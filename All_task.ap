@@ -1,0 +1,71 @@
+「全部読む」は￼非効率――まず 目的別にフォーカス しよう
+
+ゴール： “実装を理解して貢献できる” レベルに最速到達すること。
+⏱️ 目安： 3 日で全体像 → 2 週で小さな PR を出せれば上々です。
+
+⸻
+
+1️⃣ 最低限ここから読む ✨  （★＝最重要）
+
+優先度	フォルダ / ファイル	何がわかる？	読むときの着眼点
+★★★	README.md	プロダクト概要・ビルド手順	“Quick Start” が本当に動くか手元で確認
+★★★	tests/（特に *_test.c, *_spec.*）	振る舞い＝仕様そのもの	失敗系も網羅されているか／エラーメッセージ
+★★☆	include/（公開 API ヘッダ）	型・関数・エラーハンドリング規約	@ownership コメント・alloc DI が守られているか
+★★☆	src/ 直下 & src/ds/	コアロジック実装	再帰定義・FSM・ロギングの使い方
+★★☆	Makefile / run_ci.sh	ビルド & CI の入口	依存ツール・リンター・Valgrind の呼び出し
+★☆☆	docker/Dockerfile	開発／本番環境の差	GLIBC バージョン合わせ・multi-arch buildx
+★☆☆	.github/workflows/ci.yml / Jenkinsfile	CI/CD の流れ	lint→build→test→artifact の順序
+
+
+⸻
+
+2️⃣ あとで 必要に応じて読む（スキップ可）
+
+フォルダ / ファイル	いつ読む？
+docs/design/, docs/test_plans/	設計変更や大きな機能追加を担当するとき
+scripts/*.sh（lint/format/fuzz など）	独自ツールを拡張・デバッグしたいとき
+docker/entrypoint*.sh, docker-compose.yml	本番運用・ローカル開発環境をカスタマイズするとき
+ci/（Frama-C, fuzz, coverage）	形式検証・Fuzzing の結果を解析したいとき
+db/, jenkins/	DB マイグレーション・Jenkins 管理を任されたとき
+build/ 以下	生成物。リポクローン直後は空 or 無視して OK
+
+
+⸻
+
+3️⃣ 読む順番ガイド（実際の手順）
+
+Step	具体アクション	目的
+① テストを先に実行 make test or ./scripts/test.sh	動く状態を確認。出力ログで API やロギング形式を把握	
+② tests/ → include/ を読む	“何が保証されるか” を理解してから実装に入る	
+③ src/ のエントリポイント src/main.c, src/ds/*.c をトレース	ロギング・エラーフロー・アロケータ注入を確認	
+④ CI フローを追体験 run_ci.sh をローカルで実行	lint, static analysis, Valgrind が通る基準を体感	
+⑤ 小さな修正 PR （例）typo, TODO コメント, 簡単なテスト追加	レビュー & CI ループを一周して開発サイクルを掴む	
+
+
+⸻
+
+4️⃣ よくある落とし穴 ⚠️
+
+NG 例	なぜダメ？	回避策
+build/ 内を直接編集	生成物なので Git 無視対象	必要なら src/ を修正して再ビルド
+include/ で構造体本体を書く	ガイドライン 0-6 違反（ABI 破壊）	本体は .c、ヘッダは typedef struct ... のみ
+printf 直接使用	ds_log() 統一ルール違反	必ずロガー経由で
+malloc/free 直呼び	アロケータ DI 崩壊	ds_malloc / ds_free を使用（テストでモック可）
+
+
+⸻
+
+5️⃣ 「読まなくていい」もの
+	•	build/**, coverage/**, docs/doxygen/** – 自動生成物
+	•	*.log, *.stamp, *~ – CI が消す前の一時ファイル
+	•	scripts/git-hooks/ – Git Hook を自分で触らない限り不要
+	•	docker/*-postgres や jenkins/* – DB/Jenkins 担当でなければ後回し
+
+⸻
+
+📌 まとめ
+	1.	テスト → ヘッダ → 実装 の順で読む
+	2.	CI/ビルドを回しながら 挙動を確かめる
+	3.	小さな修正 PR を 早めに出して サイクルに慣れる
+
+この流れで進めれば、巨大ツリーでも迷子にならずに戦力化できます。まずは make test を回してログを眺めるところからスタートしてみてください！
