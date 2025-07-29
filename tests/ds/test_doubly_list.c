@@ -34,12 +34,22 @@ static const ds_allocator_t g_alloc_impl = {
 /*-----------------------------------------------------
  * 3-A. 基本機能テスト
  *-----------------------------------------------------*/
+
+
+
 void test__doubly_list_basic(void)
 {
+
+// *list  リスト本体の場所（器そのもの）    最初はまだ作っていないから
+// *tmp   一時的にデータを受け取るための箱  最初はまだ何も受け取っていないから
     ds_doubly_list_t *list = NULL;
     int a = 10, b = 20, c = 30, d = 40;
     void *tmp = NULL;
 
+
+// ds_doubly_list_create(...) 新しいリスト本体（器）を作る        器ができてるか
+// 「リスト本体（器そのもの）がちゃんと作れているかどうか」を検証する。つまり、「ds_doubly_list_create(...) で本当にリストが“存在している”状態になったか？」だけをチェック
+// ds_doubly_list_is_empty(list) そのリスト本体の中身が空かどうか  器の中身が何も入ってないか
     TASSERT(ds_doubly_list_create(G_ALLOC, &list) == DS_SUCCESS, "create");
     TASSERT(list != NULL, "list != NULL");
     TASSERT(ds_doubly_list_is_empty(list), "empty after create");
@@ -55,6 +65,7 @@ void test__doubly_list_basic(void)
     TASSERT(ds_doubly_list_insert_at   (G_ALLOC, list, 1, &d) == DS_SUCCESS, "insert_at d");
     TASSERT(ds_doubly_list_size(list) == 4, "size 4");
 
+    //2️⃣ 削除順を変える理由・意図 = さまざまな削除パターンを検証するため
     TASSERT(ds_doubly_list_get_at(list, 0, &tmp) == DS_SUCCESS && *(int*)tmp == c, "get 0=c");
     TASSERT(ds_doubly_list_get_at(list, 1, &tmp) == DS_SUCCESS && *(int*)tmp == d, "get 1=d");
     TASSERT(ds_doubly_list_get_at(list, 2, &tmp) == DS_SUCCESS && *(int*)tmp == a, "get 2=a");
