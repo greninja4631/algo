@@ -1,3 +1,7 @@
+Dockerとjenkinsの起動コマンドは以下全ての内容を参考にしてくれ。
+
+
+
 Jenkinsサーバ起動（Docker）
 
 docker start jenkins
