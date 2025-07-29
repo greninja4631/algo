@@ -16,9 +16,13 @@
  * @brief calloc(NULL safe) 経由の汎用アロケータ
  * @details cnt==0時はNULL返却、free(NULL)も安全
  */
+
+ //cnt = 個数 , sz = バイト数
 static void* _std_alloc(size_t cnt, size_t sz) { return cnt ? calloc(cnt, sz) : NULL; }
 static void  _std_free (void*  p)              { if (p) free(p); }
 
+//、ds_allocator_t＝型    g_alloc_impl＝定数名
+//	g_alloc_impl という箱の中の「.alloc」「.free」というメンバに、それぞれ _std_alloc や _std_free をセットしています。
 static const ds_allocator_t g_alloc_impl = {
     .alloc = _std_alloc,
     .free  = _std_free
@@ -98,10 +102,4 @@ void test__circular_list_basic(void)
  * [6] テスト用APIエクスポート
  *─────────────────────────────────────*/
 #ifdef EXPORT_CIRCULAR_LIST_TESTS
-int main(void) {
-    test__circular_list_basic();
-    // test__circular_list_edge_cases();
-    // test__circular_list_stats();
-    return 0;
-}
 #endif

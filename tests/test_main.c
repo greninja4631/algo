@@ -25,6 +25,8 @@ typedef struct {
 static ds_test_stats_t g_stats;
 
 /* ---- ロガー（色分け+INFO/ERROR区別） ---- */
+
+//lvl の型は ds_log_level_t（実体は int 等）
 static void test_logger(ds_log_level_t lvl, const char *fmt, va_list ap)
 {
     static const char *L[] = { "DEBUG", "INFO", "WARN", "ERROR", "FATAL" };
@@ -91,7 +93,6 @@ int main(int argc, char *argv[])
 
     run_suite("Data-Structures", ds_tests, sizeof ds_tests / sizeof *ds_tests);
 
-    report();
     return g_stats.failed ? 1 : 0;
 }
 
